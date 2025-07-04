@@ -262,13 +262,11 @@ export default function SettingsPage() {
   const [newCalendarName, setNewCalendarName] = useState("");
   const [isHolidayDialogOpen, setIsHolidayDialogOpen] = useState(false);
   const [holidayFormData, setHolidayFormData] = useState<{name: string, date: Date | undefined}>({ name: "", date: undefined });
-  const [isHolidayPopoverOpen, setIsHolidayPopoverOpen] = useState(false);
   
   const allSchedules = ['Horario Fijo', 'Horario Flexible', ...shifts.map(s => s.name)];
 
   const handleHolidayDateSelect = (date: Date | undefined) => {
     setHolidayFormData(prev => ({ ...prev, date }));
-    setIsHolidayPopoverOpen(false);
   };
 
   useEffect(() => {
@@ -1133,11 +1131,12 @@ export default function SettingsPage() {
                                                     <div key={scheduleName} className="flex items-center space-x-2">
                                                         <Checkbox 
                                                             id={`assign-${scheduleName}`}
-                                                            checked={breakFormData.assignedTo.includes(scheduleName)}
+                                                            checked={(breakFormData.assignedTo || []).includes(scheduleName)}
                                                             onCheckedChange={(checked) => {
+                                                                const currentAssignedTo = breakFormData.assignedTo || [];
                                                                 const newAssignedTo = checked 
-                                                                    ? [...breakFormData.assignedTo, scheduleName]
-                                                                    : breakFormData.assignedTo.filter(name => name !== scheduleName);
+                                                                    ? [...currentAssignedTo, scheduleName]
+                                                                    : currentAssignedTo.filter(name => name !== scheduleName);
                                                                 setBreakFormData({ ...breakFormData, assignedTo: newAssignedTo });
                                                             }}
                                                         />
@@ -1367,7 +1366,7 @@ export default function SettingsPage() {
                                                 </div>
                                                 <div className="space-y-2">
                                                     <Label>Fecha</Label>
-                                                    <Popover open={isHolidayPopoverOpen} onOpenChange={setIsHolidayPopoverOpen}>
+                                                    <Popover>
                                                         <PopoverTrigger asChild>
                                                             <Button type="button" variant="outline" className={cn("w-full justify-start text-left font-normal", !holidayFormData.date && "text-muted-foreground")}>
                                                                 <CalendarIcon className="mr-2 h-4 w-4" />
