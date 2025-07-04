@@ -262,12 +262,14 @@ export default function SettingsPage() {
   const [newCalendarName, setNewCalendarName] = useState("");
   const [isHolidayDialogOpen, setIsHolidayDialogOpen] = useState(false);
   const [holidayFormData, setHolidayFormData] = useState<{name: string, date: Date | undefined}>({ name: "", date: undefined });
+  const [isHolidayPopoverOpen, setIsHolidayPopoverOpen] = useState(false);
   
   const allSchedules = ['Horario Fijo', 'Horario Flexible', ...shifts.map(s => s.name)];
 
-  const handleHolidayDateSelect = useCallback((date: Date | undefined) => {
-    setHolidayFormData(prev => ({ ...prev, date: date }));
-  }, []);
+  const handleHolidayDateSelect = (date: Date | undefined) => {
+    setHolidayFormData(prev => ({ ...prev, date }));
+    setIsHolidayPopoverOpen(false);
+  };
 
   useEffect(() => {
     setIsClient(true);
@@ -1365,14 +1367,21 @@ export default function SettingsPage() {
                                                 </div>
                                                 <div className="space-y-2">
                                                     <Label>Fecha</Label>
-                                                    <Popover>
+                                                    <Popover open={isHolidayPopoverOpen} onOpenChange={setIsHolidayPopoverOpen}>
                                                         <PopoverTrigger asChild>
                                                             <Button type="button" variant="outline" className={cn("w-full justify-start text-left font-normal", !holidayFormData.date && "text-muted-foreground")}>
                                                                 <CalendarIcon className="mr-2 h-4 w-4" />
                                                                 {holidayFormData.date ? format(holidayFormData.date, "PPP") : <span>Elige una fecha</span>}
                                                             </Button>
                                                         </PopoverTrigger>
-                                                        <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={holidayFormData.date} onSelect={handleHolidayDateSelect} initialFocus/></PopoverContent>
+                                                        <PopoverContent className="w-auto p-0">
+                                                            <Calendar 
+                                                                mode="single" 
+                                                                selected={holidayFormData.date} 
+                                                                onSelect={handleHolidayDateSelect} 
+                                                                initialFocus
+                                                            />
+                                                        </PopoverContent>
                                                     </Popover>
                                                 </div>
                                             </div>
