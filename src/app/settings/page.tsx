@@ -135,6 +135,16 @@ type CalendarData = {
     holidays: Holiday[];
 };
 
+type VacationPolicy = {
+  id: string;
+  name: string;
+  unit: 'days' | 'hours';
+  amount: number;
+  countBy: 'natural' | 'workdays';
+  limitRequests: boolean;
+  blockPeriods: boolean;
+};
+
 const initialCenters: Center[] = [
   { name: "Oficina Central", address: "123 Calle Principal, Anytown", radius: 100 },
   { name: "Almacén Norte", address: "456 Avenida Industrial, Anytown", radius: 150 },
@@ -149,7 +159,7 @@ const initialDepartments: Department[] = [
 const initialRoles: Role[] = [
   { name: "Propietario", description: "Control total sobre la cuenta.", permissions: allPermissions.map(p => p.id) },
   { name: "Administrador", description: "Acceso a todo excepto la gestión de roles.", permissions: allPermissions.filter(p => p.id !== 'manage_roles').map(p => p.id) },
-  { name: "Recursos Humanos", description: "Gestiona personal, pero no la configuración.", permissions: ['view_dashboard', 'manage_employees', 'manage_attendance', 'manage_absences', 'manage_performance', 'manage_documents'] },
+  { name: "Recursos Humanos", description: "Gestiona personal, but no la configuración.", permissions: ['view_dashboard', 'manage_employees', 'manage_attendance', 'manage_absences', 'manage_performance', 'manage_documents'] },
   { name: "Manager", description: "Gestiona equipos o personas específicas.", permissions: ['view_dashboard', 'manage_attendance', 'manage_absences'] },
 ];
 const initialBreaks: Break[] = [
@@ -174,6 +184,9 @@ const initialAbsenceTypes: AbsenceType[] = [
 const initialCalendars: CalendarData[] = [
     { id: 'default-calendar', name: 'Calendario General', holidays: [] }
 ];
+const initialVacationPolicies: VacationPolicy[] = [
+    { id: 'default', name: 'General', unit: 'days', amount: 22, countBy: 'workdays', limitRequests: false, blockPeriods: false }
+];
 
 const CENTERS_STORAGE_KEY = 'workflow-central-centers';
 const DEPARTMENTS_STORAGE_KEY = 'workflow-central-departments';
@@ -185,6 +198,7 @@ const FLEXIBLE_SCHEDULES_STORAGE_KEY = 'workflow-central-flexible-schedules';
 const FIXED_SCHEDULES_STORAGE_KEY = 'workflow-central-fixed-schedules';
 const ABSENCE_TYPES_STORAGE_KEY = 'workflow-central-absence-types';
 const CALENDARS_STORAGE_KEY = 'workflow-central-calendars';
+const VACATION_POLICIES_STORAGE_KEY = 'workflow-central-vacation-policies';
 
 
 const projectColors = [
@@ -212,6 +226,7 @@ export default function SettingsPage() {
   const [fixedSchedules, setFixedSchedules] = useState<FixedSchedule[]>([]);
   const [absenceTypes, setAbsenceTypes] = useState<AbsenceType[]>(initialAbsenceTypes);
   const [calendars, setCalendars] = useState<CalendarData[]>(initialCalendars);
+  const [vacationPolicies, setVacationPolicies] = useState<VacationPolicy[]>(initialVacationPolicies);
   
   const [isCenterDialogOpen, setIsCenterDialogOpen] = useState(false);
   const [dialogCenterMode, setDialogCenterMode] = useState<'add' | 'edit'>('add');
@@ -265,6 +280,11 @@ export default function SettingsPage() {
   const [holidayFormData, setHolidayFormData] = useState<{name: string, date: Date | undefined}>({ name: "", date: undefined });
   const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
   
+  const [isVacationPolicyDialogOpen, setIsVacationPolicyDialogOpen] = useState(false);
+  const [dialogVacationPolicyMode, setDialogVacationPolicyMode] = useState<'add' | 'edit'>('add');
+  const [selectedVacationPolicy, setSelectedVacationPolicy] = useState<VacationPolicy | null>(null);
+  const [vacationPolicyFormData, setVacationPolicyFormData] = useState<Omit<VacationPolicy, 'id'>>({ name: '', unit: 'days', amount: 22, countBy: 'workdays', limitRequests: false, blockPeriods: false });
+
   const allSchedules = ['Horario Fijo', 'Horario Flexible', ...shifts.map(s => s.name)];
 
   useEffect(() => {
@@ -305,6 +325,7 @@ export default function SettingsPage() {
       loadFromStorage(FIXED_SCHEDULES_STORAGE_KEY, setFixedSchedules, []);
       loadFromStorage(ABSENCE_TYPES_STORAGE_KEY, setAbsenceTypes, initialAbsenceTypes);
       loadFromStorage(CALENDARS_STORAGE_KEY, setCalendars, initialCalendars);
+      loadFromStorage(VACATION_POLICIES_STORAGE_KEY, setVacationPolicies, initialVacationPolicies);
 
       const storedEmployees = localStorage.getItem(EMPLOYEES_STORAGE_KEY);
       if (storedEmployees) setEmployees(JSON.parse(storedEmployees));
@@ -324,8 +345,9 @@ export default function SettingsPage() {
       localStorage.setItem(FIXED_SCHEDULES_STORAGE_KEY, JSON.stringify(fixedSchedules));
       localStorage.setItem(ABSENCE_TYPES_STORAGE_KEY, JSON.stringify(absenceTypes));
       localStorage.setItem(CALENDARS_STORAGE_KEY, JSON.stringify(calendars));
+      localStorage.setItem(VACATION_POLICIES_STORAGE_KEY, JSON.stringify(vacationPolicies));
     }
-  }, [centers, departments, roles, breaks, clockInTypes, shifts, flexibleSchedules, fixedSchedules, absenceTypes, calendars, isClient]);
+  }, [centers, departments, roles, breaks, clockInTypes, shifts, flexibleSchedules, fixedSchedules, absenceTypes, calendars, vacationPolicies, isClient]);
 
 
   const openAddRoleDialog = () => {
@@ -651,8 +673,39 @@ export default function SettingsPage() {
       ];
       
       setCalendars(prev => prev.map(cal => 
-          cal.id === selectedCalendarId ? { ...cal, holidays: [...cal.holidays, ...mockHolidays] } : cal
+          cal.id === selectedCalendarId ? { ...cal, holidays: [...cal.holidays, ...mockHolidays].filter((holiday, index, self) => index === self.findIndex(t => t.name === holiday.name))} : cal
       ));
+  };
+
+  const openAddVacationPolicyDialog = () => {
+    setDialogVacationPolicyMode('add');
+    setSelectedVacationPolicy(null);
+    setVacationPolicyFormData({ name: '', unit: 'days', amount: 22, countBy: 'workdays', limitRequests: false, blockPeriods: false });
+    setIsVacationPolicyDialogOpen(true);
+  };
+
+  const openEditVacationPolicyDialog = (policy: VacationPolicy) => {
+    setDialogVacationPolicyMode('edit');
+    setSelectedVacationPolicy(policy);
+    setVacationPolicyFormData(policy);
+    setIsVacationPolicyDialogOpen(true);
+  };
+  
+  const handleVacationPolicyFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!vacationPolicyFormData.name) return;
+    const payload = { ...vacationPolicyFormData, amount: Number(vacationPolicyFormData.amount) };
+
+    if (dialogVacationPolicyMode === 'add') {
+      setVacationPolicies(prev => [...prev, { id: Date.now().toString(), ...payload }]);
+    } else if (selectedVacationPolicy) {
+      setVacationPolicies(prev => prev.map(p => p.id === selectedVacationPolicy.id ? { ...p, ...payload } : p));
+    }
+    setIsVacationPolicyDialogOpen(false);
+  };
+
+  const handleDeleteVacationPolicy = (id: string) => {
+    setVacationPolicies(prev => prev.filter(p => p.id !== id));
   };
 
   const selectedCalendar = calendars.find(c => c.id === selectedCalendarId);
@@ -1422,25 +1475,72 @@ export default function SettingsPage() {
 
         <TabsContent value="vacations" className="space-y-4">
             <Card>
-                <CardHeader>
-                    <CardTitle className="font-headline">Configuración de Vacaciones</CardTitle>
-                    <CardDescription>Establece las políticas de vacaciones para la empresa.</CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle className="font-headline">Políticas de Vacaciones</CardTitle>
+                        <CardDescription>Establece las políticas de vacaciones para la empresa.</CardDescription>
+                    </div>
+                    <Button onClick={openAddVacationPolicyDialog}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Política</Button>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="space-y-2">
-                        <Label htmlFor="default-vacation-days">Días de vacaciones por defecto al año</Label>
-                        <Input id="default-vacation-days" type="number" defaultValue="22" />
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <Switch id="block-periods" />
-                        <Label htmlFor="block-periods">Bloquear periodos específicos para solicitudes de vacaciones</Label>
-                    </div>
-                     <div className="flex items-center space-x-2">
-                        <Switch id="natural-days" />
-                        <Label htmlFor="natural-days">Contar vacaciones como días naturales en lugar de laborables</Label>
-                    </div>
+                <CardContent className="space-y-4">
+                     {vacationPolicies.map(policy => (
+                        <div key={policy.id} className="flex items-center justify-between rounded-lg border p-4">
+                            <div>
+                                <h3 className="font-semibold">{policy.name}</h3>
+                                <p className="text-sm text-muted-foreground">{policy.amount} {policy.unit === 'days' ? 'días' : 'horas'} por año</p>
+                            </div>
+                            <div className="flex items-center">
+                                <Button variant="ghost" size="sm" onClick={() => openEditVacationPolicyDialog(policy)}>Editar</Button>
+                                <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDeleteVacationPolicy(policy.id)}>
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
+                    ))}
                 </CardContent>
             </Card>
+            <Dialog open={isVacationPolicyDialogOpen} onOpenChange={setIsVacationPolicyDialogOpen}>
+                <DialogContent>
+                    <DialogHeader><DialogTitle className="font-headline">{dialogVacationPolicyMode === 'add' ? 'Añadir Política de Vacaciones' : 'Editar Política de Vacaciones'}</DialogTitle></DialogHeader>
+                    <form onSubmit={handleVacationPolicyFormSubmit} className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="policy-name">Nombre de la Política</Label>
+                            <Input id="policy-name" value={vacationPolicyFormData.name} onChange={e => setVacationPolicyFormData({...vacationPolicyFormData, name: e.target.value})} required/>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Unidad de Cómputo</Label>
+                            <RadioGroup value={vacationPolicyFormData.unit} onValueChange={(value: 'days' | 'hours') => setVacationPolicyFormData({...vacationPolicyFormData, unit: value})} className="flex gap-4">
+                                <div className="flex items-center space-x-2"><RadioGroupItem value="days" id="unit-days"/><Label htmlFor="unit-days">Días</Label></div>
+                                <div className="flex items-center space-x-2"><RadioGroupItem value="hours" id="unit-hours"/><Label htmlFor="unit-hours">Horas</Label></div>
+                            </RadioGroup>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="policy-amount">Cantidad de {vacationPolicyFormData.unit === 'days' ? 'Días' : 'Horas'} al Año</Label>
+                            <Input id="policy-amount" type="number" value={vacationPolicyFormData.amount} onChange={e => setVacationPolicyFormData({...vacationPolicyFormData, amount: Number(e.target.value)})} required/>
+                        </div>
+                        {vacationPolicyFormData.unit === 'days' && (
+                            <div className="space-y-2">
+                                <Label>Contar como</Label>
+                                <RadioGroup value={vacationPolicyFormData.countBy} onValueChange={(value: 'workdays' | 'natural') => setVacationPolicyFormData({...vacationPolicyFormData, countBy: value})} className="flex gap-4">
+                                    <div className="flex items-center space-x-2"><RadioGroupItem value="workdays" id="count-workdays"/><Label htmlFor="count-workdays">Días Laborales</Label></div>
+                                    <div className="flex items-center space-x-2"><RadioGroupItem value="natural" id="count-natural"/><Label htmlFor="count-natural">Días Naturales</Label></div>
+                                </RadioGroup>
+                            </div>
+                        )}
+                        <div className="space-y-3 pt-2">
+                            <div className="flex items-center space-x-2">
+                                <Switch id="policy-limit" checked={vacationPolicyFormData.limitRequests} onCheckedChange={checked => setVacationPolicyFormData({...vacationPolicyFormData, limitRequests: checked})} />
+                                <Label htmlFor="policy-limit">Limitar solicitudes</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Switch id="policy-block" checked={vacationPolicyFormData.blockPeriods} onCheckedChange={checked => setVacationPolicyFormData({...vacationPolicyFormData, blockPeriods: checked})} />
+                                <Label htmlFor="policy-block">Bloquear periodos</Label>
+                            </div>
+                        </div>
+                        <DialogFooter><Button type="submit">Guardar Política</Button></DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </TabsContent>
         
         <TabsContent value="absences" className="space-y-4">

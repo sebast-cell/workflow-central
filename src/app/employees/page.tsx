@@ -27,6 +27,16 @@ type CalendarData = {
     holidays: { id: string, name: string, date: string }[];
 };
 
+type VacationPolicy = {
+  id: string;
+  name: string;
+  unit: 'days' | 'hours';
+  amount: number;
+  countBy: 'natural' | 'workdays';
+  limitRequests: boolean;
+  blockPeriods: boolean;
+};
+
 type Employee = {
     id: number;
     name: string;
@@ -39,23 +49,26 @@ type Employee = {
     workCenter: string;
     manager: string;
     calendarId?: string;
+    vacationPolicyId?: string;
 }
 
 const initialEmployees: Employee[] = [
-  { id: 1, name: "Olivia Martin", email: "olivia.martin@example.com", department: "Ingeniería", role: "Desarrollador Frontend", status: "Activo", schedule: "9-5", avatar: "OM", workCenter: "Oficina Central", manager: "Noah Brown", calendarId: "default-calendar" },
-  { id: 2, name: "Jackson Lee", email: "jackson.lee@example.com", department: "Diseño", role: "Diseñador UI/UX", status: "Activo", schedule: "10-6", avatar: "JL", workCenter: "Oficina Central", manager: "Noah Brown", calendarId: "default-calendar" },
-  { id: 3, name: "Isabella Nguyen", email: "isabella.nguyen@example.com", department: "Marketing", role: "Estratega de Contenido", status: "Activo", schedule: "9-5", avatar: "IN", workCenter: "Remoto", manager: "Noah Brown", calendarId: "default-calendar" },
-  { id: 4, name: "William Kim", email: "will.kim@example.com", department: "Ingeniería", role: "Desarrollador Backend", status: "De Licencia", schedule: "9-5", avatar: "WK", workCenter: "Oficina Central", manager: "Noah Brown", calendarId: "default-calendar" },
-  { id: 5, name: "Sophia Davis", email: "sophia.davis@example.com", department: "Ventas", role: "Ejecutivo de Cuentas", status: "Activo", schedule: "Flex", avatar: "SD", workCenter: "Almacén Norte", manager: "Noah Brown", calendarId: "default-calendar" },
-  { id: 6, name: "Liam Garcia", email: "liam.garcia@example.com", department: "RRHH", role: "Generalista de RRHH", status: "Activo", schedule: "8-4", avatar: "LG", workCenter: "Oficina Central", manager: "Noah Brown", calendarId: "default-calendar" },
+  { id: 1, name: "Olivia Martin", email: "olivia.martin@example.com", department: "Ingeniería", role: "Desarrollador Frontend", status: "Activo", schedule: "9-5", avatar: "OM", workCenter: "Oficina Central", manager: "Noah Brown", calendarId: "default-calendar", vacationPolicyId: "default" },
+  { id: 2, name: "Jackson Lee", email: "jackson.lee@example.com", department: "Diseño", role: "Diseñador UI/UX", status: "Activo", schedule: "10-6", avatar: "JL", workCenter: "Oficina Central", manager: "Noah Brown", calendarId: "default-calendar", vacationPolicyId: "default" },
+  { id: 3, name: "Isabella Nguyen", email: "isabella.nguyen@example.com", department: "Marketing", role: "Estratega de Contenido", status: "Activo", schedule: "9-5", avatar: "IN", workCenter: "Remoto", manager: "Noah Brown", calendarId: "default-calendar", vacationPolicyId: "default" },
+  { id: 4, name: "William Kim", email: "will.kim@example.com", department: "Ingeniería", role: "Desarrollador Backend", status: "De Licencia", schedule: "9-5", avatar: "WK", workCenter: "Oficina Central", manager: "Noah Brown", calendarId: "default-calendar", vacationPolicyId: "default" },
+  { id: 5, name: "Sophia Davis", email: "sophia.davis@example.com", department: "Ventas", role: "Ejecutivo de Cuentas", status: "Activo", schedule: "Flex", avatar: "SD", workCenter: "Almacén Norte", manager: "Noah Brown", calendarId: "default-calendar", vacationPolicyId: "default" },
+  { id: 6, name: "Liam Garcia", email: "liam.garcia@example.com", department: "RRHH", role: "Generalista de RRHH", status: "Activo", schedule: "8-4", avatar: "LG", workCenter: "Oficina Central", manager: "Noah Brown", calendarId: "default-calendar", vacationPolicyId: "default" },
 ];
 
 const EMPLOYEES_STORAGE_KEY = 'workflow-central-employees';
 const CALENDARS_STORAGE_KEY = 'workflow-central-calendars';
+const VACATION_POLICIES_STORAGE_KEY = 'workflow-central-vacation-policies';
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
   const [calendars, setCalendars] = useState<CalendarData[]>([]);
+  const [vacationPolicies, setVacationPolicies] = useState<VacationPolicy[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add');
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
@@ -80,6 +93,11 @@ export default function EmployeesPage() {
           setCalendars(JSON.parse(storedCalendars));
         }
 
+        const storedPolicies = localStorage.getItem(VACATION_POLICIES_STORAGE_KEY);
+        if (storedPolicies) {
+          setVacationPolicies(JSON.parse(storedPolicies));
+        }
+
       } catch (error) {
         console.error("Failed to access localStorage", error);
       }
@@ -101,6 +119,7 @@ export default function EmployeesPage() {
     workCenter: "",
     manager: "",
     calendarId: "",
+    vacationPolicyId: "",
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -115,7 +134,7 @@ export default function EmployeesPage() {
   const openAddDialog = () => {
     setDialogMode('add');
     setSelectedEmployee(null);
-    setFormData({ name: "", email: "", department: "", role: "", schedule: "", workCenter: "", manager: "", calendarId: "" });
+    setFormData({ name: "", email: "", department: "", role: "", schedule: "", workCenter: "", manager: "", calendarId: "", vacationPolicyId: "" });
     setIsDialogOpen(true);
   }
 
@@ -131,6 +150,7 @@ export default function EmployeesPage() {
         workCenter: employee.workCenter,
         manager: employee.manager,
         calendarId: employee.calendarId || "",
+        vacationPolicyId: employee.vacationPolicyId || "",
     });
     setIsDialogOpen(true);
   }
@@ -344,6 +364,17 @@ export default function EmployeesPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     {calendars.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="vacationPolicyId">Política de Vacaciones</Label>
+                            <Select value={formData.vacationPolicyId} onValueChange={(value) => handleSelectChange('vacationPolicyId', value)}>
+                                <SelectTrigger id="vacationPolicyId">
+                                <SelectValue placeholder="Seleccionar Política" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {vacationPolicies.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
