@@ -646,10 +646,11 @@ export default function SettingsPage() {
   const handleImportHolidays = () => {
       // This is a mock implementation
       if (!selectedCalendarId) return;
+      const timestamp = Date.now();
       const mockHolidays: Holiday[] = [
-          { id: 'mock1', name: 'Año Nuevo', date: new Date(new Date().getFullYear(), 0, 1).toISOString() },
-          { id: 'mock2', name: 'Día del Trabajador', date: new Date(new Date().getFullYear(), 4, 1).toISOString() },
-          { id: 'mock3', name: 'Navidad', date: new Date(new Date().getFullYear(), 11, 25).toISOString() },
+          { id: `mock1-${timestamp}`, name: 'Año Nuevo', date: new Date(new Date().getFullYear(), 0, 1).toISOString() },
+          { id: `mock2-${timestamp}`, name: 'Día del Trabajador', date: new Date(new Date().getFullYear(), 4, 1).toISOString() },
+          { id: `mock3-${timestamp}`, name: 'Navidad', date: new Date(new Date().getFullYear(), 11, 25).toISOString() },
       ];
       setCalendars(prev => prev.map(cal => 
           cal.id === selectedCalendarId ? { ...cal, holidays: [...cal.holidays, ...mockHolidays] } : cal
