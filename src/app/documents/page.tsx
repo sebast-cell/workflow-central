@@ -1,8 +1,13 @@
+'use client';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Folder, File, PenSquare, Upload, MoreHorizontal } from "lucide-react";
+import { Folder, File, PenSquare, Upload } from "lucide-react";
 
 const folders = [
   { name: "Documentos Laborales", count: 12 },
@@ -27,10 +32,55 @@ export default function DocumentsPage() {
           <h1 className="text-3xl font-headline font-bold tracking-tight">Gestión de Documentos</h1>
           <p className="text-muted-foreground">Sube, organiza y gestiona documentos de la empresa y los empleados.</p>
         </div>
-         <Button>
-            <Upload className="mr-2 h-4 w-4" />
-            Subir Documento
-        </Button>
+        <Dialog>
+            <DialogTrigger asChild>
+                <Button>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Subir Documento
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                    <DialogTitle className="font-headline">Subir Nuevo Documento</DialogTitle>
+                    <DialogDescription>
+                        Selecciona un archivo y asígnalo a un empleado o a una carpeta de la empresa.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="file">Archivo</Label>
+                        <Input id="file" type="file" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="employee">Asignar a Empleado (Opcional)</Label>
+                        <Select>
+                            <SelectTrigger id="employee">
+                                <SelectValue placeholder="Buscar empleado..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="1">Olivia Martin</SelectItem>
+                                <SelectItem value="2">Jackson Lee</SelectItem>
+                                <SelectItem value="3">Isabella Nguyen</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="folder">Guardar en Carpeta</Label>
+                         <Select>
+                            <SelectTrigger id="folder">
+                                <SelectValue placeholder="Seleccionar carpeta" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {folders.map(f => <SelectItem key={f.name} value={f.name}>{f.name}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button type="submit">Subir Archivo</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
@@ -85,10 +135,10 @@ export default function DocumentsPage() {
                                 )}
                             </TableCell>
                             <TableCell className="text-right">
-                                {file.name.endsWith('.pdf') && !file.signature && (
+                                {file.name.endsWith('.pdf') && file.signature === 'Pendiente' && (
                                     <Button variant="ghost" size="sm">
                                         <PenSquare className="mr-2 h-4 w-4"/>
-                                        Solicitar Firma
+                                        Recordar Firma
                                     </Button>
                                 )}
                             </TableCell>
