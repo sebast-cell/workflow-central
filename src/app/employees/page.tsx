@@ -30,15 +30,17 @@ type Employee = {
     status: string;
     schedule: string;
     avatar: string;
+    workCenter: string;
+    manager: string;
 }
 
 const initialEmployees: Employee[] = [
-  { id: 1, name: "Olivia Martin", email: "olivia.martin@example.com", department: "Ingeniería", role: "Desarrollador Frontend", status: "Activo", schedule: "9-5", avatar: "OM" },
-  { id: 2, name: "Jackson Lee", email: "jackson.lee@example.com", department: "Diseño", role: "Diseñador UI/UX", status: "Activo", schedule: "10-6", avatar: "JL" },
-  { id: 3, name: "Isabella Nguyen", email: "isabella.nguyen@example.com", department: "Marketing", role: "Estratega de Contenido", status: "Activo", schedule: "9-5", avatar: "IN" },
-  { id: 4, name: "William Kim", email: "will.kim@example.com", department: "Ingeniería", role: "Desarrollador Backend", status: "De Licencia", schedule: "9-5", avatar: "WK" },
-  { id: 5, name: "Sophia Davis", email: "sophia.davis@example.com", department: "Ventas", role: "Ejecutivo de Cuentas", status: "Activo", schedule: "Flex", avatar: "SD" },
-  { id: 6, name: "Liam Garcia", email: "liam.garcia@example.com", department: "RRHH", role: "Generalista de RRHH", status: "Activo", schedule: "8-4", avatar: "LG" },
+  { id: 1, name: "Olivia Martin", email: "olivia.martin@example.com", department: "Ingeniería", role: "Desarrollador Frontend", status: "Activo", schedule: "9-5", avatar: "OM", workCenter: "Oficina Central", manager: "Noah Brown" },
+  { id: 2, name: "Jackson Lee", email: "jackson.lee@example.com", department: "Diseño", role: "Diseñador UI/UX", status: "Activo", schedule: "10-6", avatar: "JL", workCenter: "Oficina Central", manager: "Noah Brown" },
+  { id: 3, name: "Isabella Nguyen", email: "isabella.nguyen@example.com", department: "Marketing", role: "Estratega de Contenido", status: "Activo", schedule: "9-5", avatar: "IN", workCenter: "Remoto", manager: "Noah Brown" },
+  { id: 4, name: "William Kim", email: "will.kim@example.com", department: "Ingeniería", role: "Desarrollador Backend", status: "De Licencia", schedule: "9-5", avatar: "WK", workCenter: "Oficina Central", manager: "Noah Brown" },
+  { id: 5, name: "Sophia Davis", email: "sophia.davis@example.com", department: "Ventas", role: "Ejecutivo de Cuentas", status: "Activo", schedule: "Flex", avatar: "SD", workCenter: "Almacén Norte", manager: "Noah Brown" },
+  { id: 6, name: "Liam Garcia", email: "liam.garcia@example.com", department: "RRHH", role: "Generalista de RRHH", status: "Activo", schedule: "8-4", avatar: "LG", workCenter: "Oficina Central", manager: "Noah Brown" },
 ];
 
 export default function EmployeesPage() {
@@ -53,6 +55,8 @@ export default function EmployeesPage() {
     department: "",
     role: "",
     schedule: "",
+    workCenter: "",
+    manager: "",
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,7 +71,7 @@ export default function EmployeesPage() {
   const openAddDialog = () => {
     setDialogMode('add');
     setSelectedEmployee(null);
-    setFormData({ name: "", email: "", department: "", role: "", schedule: "" });
+    setFormData({ name: "", email: "", department: "", role: "", schedule: "", workCenter: "", manager: "" });
     setIsDialogOpen(true);
   }
 
@@ -80,6 +84,8 @@ export default function EmployeesPage() {
         department: employee.department,
         role: employee.role,
         schedule: employee.schedule,
+        workCenter: employee.workCenter,
+        manager: employee.manager,
     });
     setIsDialogOpen(true);
   }
@@ -99,7 +105,7 @@ export default function EmployeesPage() {
         }]);
     } else if (dialogMode === 'edit' && selectedEmployee) {
         setEmployees(prev => prev.map(emp => 
-            emp.id === selectedEmployee.id ? { ...emp, ...formData } : emp
+            emp.id === selectedEmployee.id ? { ...emp, ...formData, avatar: emp.avatar, status: emp.status } : emp
         ));
     }
 
@@ -152,9 +158,9 @@ export default function EmployeesPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Empleado</TableHead>
-                <TableHead className="hidden md:table-cell">Departamento</TableHead>
+                <TableHead className="hidden lg:table-cell">Departamento</TableHead>
                 <TableHead>Estado</TableHead>
-                <TableHead className="hidden md:table-cell">Horario</TableHead>
+                <TableHead className="hidden md:table-cell">Centro</TableHead>
                 <TableHead>
                   <span className="sr-only">Acciones</span>
                 </TableHead>
@@ -175,13 +181,13 @@ export default function EmployeesPage() {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">{employee.department}</TableCell>
+                  <TableCell className="hidden lg:table-cell">{employee.department}</TableCell>
                   <TableCell>
                     <Badge variant={employee.status === 'Activo' ? 'secondary' : 'outline'} className={employee.status === 'Activo' ? "bg-green-100 text-green-800" : ""}>
                       {employee.status}
                     </Badge>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">{employee.schedule}</TableCell>
+                  <TableCell className="hidden md:table-cell">{employee.workCenter}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -250,12 +256,36 @@ export default function EmployeesPage() {
                           </Select>
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="role">Rol</Label>
+                          <Label htmlFor="role">Cargo</Label>
                           <Input id="role" value={formData.role} onChange={handleInputChange} placeholder="Ej. Desarrollador Frontend" />
+                        </div>
+                         <div className="space-y-2">
+                          <Label htmlFor="workCenter">Centro de Trabajo</Label>
+                           <Select value={formData.workCenter} onValueChange={(value) => handleSelectChange('workCenter', value)}>
+                            <SelectTrigger id="workCenter">
+                              <SelectValue placeholder="Seleccionar" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Oficina Central">Oficina Central</SelectItem>
+                              <SelectItem value="Almacén Norte">Almacén Norte</SelectItem>
+                              <SelectItem value="Remoto">Remoto</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                         <div className="space-y-2">
+                          <Label htmlFor="manager">Responsable de Aprobación</Label>
+                           <Select value={formData.manager} onValueChange={(value) => handleSelectChange('manager', value)}>
+                            <SelectTrigger id="manager">
+                              <SelectValue placeholder="Seleccionar" />
+                            </SelectTrigger>
+                            <SelectContent>
+                               {employees.map(e => <SelectItem key={e.id} value={e.name}>{e.name}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="schedule">Horario</Label>
-                          <Input id="schedule" value={formData.schedule} onChange={handleInputChange} placeholder="Ej. 9-5" />
+                          <Input id="schedule" value={formData.schedule} onChange={handleInputChange} placeholder="Ej. 9-5, Fijo, Flexible" />
                         </div>
                       </div>
                       <DialogFooter>

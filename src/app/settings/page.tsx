@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { List, PlusCircle } from "lucide-react";
+import { ShieldCheck, CalendarClock, Briefcase, UserPlus, SlidersHorizontal, Sun, Moon, Coffee, Timer, CalendarDays, Plane, Bell, Bot, Lock, Puzzle, List, PlusCircle } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
 export default function SettingsPage() {
   const [centers, setCenters] = useState([
@@ -23,6 +24,19 @@ export default function SettingsPage() {
     { name: "RRHH" },
   ]);
 
+  const roles = [
+    { name: "Propietario", description: "Control total sobre la cuenta." },
+    { name: "Administrador", description: "Acceso a todo excepto la gestión de roles." },
+    { name: "Recursos Humanos", description: "Gestiona personal, pero no la configuración." },
+    { name: "Manager", description: "Gestiona equipos o personas específicas." },
+  ];
+
+  const absenceTypes = [
+    { name: "Vacaciones", remunerated: true, limit: "Anual" },
+    { name: "Licencia por enfermedad", remunerated: true, limit: "Sin límite" },
+    { name: "Teletrabajo", remunerated: true, limit: "Sin límite" },
+  ];
+
   return (
     <div className="space-y-8">
       <div>
@@ -30,14 +44,26 @@ export default function SettingsPage() {
         <p className="text-muted-foreground">Gestiona la configuración de la cuenta y de la organización.</p>
       </div>
 
-      <Tabs defaultValue="general" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="centers">Centros de Trabajo</TabsTrigger>
-          <TabsTrigger value="departments">Departamentos</TabsTrigger>
-          <TabsTrigger value="security">Seguridad</TabsTrigger>
-          <TabsTrigger value="integrations">Integraciones</TabsTrigger>
-          <TabsTrigger value="notifications">Notificaciones</TabsTrigger>
+      <Tabs defaultValue="general" className="space-y-4" orientation="vertical">
+        <TabsList className="w-full md:w-48 h-auto flex-col items-start">
+          <TabsTrigger value="general" className="w-full justify-start"><Briefcase className="mr-2 h-4 w-4"/>General</TabsTrigger>
+          <TabsTrigger value="roles" className="w-full justify-start"><ShieldCheck className="mr-2 h-4 w-4"/>Roles</TabsTrigger>
+          <TabsTrigger value="centers" className="w-full justify-start"><UserPlus className="mr-2 h-4 w-4"/>Centros y Deptos.</TabsTrigger>
+          <Separator className="my-2"/>
+          <p className="px-3 py-2 text-xs font-semibold text-muted-foreground">TIEMPO</p>
+          <TabsTrigger value="schedules" className="w-full justify-start"><CalendarClock className="mr-2 h-4 w-4"/>Horarios</TabsTrigger>
+          <TabsTrigger value="breaks" className="w-full justify-start"><Coffee className="mr-2 h-4 w-4"/>Descansos</TabsTrigger>
+          <TabsTrigger value="checkin-types" className="w-full justify-start"><SlidersHorizontal className="mr-2 h-4 w-4"/>Tipos de Fichaje</TabsTrigger>
+          <TabsTrigger value="calendars" className="w-full justify-start"><CalendarDays className="mr-2 h-4 w-4"/>Calendarios</TabsTrigger>
+          <TabsTrigger value="vacations" className="w-full justify-start"><Plane className="mr-2 h-4 w-4"/>Vacaciones</TabsTrigger>
+          <TabsTrigger value="absences" className="w-full justify-start"><Plane className="mr-2 h-4 w-4"/>Ausencias</TabsTrigger>
+          <Separator className="my-2"/>
+          <p className="px-3 py-2 text-xs font-semibold text-muted-foreground">CUENTA</p>
+          <TabsTrigger value="automations" className="w-full justify-start"><Bot className="mr-2 h-4 w-4"/>Automatizaciones</TabsTrigger>
+          <TabsTrigger value="notifications" className="w-full justify-start"><Bell className="mr-2 h-4 w-4"/>Notificaciones</TabsTrigger>
+          <TabsTrigger value="permissions" className="w-full justify-start"><Lock className="mr-2 h-4 w-4"/>Permisos</TabsTrigger>
+          <TabsTrigger value="integrations" className="w-full justify-start"><Puzzle className="mr-2 h-4 w-4"/>Integraciones</TabsTrigger>
+          <TabsTrigger value="security" className="w-full justify-start"><Lock className="mr-2 h-4 w-4"/>Seguridad</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="space-y-4">
@@ -58,6 +84,29 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+         <TabsContent value="roles" className="space-y-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="font-headline">Roles de Usuario</CardTitle>
+                <CardDescription>Indica qué usuarios tendrán más visibilidad o control.</CardDescription>
+              </div>
+               <Button><PlusCircle className="mr-2 h-4 w-4"/> Añadir Rol</Button>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {roles.map((role, index) => (
+                <div key={index} className="flex items-center justify-between rounded-lg border p-4">
+                  <div>
+                    <h3 className="font-semibold">{role.name}</h3>
+                    <p className="text-sm text-muted-foreground">{role.description}</p>
+                  </div>
+                  <Button variant="ghost" size="sm">Editar</Button>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </TabsContent>
         
         <TabsContent value="centers" className="space-y-4">
           <Card>
@@ -71,26 +120,13 @@ export default function SettingsPage() {
                     <Button><PlusCircle className="mr-2 h-4 w-4"/> Añadir Centro</Button>
                 </DialogTrigger>
                 <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle className="font-headline">Nuevo Centro de Trabajo</DialogTitle>
-                    </DialogHeader>
+                    <DialogHeader><DialogTitle className="font-headline">Nuevo Centro de Trabajo</DialogTitle></DialogHeader>
                     <div className="grid gap-4 py-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="center-name">Nombre del Centro</Label>
-                            <Input id="center-name" placeholder="Ej. Oficina Principal"/>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="center-address">Dirección</Label>
-                            <Input id="center-address" placeholder="Ej. 123 Calle Falsa"/>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="center-radius">Radio de Geolocalización (metros)</Label>
-                            <Input id="center-radius" type="number" placeholder="Ej. 100"/>
-                        </div>
+                        <div className="space-y-2"><Label htmlFor="center-name">Nombre del Centro</Label><Input id="center-name" placeholder="Ej. Oficina Principal"/></div>
+                        <div className="space-y-2"><Label htmlFor="center-address">Dirección</Label><Input id="center-address" placeholder="Ej. 123 Calle Falsa"/></div>
+                        <div className="space-y-2"><Label htmlFor="center-radius">Radio de Geolocalización (metros)</Label><Input id="center-radius" type="number" placeholder="Ej. 100"/></div>
                     </div>
-                    <DialogFooter>
-                        <Button>Guardar Centro</Button>
-                    </DialogFooter>
+                    <DialogFooter><Button>Guardar Centro</Button></DialogFooter>
                 </DialogContent>
                </Dialog>
             </CardHeader>
@@ -106,32 +142,20 @@ export default function SettingsPage() {
               ))}
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="departments" className="space-y-4">
-          <Card>
+           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="font-headline">Departamentos</CardTitle>
                 <CardDescription>Organiza a tus empleados en diferentes departamentos.</CardDescription>
               </div>
                <Dialog>
-                <DialogTrigger asChild>
-                    <Button><PlusCircle className="mr-2 h-4 w-4"/> Añadir Depto.</Button>
-                </DialogTrigger>
+                <DialogTrigger asChild><Button><PlusCircle className="mr-2 h-4 w-4"/> Añadir Depto.</Button></DialogTrigger>
                 <DialogContent className="sm:max-w-xs">
-                    <DialogHeader>
-                        <DialogTitle className="font-headline">Nuevo Departamento</DialogTitle>
-                    </DialogHeader>
+                    <DialogHeader><DialogTitle className="font-headline">Nuevo Departamento</DialogTitle></DialogHeader>
                     <div className="grid gap-4 py-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="dept-name">Nombre del Departamento</Label>
-                            <Input id="dept-name" placeholder="Ej. Soporte Técnico"/>
-                        </div>
+                        <div className="space-y-2"><Label htmlFor="dept-name">Nombre del Departamento</Label><Input id="dept-name" placeholder="Ej. Soporte Técnico"/></div>
                     </div>
-                    <DialogFooter>
-                        <Button>Guardar</Button>
-                    </DialogFooter>
+                    <DialogFooter><Button>Guardar</Button></DialogFooter>
                 </DialogContent>
                </Dialog>
             </CardHeader>
@@ -144,6 +168,149 @@ export default function SettingsPage() {
               ))}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="schedules" className="space-y-4">
+             <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline">Tipos de Horario</CardTitle>
+                    <CardDescription>Configura los diferentes tipos de horarios que los empleados pueden tener.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                     <div className="flex items-center justify-between rounded-lg border p-4">
+                        <div><h3 className="font-semibold">Flexible</h3><p className="text-sm text-muted-foreground">Se establecen días laborables y un total de horas a cumplir.</p></div>
+                        <Button variant="outline">Configurar</Button>
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg border p-4">
+                        <div><h3 className="font-semibold">Fijo</h3><p className="text-sm text-muted-foreground">Se establecen horas de entrada y salida fijas.</p></div>
+                        <Button variant="outline">Configurar</Button>
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg border p-4">
+                        <div><h3 className="font-semibold">Turnos</h3><p className="text-sm text-muted-foreground">Para horarios rotativos y cambiantes.</p></div>
+                        <Button variant="outline">Configurar</Button>
+                    </div>
+                </CardContent>
+            </Card>
+        </TabsContent>
+
+         <TabsContent value="breaks" className="space-y-4">
+             <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline">Gestión de Descansos</CardTitle>
+                    <CardDescription>Configura los descansos, ya sean remunerados o no.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                     <div className="flex items-center justify-between rounded-lg border p-4">
+                        <div>
+                            <h3 className="font-semibold">Descanso de Comida</h3>
+                            <p className="text-sm text-muted-foreground">No remunerado, 60 minutos.</p>
+                        </div>
+                        <Button variant="ghost">Editar</Button>
+                    </div>
+                     <div className="flex items-center justify-between rounded-lg border p-4">
+                        <div>
+                            <h3 className="font-semibold">Pausa para Café</h3>
+                            <p className="text-sm text-muted-foreground">Remunerado, 15 minutos.</p>
+                        </div>
+                        <Button variant="ghost">Editar</Button>
+                    </div>
+                     <Button><PlusCircle className="mr-2 h-4 w-4"/> Añadir Descanso</Button>
+                </CardContent>
+            </Card>
+        </TabsContent>
+        
+        <TabsContent value="vacations" className="space-y-4">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline">Configuración de Vacaciones</CardTitle>
+                    <CardDescription>Establece las políticas de vacaciones para la empresa.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="space-y-2">
+                        <Label htmlFor="default-vacation-days">Días de vacaciones por defecto al año</Label>
+                        <Input id="default-vacation-days" type="number" defaultValue="22" />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <Switch id="block-periods" />
+                        <Label htmlFor="block-periods">Bloquear periodos específicos para solicitudes de vacaciones</Label>
+                    </div>
+                     <div className="flex items-center space-x-2">
+                        <Switch id="natural-days" />
+                        <Label htmlFor="natural-days">Contar vacaciones como días naturales en lugar de laborables</Label>
+                    </div>
+                </CardContent>
+            </Card>
+        </TabsContent>
+        
+        <TabsContent value="absences" className="space-y-4">
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle className="font-headline">Tipos de Ausencia</CardTitle>
+                        <CardDescription>Crea y configura diferentes tipos de permisos y ausencias.</CardDescription>
+                    </div>
+                    <Button><PlusCircle className="mr-2 h-4 w-4"/> Añadir Tipo</Button>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {absenceTypes.map((absence, index) => (
+                        <div key={index} className="flex items-center justify-between rounded-lg border p-4">
+                            <div>
+                                <h3 className="font-semibold">{absence.name}</h3>
+                                <p className="text-sm text-muted-foreground">Remunerado: {absence.remunerated ? 'Sí' : 'No'} | Límite: {absence.limit}</p>
+                            </div>
+                            <Button variant="ghost">Editar</Button>
+                        </div>
+                    ))}
+                </CardContent>
+            </Card>
+        </TabsContent>
+        
+        <TabsContent value="automations" className="space-y-4">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline">Automatizaciones de Jornada</CardTitle>
+                    <CardDescription>Configura acciones automáticas para los fichajes de los empleados.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="flex items-center justify-between rounded-lg border p-4">
+                        <div>
+                            <h3 className="font-semibold">Cierre Automático al Cumplir Horario</h3>
+                            <p className="text-sm text-muted-foreground">Cierra el fichaje cuando el empleado completa su jornada.</p>
+                        </div>
+                        <Switch />
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg border p-4">
+                        <div>
+                            <h3 className="font-semibold">Cierre Automático por Olvido</h3>
+                            <p className="text-sm text-muted-foreground">Establece una hora tope para cerrar fichajes abiertos.</p>
+                        </div>
+                         <Switch defaultChecked />
+                    </div>
+                </CardContent>
+            </Card>
+        </TabsContent>
+        
+        <TabsContent value="permissions" className="space-y-4">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="font-headline">Permisos de Empleado</CardTitle>
+                    <CardDescription>Restringe la visibilidad de ciertas secciones para los empleados.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="flex items-center justify-between rounded-lg border p-4">
+                        <h3 className="font-semibold">Ver "Husin" y "Timeline"</h3>
+                        <Switch defaultChecked />
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg border p-4">
+                        <h3 className="font-semibold">Ver calendario de ausencias del equipo</h3>
+                        <Switch defaultChecked />
+                    </div>
+                     <div className="flex items-center justify-between rounded-lg border p-4">
+                        <h3 className="font-semibold">Editar su propio perfil</h3>
+                        <Switch defaultChecked />
+                    </div>
+                </CardContent>
+            </Card>
         </TabsContent>
 
         <TabsContent value="security" className="space-y-4">
@@ -160,7 +327,7 @@ export default function SettingsPage() {
                 </div>
                 <Switch aria-label="Toggle Two-Factor Authentication" />
               </div>
-              <Button>Cambiar Contraseña</Button>
+              <Button>Cambiar Contraseña Maestra</Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -173,31 +340,16 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Slack</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4">Recibe notificaciones en Slack.</p>
-                  <Button className="w-full">Conectar</Button>
-                </CardContent>
+                <CardHeader><CardTitle className="text-lg">Slack</CardTitle></CardHeader>
+                <CardContent><p className="text-sm text-muted-foreground mb-4">Recibe notificaciones en Slack.</p><Button className="w-full">Conectar</Button></CardContent>
               </Card>
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Google Calendar</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4">Sincroniza ausencias y horarios.</p>
-                   <Button className="w-full">Conectar</Button>
-                </CardContent>
+                <CardHeader><CardTitle className="text-lg">Google Calendar</CardTitle></CardHeader>
+                <CardContent><p className="text-sm text-muted-foreground mb-4">Sincroniza ausencias y horarios.</p><Button className="w-full">Conectar</Button></CardContent>
               </Card>
                <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">QuickBooks</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4">Sincroniza datos de nómina.</p>
-                   <Button className="w-full" variant="secondary" disabled>Conectado</Button>
-                </CardContent>
+                <CardHeader><CardTitle className="text-lg">QuickBooks</CardTitle></CardHeader>
+                <CardContent><p className="text-sm text-muted-foreground mb-4">Sincroniza datos de nómina.</p><Button className="w-full" variant="secondary" disabled>Conectado</Button></CardContent>
               </Card>
             </CardContent>
           </Card>

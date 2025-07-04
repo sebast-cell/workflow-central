@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,9 +11,31 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Edit, PlusCircle, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+type Task = {
+    id: number;
+    name: string;
+    assignee: string;
+    status: "Completado" | "En Progreso" | "Pendiente";
+    hours: number;
+};
+
+type Project = {
+    id: number;
+    name: string;
+    client: string;
+    progress: number;
+    color: string;
+    members: string[];
+    tasks: Task[];
+};
 
 // Mock data - In a real app, this would be fetched from an API
-const projects = [
+const initialProjects: Project[] = [
   { id: 1, name: "Rediseño del Sitio Web", client: "Innovate Inc.", progress: 75, color: "bg-blue-500", members: ["OM", "JL", "IN"], tasks: [
     {id: 1, name: "Investigación y Análisis", assignee: "Olivia Martin", status: "Completado", hours: 20},
     {id: 2, name: "Diseño de Wireframes", assignee: "Jackson Lee", status: "En Progreso", hours: 15},
@@ -37,10 +60,30 @@ const membersData: {[key: string]: { name: string, role: string, avatar: string 
 export default function ProjectDetailsPage() {
     const params = useParams();
     const projectId = params.projectId;
-    const project = projects.find(p => p.id.toString() === projectId);
+    const [project, setProject] = useState(initialProjects.find(p => p.id.toString() === projectId));
 
     if (!project) {
         return <div className="p-8">Proyecto no encontrado.</div>
+    }
+
+    const handleAddTask = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+        const name = formData.get('taskName') as string;
+        const assignee = formData.get('assignee') as string;
+        const status = formData.get('status') as "Completado" | "En Progreso" | "Pendiente";
+        
+        if (!name || !assignee || !status) return;
+
+        const newTask: Task = {
+            id: Date.now(),
+            name,
+            assignee: membersData[assignee].name,
+            status,
+            hours: 0,
+        }
+        
+        setProject(prev => prev ? {...prev, tasks: [...prev.tasks, newTask]} : undefined);
     }
 
     const getStatusBadge = (status: string) => {
@@ -96,7 +139,53 @@ export default function ProjectDetailsPage() {
                              <CardTitle className="font-headline">Lista de Tareas</CardTitle>
                              <CardDescription>Seguimiento de todas las tareas asociadas al proyecto.</CardDescription>
                            </div>
-                           <Button><PlusCircle className="mr-2 h-4 w-4"/> Nueva Tarea</Button>
+                           <Dialog>
+                               <DialogTrigger asChild>
+                                    <Button><PlusCircle className="mr-2 h-4 w-4"/> Nueva Tarea</Button>
+                               </DialogTrigger>
+                               <DialogContent>
+                                   <DialogHeader>
+                                       <DialogTitle className="font-headline">Añadir Nueva Tarea</DialogTitle>
+                                   </DialogHeader>
+                                   <form onSubmit={handleAddTask}>
+                                        <div className="grid gap-4 py-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="taskName">Nombre de la Tarea</Label>
+                                                <Input id="taskName" name="taskName" placeholder="Ej. Diseño de Wireframes"/>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="assignee">Asignar a</Label>
+                                                <Select name="assignee">
+                                                    <SelectTrigger id="assignee">
+                                                        <SelectValue placeholder="Seleccionar miembro"/>
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {project.members.map(m => (
+                                                            <SelectItem key={m} value={m}>{membersData[m].name}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="status">Estado</Label>
+                                                <Select name="status" defaultValue="Pendiente">
+                                                    <SelectTrigger id="status">
+                                                        <SelectValue placeholder="Seleccionar estado"/>
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="Pendiente">Pendiente</SelectItem>
+                                                        <SelectItem value="En Progreso">En Progreso</SelectItem>
+                                                        <SelectItem value="Completado">Completado</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
+                                        <DialogFooter>
+                                            <Button type="submit">Añadir Tarea</Button>
+                                        </DialogFooter>
+                                   </form>
+                               </DialogContent>
+                           </Dialog>
                         </CardHeader>
                         <CardContent>
                             <Table>

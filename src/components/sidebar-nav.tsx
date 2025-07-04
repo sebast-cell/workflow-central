@@ -42,7 +42,7 @@ export default function SidebarNav() {
             <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
                 asChild
-                isActive={pathname === item.href}
+                isActive={pathname.startsWith(item.href) && (item.href !== '/dashboard' || pathname === '/dashboard')}
                 tooltip={{ children: item.label, side:'right' }}
                 >
                 <Link href={item.href}>
@@ -58,7 +58,7 @@ export default function SidebarNav() {
             <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
                 asChild
-                isActive={pathname === item.href}
+                isActive={pathname.startsWith(item.href)}
                 tooltip={{ children: item.label, side: 'right' }}
                 >
                 <Link href={item.href}>

@@ -1,7 +1,8 @@
 'use client';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Check, Clock, FileText, User } from "lucide-react";
+import { Calendar, Check, Clock, FileText, User, ClipboardList } from "lucide-react";
+import Link from "next/link";
 
 export default function EmployeeDashboard() {
   return (
@@ -62,7 +63,12 @@ export default function EmployeeDashboard() {
             <CardContent className="grid grid-cols-2 gap-4">
                 <Button>Marcar Salida</Button>
                 <Button variant="outline">Empezar Descanso</Button>
-                <Button variant="secondary" className="col-span-2">Solicitar Ausencia</Button>
+                <Button asChild variant="secondary">
+                    <Link href="/portal/absences">Solicitar Ausencia</Link>
+                </Button>
+                <Button asChild variant="secondary">
+                    <Link href="/portal/tasks">Imputar Tareas</Link>
+                </Button>
             </CardContent>
         </Card>
         <Card>
@@ -75,7 +81,9 @@ export default function EmployeeDashboard() {
                 <div>
                     <p className="font-semibold">Olivia Martin</p>
                     <p className="text-sm text-muted-foreground">olivia.martin@example.com</p>
-                    <Button variant="link" className="p-0 h-auto mt-1">Editar Perfil</Button>
+                    <Button asChild variant="link" className="p-0 h-auto mt-1">
+                        <Link href="/portal/profile">Editar Perfil</Link>
+                    </Button>
                 </div>
             </CardContent>
         </Card>

@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Folder, File, PenSquare, Upload } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const folders = [
   { name: "Documentos Laborales", count: 12 },
@@ -75,6 +76,15 @@ export default function DocumentsPage() {
                             </SelectContent>
                         </Select>
                     </div>
+                    <div className="flex items-center space-x-2 pt-2">
+                        <Checkbox id="signature" />
+                        <label
+                          htmlFor="signature"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          Solicitar firma electrónica (para PDFs)
+                        </label>
+                      </div>
                 </div>
                 <DialogFooter>
                     <Button type="submit">Subir Archivo</Button>

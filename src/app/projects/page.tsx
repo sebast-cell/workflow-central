@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { PlusCircle } from "lucide-react";
 import Link from "next/link";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Switch } from "@/components/ui/switch";
 
 const projects = [
   { id: 1, name: "Rediseño del Sitio Web", client: "Innovate Inc.", progress: 75, color: "bg-blue-500" },
@@ -74,6 +75,10 @@ export default function ProjectsPage() {
                     </div>
                   ))}
                 </RadioGroup>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch id="private-project" />
+                <Label htmlFor="private-project">Privatizar proyecto</Label>
               </div>
             </div>
             <DialogFooter>
