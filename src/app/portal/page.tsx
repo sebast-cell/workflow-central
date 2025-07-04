@@ -1,10 +1,55 @@
 'use client';
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Check, Clock, FileText, User, ClipboardList } from "lucide-react";
+import { Calendar, Check, Clock, FileText, User, ClipboardList, XCircle } from "lucide-react";
 import Link from "next/link";
+import { useToast } from "@/hooks/use-toast";
 
 export default function EmployeeDashboard() {
+  const { toast } = useToast();
+  const [isClockedIn, setIsClockedIn] = useState(true);
+  const [statusText, setStatusText] = useState("Entrada Marcada");
+  const [statusTime, setStatusTime] = useState(`a las 09:01 AM`);
+
+  const handleClockInOut = () => {
+    if (!navigator.geolocation) {
+      toast({
+        variant: "destructive",
+        title: "Error de Geolocalización",
+        description: "Tu navegador no soporta la geolocalización.",
+      });
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const newStatus = !isClockedIn;
+        setIsClockedIn(newStatus);
+        const newStatusText = newStatus ? "Entrada Marcada" : "Salida Marcada";
+        setStatusText(newStatusText);
+        const time = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: true });
+        setStatusTime(`a las ${time}`);
+        
+        toast({
+          title: "Fichaje Exitoso",
+          description: `Se ha registrado tu ${newStatusText.toLowerCase()}.`,
+        });
+      },
+      (error) => {
+        let description = "No se pudo obtener tu ubicación. Por favor, activa los permisos en tu navegador.";
+        if (error.code === error.PERMISSION_DENIED) {
+            description = "Has denegado el permiso de ubicación. Por favor, actívalo en la configuración de tu navegador para poder fichar.";
+        }
+        toast({
+          variant: "destructive",
+          title: "Error de Ubicación",
+          description: description,
+        });
+      }
+    );
+  };
+
   return (
     <div className="space-y-8">
       <div>
@@ -16,11 +61,11 @@ export default function EmployeeDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Estado Actual</CardTitle>
-            <Check className="h-4 w-4 text-green-500" />
+            {isClockedIn ? <Check className="h-4 w-4 text-green-500" /> : <XCircle className="h-4 w-4 text-red-500" />}
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">Entrada Marcada</div>
-            <p className="text-xs text-muted-foreground">a las 09:01 AM</p>
+            <div className={`text-2xl font-bold ${isClockedIn ? 'text-green-600' : 'text-red-600'}`}>{statusText}</div>
+            <p className="text-xs text-muted-foreground">{statusTime}</p>
           </CardContent>
         </Card>
         <Card>
@@ -61,7 +106,7 @@ export default function EmployeeDashboard() {
                 <CardTitle className="font-headline">Acciones Rápidas</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-4">
-                <Button>Marcar Salida</Button>
+                <Button onClick={handleClockInOut}>{isClockedIn ? 'Marcar Salida' : 'Marcar Entrada'}</Button>
                 <Button variant="outline">Empezar Descanso</Button>
                 <Button asChild variant="secondary">
                     <Link href="/portal/absences">Solicitar Ausencia</Link>
