@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import type { DateRange } from "react-day-picker";
 
 
 const allPermissions = [
@@ -46,8 +47,10 @@ type Employee = {
     schedule: string;
     avatar: string;
     workCenter: string;
-    manager: string;
+    vacationManager: string;
+    clockInManager: string;
     calendarId?: string;
+    vacationPolicyId?: string;
 };
 
 const EMPLOYEES_STORAGE_KEY = 'workflow-central-employees';
@@ -143,6 +146,7 @@ type VacationPolicy = {
   countBy: 'natural' | 'workdays';
   limitRequests: boolean;
   blockPeriods: boolean;
+  blockedPeriods: { id: string; from: string; to: string }[];
 };
 
 const initialCenters: Center[] = [
@@ -185,7 +189,7 @@ const initialCalendars: CalendarData[] = [
     { id: 'default-calendar', name: 'Calendario General', holidays: [] }
 ];
 const initialVacationPolicies: VacationPolicy[] = [
-    { id: 'default', name: 'General', unit: 'days', amount: 22, countBy: 'workdays', limitRequests: false, blockPeriods: false }
+    { id: 'default', name: 'General', unit: 'days', amount: 22, countBy: 'workdays', limitRequests: false, blockPeriods: false, blockedPeriods: [] }
 ];
 
 const CENTERS_STORAGE_KEY = 'workflow-central-centers';
@@ -283,7 +287,9 @@ export default function SettingsPage() {
   const [isVacationPolicyDialogOpen, setIsVacationPolicyDialogOpen] = useState(false);
   const [dialogVacationPolicyMode, setDialogVacationPolicyMode] = useState<'add' | 'edit'>('add');
   const [selectedVacationPolicy, setSelectedVacationPolicy] = useState<VacationPolicy | null>(null);
-  const [vacationPolicyFormData, setVacationPolicyFormData] = useState<Omit<VacationPolicy, 'id'>>({ name: '', unit: 'days', amount: 22, countBy: 'workdays', limitRequests: false, blockPeriods: false });
+  const [vacationPolicyFormData, setVacationPolicyFormData] = useState<Omit<VacationPolicy, 'id'>>({ name: '', unit: 'days', amount: 22, countBy: 'workdays', limitRequests: false, blockPeriods: false, blockedPeriods: [] });
+  const [newBlockedPeriod, setNewBlockedPeriod] = useState<DateRange | undefined>(undefined);
+  const [isBlockedPeriodPopoverOpen, setIsBlockedPeriodPopoverOpen] = useState(false);
 
   const allSchedules = ['Horario Fijo', 'Horario Flexible', ...shifts.map(s => s.name)];
 
@@ -314,6 +320,8 @@ export default function SettingsPage() {
       
       const breakMigration = (data: any[]) => data.map((b: any) => ({ ...b, assignedTo: Array.isArray(b.assignedTo) ? b.assignedTo : [] }));
       const clockInMigration = (data: any[]) => data.map((t: any) => ({ ...t, assignment: t.assignment || 'all', assignedTo: Array.isArray(t.assignedTo) ? t.assignedTo : []}));
+      const vacationPolicyMigration = (data: any[]) => data.map((p: any) => ({ ...p, blockedPeriods: Array.isArray(p.blockedPeriods) ? p.blockedPeriods : [] }));
+
 
       loadFromStorage(CENTERS_STORAGE_KEY, setCenters, initialCenters);
       loadFromStorage(DEPARTMENTS_STORAGE_KEY, setDepartments, initialDepartments);
@@ -325,7 +333,7 @@ export default function SettingsPage() {
       loadFromStorage(FIXED_SCHEDULES_STORAGE_KEY, setFixedSchedules, []);
       loadFromStorage(ABSENCE_TYPES_STORAGE_KEY, setAbsenceTypes, initialAbsenceTypes);
       loadFromStorage(CALENDARS_STORAGE_KEY, setCalendars, initialCalendars);
-      loadFromStorage(VACATION_POLICIES_STORAGE_KEY, setVacationPolicies, initialVacationPolicies);
+      loadFromStorage(VACATION_POLICIES_STORAGE_KEY, setVacationPolicies, initialVacationPolicies, vacationPolicyMigration);
 
       const storedEmployees = localStorage.getItem(EMPLOYEES_STORAGE_KEY);
       if (storedEmployees) setEmployees(JSON.parse(storedEmployees));
@@ -680,14 +688,17 @@ export default function SettingsPage() {
   const openAddVacationPolicyDialog = () => {
     setDialogVacationPolicyMode('add');
     setSelectedVacationPolicy(null);
-    setVacationPolicyFormData({ name: '', unit: 'days', amount: 22, countBy: 'workdays', limitRequests: false, blockPeriods: false });
+    setVacationPolicyFormData({ name: '', unit: 'days', amount: 22, countBy: 'workdays', limitRequests: false, blockPeriods: false, blockedPeriods: [] });
     setIsVacationPolicyDialogOpen(true);
   };
 
   const openEditVacationPolicyDialog = (policy: VacationPolicy) => {
     setDialogVacationPolicyMode('edit');
     setSelectedVacationPolicy(policy);
-    setVacationPolicyFormData(policy);
+    setVacationPolicyFormData({ 
+        ...policy,
+        blockedPeriods: policy.blockedPeriods || []
+     });
     setIsVacationPolicyDialogOpen(true);
   };
   
@@ -1424,7 +1435,7 @@ export default function SettingsPage() {
                                                                 {holidayFormData.date ? format(holidayFormData.date, "PPP") : <span>Elige una fecha</span>}
                                                             </Button>
                                                         </PopoverTrigger>
-                                                        <PopoverContent className="w-auto p-0" onInteractOutside={(e) => e.preventDefault()}>
+                                                        <PopoverContent className="w-auto p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
                                                             <Calendar 
                                                                 mode="single" 
                                                                 selected={holidayFormData.date} 
@@ -1537,6 +1548,83 @@ export default function SettingsPage() {
                                 <Label htmlFor="policy-block">Bloquear periodos</Label>
                             </div>
                         </div>
+                        {vacationPolicyFormData.blockPeriods && (
+                            <div className="space-y-3 rounded-lg border bg-muted/50 p-4">
+                                <Label className="font-medium">Periodos Bloqueados</Label>
+                                <div className="space-y-2">
+                                    {(vacationPolicyFormData.blockedPeriods || []).map((period) => (
+                                        <div key={period.id} className="flex items-center justify-between text-sm bg-background p-2 rounded-md">
+                                            <span>{format(new Date(period.from), 'd LLL, y')} - {format(new Date(period.to), 'd LLL, y')}</span>
+                                            <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => {
+                                                setVacationPolicyFormData(prev => ({
+                                                    ...prev,
+                                                    blockedPeriods: (prev.blockedPeriods || []).filter(p => p.id !== period.id)
+                                                }))
+                                            }}>
+                                                <Trash2 className="h-3 w-3 text-destructive" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                    {(vacationPolicyFormData.blockedPeriods || []).length === 0 && (
+                                        <p className="text-sm text-muted-foreground px-2">No hay periodos bloqueados.</p>
+                                    )}
+                                </div>
+                                <div className="flex gap-2 pt-2">
+                                    <Popover open={isBlockedPeriodPopoverOpen} onOpenChange={setIsBlockedPeriodPopoverOpen}>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                type="button"
+                                                variant={"outline"}
+                                                className={cn(
+                                                    "w-full justify-start text-left font-normal bg-background",
+                                                    !newBlockedPeriod && "text-muted-foreground"
+                                                )}
+                                            >
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {newBlockedPeriod?.from ? (
+                                                    newBlockedPeriod.to ? (
+                                                        <>
+                                                            {format(newBlockedPeriod.from, "LLL dd, y")} -{" "}
+                                                            {format(newBlockedPeriod.to, "LLL dd, y")}
+                                                        </>
+                                                    ) : (
+                                                        format(newBlockedPeriod.from, "LLL dd, y")
+                                                    )
+                                                ) : (
+                                                    <span>Selecciona un rango</span>
+                                                )}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar
+                                                initialFocus
+                                                mode="range"
+                                                selected={newBlockedPeriod}
+                                                onSelect={setNewBlockedPeriod}
+                                                numberOfMonths={1}
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
+                                    <Button type="button" size="sm" onClick={() => {
+                                        if (newBlockedPeriod?.from && newBlockedPeriod?.to) {
+                                            const newPeriod = {
+                                                id: Date.now().toString(),
+                                                from: newBlockedPeriod.from.toISOString(),
+                                                to: newBlockedPeriod.to.toISOString(),
+                                            };
+                                            setVacationPolicyFormData(prev => ({
+                                                ...prev,
+                                                blockedPeriods: [...(prev.blockedPeriods || []), newPeriod]
+                                            }));
+                                            setNewBlockedPeriod(undefined);
+                                            setIsBlockedPeriodPopoverOpen(false);
+                                        }
+                                    }} disabled={!newBlockedPeriod?.from || !newBlockedPeriod?.to}>
+                                        Añadir
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                         <DialogFooter><Button type="submit">Guardar Política</Button></DialogFooter>
                     </form>
                 </DialogContent>
