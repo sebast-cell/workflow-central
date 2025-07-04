@@ -267,6 +267,10 @@ export default function SettingsPage() {
 
   const handleHolidayDateSelect = (date: Date | undefined) => {
     setHolidayFormData(prev => ({ ...prev, date }));
+    if (date) {
+        // This is a common pattern to close a popover after selection
+        // but we'll manage the popover state manually for more control in the form
+    }
   };
 
   useEffect(() => {
@@ -1377,7 +1381,9 @@ export default function SettingsPage() {
                                                             <Calendar 
                                                                 mode="single" 
                                                                 selected={holidayFormData.date} 
-                                                                onSelect={handleHolidayDateSelect} 
+                                                                onSelect={(date) => {
+                                                                    setHolidayFormData(prev => ({...prev, date}));
+                                                                }}
                                                                 initialFocus
                                                             />
                                                         </PopoverContent>
