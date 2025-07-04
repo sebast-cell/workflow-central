@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from "react";
@@ -11,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ShieldCheck, CalendarClock, Briefcase, UserPlus, SlidersHorizontal, Sun, Moon, Coffee, Timer, CalendarDays, Plane, Bell, Bot, Lock, Puzzle, List, PlusCircle, Trash2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function SettingsPage() {
   const [centers, setCenters] = useState([
@@ -25,12 +27,17 @@ export default function SettingsPage() {
     { name: "RRHH" },
   ]);
 
-  const roles = [
+  const [roles, setRoles] = useState([
     { name: "Propietario", description: "Control total sobre la cuenta." },
     { name: "Administrador", description: "Acceso a todo excepto la gestión de roles." },
-    { name: "Recursos Humanos", description: "Gestiona personal, pero no la configuración." },
+    { name: "Recursos Humanos", description: "Gestiona personal, but no la configuración." },
     { name: "Manager", description: "Gestiona equipos o personas específicas." },
-  ];
+  ]);
+
+  const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
+  const [dialogRoleMode, setDialogRoleMode] = useState<'add' | 'edit'>('add');
+  const [selectedRole, setSelectedRole] = useState<{ name: string, description: string } | null>(null);
+  const [roleFormData, setRoleFormData] = useState({ name: '', description: '' });
 
   const absenceTypes = [
     { name: "Vacaciones", remunerated: true, limit: "Anual" },
@@ -43,6 +50,32 @@ export default function SettingsPage() {
     { name: "Turno de Tarde", start: "14:00", end: "22:00" },
     { name: "Turno de Noche", start: "22:00", end: "06:00" },
   ];
+
+  const openAddRoleDialog = () => {
+    setDialogRoleMode('add');
+    setSelectedRole(null);
+    setRoleFormData({ name: '', description: '' });
+    setIsRoleDialogOpen(true);
+  };
+
+  const openEditRoleDialog = (role: { name: string, description: string }) => {
+    setDialogRoleMode('edit');
+    setSelectedRole(role);
+    setRoleFormData({ name: role.name, description: role.description });
+    setIsRoleDialogOpen(true);
+  };
+
+  const handleRoleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!roleFormData.name) return;
+
+    if (dialogRoleMode === 'add') {
+      setRoles(prev => [...prev, roleFormData]);
+    } else if (dialogRoleMode === 'edit' && selectedRole) {
+      setRoles(prev => prev.map(r => (r.name === selectedRole.name ? roleFormData : r)));
+    }
+    setIsRoleDialogOpen(false);
+  };
 
   return (
     <div className="space-y-8">
@@ -99,7 +132,7 @@ export default function SettingsPage() {
                 <CardTitle className="font-headline">Roles de Usuario</CardTitle>
                 <CardDescription>Indica qué usuarios tendrán más visibilidad o control.</CardDescription>
               </div>
-               <Button><PlusCircle className="mr-2 h-4 w-4"/> Añadir Rol</Button>
+               <Button onClick={openAddRoleDialog}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Rol</Button>
             </CardHeader>
             <CardContent className="space-y-4">
               {roles.map((role, index) => (
@@ -108,11 +141,49 @@ export default function SettingsPage() {
                     <h3 className="font-semibold">{role.name}</h3>
                     <p className="text-sm text-muted-foreground">{role.description}</p>
                   </div>
-                  <Button variant="ghost" size="sm">Editar</Button>
+                  <Button variant="ghost" size="sm" onClick={() => openEditRoleDialog(role)}>Editar</Button>
                 </div>
               ))}
             </CardContent>
           </Card>
+          <Dialog open={isRoleDialogOpen} onOpenChange={setIsRoleDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle className="font-headline">
+                  {dialogRoleMode === 'add' ? 'Añadir Nuevo Rol' : 'Editar Rol'}
+                </DialogTitle>
+                <DialogDescription>
+                  {dialogRoleMode === 'add' ? 'Define un nuevo rol y su descripción.' : `Editando el rol de ${selectedRole?.name}.`}
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleRoleFormSubmit}>
+                <div className="grid gap-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="role-name">Nombre del Rol</Label>
+                    <Input 
+                      id="role-name" 
+                      value={roleFormData.name} 
+                      onChange={(e) => setRoleFormData(prev => ({ ...prev, name: e.target.value }))} 
+                      placeholder="Ej. Manager de Proyecto" 
+                      required 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="role-description">Descripción</Label>
+                    <Textarea 
+                      id="role-description" 
+                      value={roleFormData.description} 
+                      onChange={(e) => setRoleFormData(prev => ({ ...prev, description: e.target.value }))} 
+                      placeholder="Describe los permisos y responsabilidades de este rol." 
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="submit">{dialogRoleMode === 'add' ? 'Añadir Rol' : 'Guardar Cambios'}</Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
         
         <TabsContent value="centers" className="space-y-4">
@@ -509,3 +580,5 @@ export default function SettingsPage() {
     </div>
   )
 }
+
+    
