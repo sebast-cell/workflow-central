@@ -282,7 +282,6 @@ export default function SettingsPage() {
   const [newCalendarName, setNewCalendarName] = useState("");
   const [isHolidayDialogOpen, setIsHolidayDialogOpen] = useState(false);
   const [holidayFormData, setHolidayFormData] = useState<{name: string, date: Date | undefined}>({ name: "", date: undefined });
-  const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
   
   const [isVacationPolicyDialogOpen, setIsVacationPolicyDialogOpen] = useState(false);
   const [dialogVacationPolicyMode, setDialogVacationPolicyMode] = useState<'add' | 'edit'>('add');
@@ -651,7 +650,7 @@ export default function SettingsPage() {
     if (!holidayFormData.name || !holidayFormData.date || !selectedCalendarId) return;
     
     const newHoliday: Holiday = {
-      id: `custom-${Date.now()}`,
+      id: `custom-${Date.now()}-${Math.random()}`,
       name: holidayFormData.name,
       date: holidayFormData.date.toISOString(),
     };
@@ -1418,38 +1417,39 @@ export default function SettingsPage() {
                                 <Button variant="outline" onClick={handleImportHolidays}>Importar Festivos</Button>
                                 <Dialog open={isHolidayDialogOpen} onOpenChange={setIsHolidayDialogOpen}>
                                     <DialogTrigger asChild><Button><PlusCircle className="mr-2 h-4 w-4"/> Añadir Festivo</Button></DialogTrigger>
-                                    <DialogContent>
+                                    <DialogContent className="sm:max-w-md">
                                         <DialogHeader><DialogTitle className="font-headline">Añadir Festivo Personalizado</DialogTitle></DialogHeader>
-                                        <form onSubmit={handleHolidayFormSubmit}>
-                                            <div className="grid gap-4 py-4">
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="holiday-name">Nombre del Festivo</Label>
-                                                    <Input id="holiday-name" value={holidayFormData.name} onChange={e => setHolidayFormData({...holidayFormData, name: e.target.value})} required/>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label>Fecha</Label>
-                                                    <Popover open={isDatePopoverOpen} onOpenChange={setIsDatePopoverOpen}>
-                                                        <PopoverTrigger asChild>
-                                                            <Button type="button" variant="outline" className={cn("w-full justify-start text-left font-normal", !holidayFormData.date && "text-muted-foreground")}>
-                                                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                                                {holidayFormData.date ? format(holidayFormData.date, "PPP") : <span>Elige una fecha</span>}
-                                                            </Button>
-                                                        </PopoverTrigger>
-                                                        <PopoverContent className="w-auto p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
-                                                            <Calendar 
-                                                                mode="single" 
-                                                                selected={holidayFormData.date} 
-                                                                onSelect={(date) => {
-                                                                    setHolidayFormData(prev => ({...prev, date}));
-                                                                    setIsDatePopoverOpen(false);
-                                                                }}
-                                                                initialFocus
-                                                            />
-                                                        </PopoverContent>
-                                                    </Popover>
-                                                </div>
+                                        <form onSubmit={handleHolidayFormSubmit} className="grid gap-4 py-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="holiday-name">Nombre del Festivo</Label>
+                                                <Input id="holiday-name" value={holidayFormData.name} onChange={e => setHolidayFormData({...holidayFormData, name: e.target.value})} required/>
                                             </div>
-                                            <DialogFooter><Button type="submit">Añadir Festivo</Button></DialogFooter>
+                                            <div className="space-y-2">
+                                                <Label>Fecha</Label>
+                                                <Popover>
+                                                    <PopoverTrigger asChild>
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            className={cn("w-full justify-start text-left font-normal", !holidayFormData.date && "text-muted-foreground")}
+                                                        >
+                                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                                            {holidayFormData.date ? format(holidayFormData.date, "PPP") : <span>Elige una fecha</span>}
+                                                        </Button>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="w-auto p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
+                                                        <Calendar 
+                                                            mode="single" 
+                                                            selected={holidayFormData.date} 
+                                                            onSelect={(date) => setHolidayFormData(prev => ({...prev, date}))}
+                                                            initialFocus
+                                                        />
+                                                    </PopoverContent>
+                                                </Popover>
+                                            </div>
+                                            <DialogFooter>
+                                                <Button type="submit">Añadir Festivo</Button>
+                                            </DialogFooter>
                                         </form>
                                     </DialogContent>
                                 </Dialog>
@@ -1595,7 +1595,7 @@ export default function SettingsPage() {
                                                 )}
                                             </Button>
                                         </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
+                                        <PopoverContent className="w-auto p-0" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
                                             <Calendar
                                                 initialFocus
                                                 mode="range"
