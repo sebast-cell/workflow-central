@@ -177,20 +177,39 @@ export default function SettingsPage() {
     if (isClient) {
       try {
         const storedCenters = localStorage.getItem(CENTERS_STORAGE_KEY);
-        if (storedCenters) setCenters(JSON.parse(storedCenters));
-        else localStorage.setItem(CENTERS_STORAGE_KEY, JSON.stringify(initialCenters));
+        if (storedCenters) {
+          setCenters(JSON.parse(storedCenters));
+        } else {
+          setCenters(initialCenters);
+          localStorage.setItem(CENTERS_STORAGE_KEY, JSON.stringify(initialCenters));
+        }
 
         const storedDepts = localStorage.getItem(DEPARTMENTS_STORAGE_KEY);
-        if (storedDepts) setDepartments(JSON.parse(storedDepts));
-        else localStorage.setItem(DEPARTMENTS_STORAGE_KEY, JSON.stringify(initialDepartments));
+        if (storedDepts) {
+          setDepartments(JSON.parse(storedDepts));
+        } else {
+          setDepartments(initialDepartments);
+          localStorage.setItem(DEPARTMENTS_STORAGE_KEY, JSON.stringify(initialDepartments));
+        }
         
         const storedRoles = localStorage.getItem(ROLES_STORAGE_KEY);
-        if (storedRoles) setRoles(JSON.parse(storedRoles));
-        else localStorage.setItem(ROLES_STORAGE_KEY, JSON.stringify(initialRoles));
+        if (storedRoles) {
+          setRoles(JSON.parse(storedRoles));
+        } else {
+          setRoles(initialRoles);
+          localStorage.setItem(ROLES_STORAGE_KEY, JSON.stringify(initialRoles));
+        }
         
         const storedBreaks = localStorage.getItem(BREAKS_STORAGE_KEY);
-        if (storedBreaks) setBreaks(JSON.parse(storedBreaks));
-        else localStorage.setItem(BREAKS_STORAGE_KEY, JSON.stringify(initialBreaks));
+        if (storedBreaks) {
+          const parsed = JSON.parse(storedBreaks);
+          // Data migration: ensure `assignedTo` is always an array to prevent crashes from old data.
+          const migrated = parsed.map((b: any) => ({...b, assignedTo: b.assignedTo || []}));
+          setBreaks(migrated);
+        } else {
+          setBreaks(initialBreaks);
+          localStorage.setItem(BREAKS_STORAGE_KEY, JSON.stringify(initialBreaks));
+        }
 
         const storedClockInTypes = localStorage.getItem(CLOCK_IN_TYPES_STORAGE_KEY);
         if (storedClockInTypes) {
@@ -202,7 +221,10 @@ export default function SettingsPage() {
             }));
             setClockInTypes(migrated);
         }
-        else localStorage.setItem(CLOCK_IN_TYPES_STORAGE_KEY, JSON.stringify(initialClockInTypes));
+        else {
+            setClockInTypes(initialClockInTypes);
+            localStorage.setItem(CLOCK_IN_TYPES_STORAGE_KEY, JSON.stringify(initialClockInTypes));
+        }
         
         const storedEmployees = localStorage.getItem(EMPLOYEES_STORAGE_KEY);
         if (storedEmployees) setEmployees(JSON.parse(storedEmployees));
@@ -849,7 +871,7 @@ export default function SettingsPage() {
                                         : `, Límite: ${br.limit} min`}
                                 </p>
                                 <p className="text-sm text-muted-foreground">
-                                    Asignado a: {br.assignedTo.length > 0 ? br.assignedTo.join(', ') : 'Ninguno'}
+                                    Asignado a: {br.assignedTo?.length > 0 ? br.assignedTo.join(', ') : 'Ninguno'}
                                 </p>
                             </div>
                             <div className="flex items-center">
