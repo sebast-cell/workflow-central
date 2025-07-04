@@ -44,6 +44,12 @@ type Role = {
   permissions: string[];
 };
 
+type Break = {
+  name: string;
+  remunerated: boolean;
+  duration: number; // in minutes
+}
+
 const initialCenters: Center[] = [
   { name: "Oficina Central", address: "123 Calle Principal, Anytown", radius: 100 },
   { name: "Almacén Norte", address: "456 Avenida Industrial, Anytown", radius: 150 },
@@ -61,10 +67,15 @@ const initialRoles: Role[] = [
   { name: "Recursos Humanos", description: "Gestiona personal, pero no la configuración.", permissions: ['view_dashboard', 'manage_employees', 'manage_attendance', 'manage_absences', 'manage_performance', 'manage_documents'] },
   { name: "Manager", description: "Gestiona equipos o personas específicas.", permissions: ['view_dashboard', 'manage_attendance', 'manage_absences'] },
 ];
+const initialBreaks: Break[] = [
+    { name: "Descanso de Comida", remunerated: false, duration: 60 },
+    { name: "Pausa para Café", remunerated: true, duration: 15 },
+]
 
 const CENTERS_STORAGE_KEY = 'workflow-central-centers';
 const DEPARTMENTS_STORAGE_KEY = 'workflow-central-departments';
 const ROLES_STORAGE_KEY = 'workflow-central-roles';
+const BREAKS_STORAGE_KEY = 'workflow-central-breaks';
 
 export default function SettingsPage() {
   const [isClient, setIsClient] = useState(false);
@@ -72,6 +83,7 @@ export default function SettingsPage() {
   const [centers, setCenters] = useState<Center[]>(initialCenters);
   const [departments, setDepartments] = useState<Department[]>(initialDepartments);
   const [roles, setRoles] = useState<Role[]>(initialRoles);
+  const [breaks, setBreaks] = useState<Break[]>(initialBreaks);
   
   const [isCenterDialogOpen, setIsCenterDialogOpen] = useState(false);
   const [dialogCenterMode, setDialogCenterMode] = useState<'add' | 'edit'>('add');
@@ -87,6 +99,11 @@ export default function SettingsPage() {
   const [dialogRoleMode, setDialogRoleMode] = useState<'add' | 'edit'>('add');
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [roleFormData, setRoleFormData] = useState<Role>({ name: '', description: '', permissions: [] });
+  
+  const [isBreakDialogOpen, setIsBreakDialogOpen] = useState(false);
+  const [dialogBreakMode, setDialogBreakMode] = useState<'add' | 'edit'>('add');
+  const [selectedBreak, setSelectedBreak] = useState<Break | null>(null);
+  const [breakFormData, setBreakFormData] = useState<Break>({ name: "", remunerated: false, duration: 30 });
 
   const absenceTypes = [
     { name: "Vacaciones", remunerated: true, limit: "Anual" },
@@ -118,6 +135,10 @@ export default function SettingsPage() {
         const storedRoles = localStorage.getItem(ROLES_STORAGE_KEY);
         if (storedRoles) setRoles(JSON.parse(storedRoles));
         else localStorage.setItem(ROLES_STORAGE_KEY, JSON.stringify(initialRoles));
+        
+        const storedBreaks = localStorage.getItem(BREAKS_STORAGE_KEY);
+        if (storedBreaks) setBreaks(JSON.parse(storedBreaks));
+        else localStorage.setItem(BREAKS_STORAGE_KEY, JSON.stringify(initialBreaks));
 
       } catch (error) {
         console.error("Failed to access localStorage", error);
@@ -130,8 +151,9 @@ export default function SettingsPage() {
       localStorage.setItem(CENTERS_STORAGE_KEY, JSON.stringify(centers));
       localStorage.setItem(DEPARTMENTS_STORAGE_KEY, JSON.stringify(departments));
       localStorage.setItem(ROLES_STORAGE_KEY, JSON.stringify(roles));
+      localStorage.setItem(BREAKS_STORAGE_KEY, JSON.stringify(breaks));
     }
-  }, [centers, departments, roles, isClient]);
+  }, [centers, departments, roles, breaks, isClient]);
 
 
   const openAddRoleDialog = () => {
@@ -221,6 +243,38 @@ export default function SettingsPage() {
   
   const handleDeleteDepartment = (departmentName: string) => {
       setDepartments(prev => prev.filter(d => d.name !== departmentName));
+  };
+  
+  const openAddBreakDialog = () => {
+    setDialogBreakMode('add');
+    setSelectedBreak(null);
+    setBreakFormData({ name: "", remunerated: false, duration: 30 });
+    setIsBreakDialogOpen(true);
+  };
+
+  const openEditBreakDialog = (br: Break) => {
+    setDialogBreakMode('edit');
+    setSelectedBreak(br);
+    setBreakFormData(br);
+    setIsBreakDialogOpen(true);
+  };
+
+  const handleBreakFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!breakFormData.name || !breakFormData.duration) return;
+    
+    const payload = {...breakFormData, duration: Number(breakFormData.duration)};
+
+    if (dialogBreakMode === 'add') {
+        setBreaks(prev => [...prev, payload]);
+    } else if (dialogBreakMode === 'edit' && selectedBreak) {
+        setBreaks(prev => prev.map(b => (b.name === selectedBreak.name ? payload : b)));
+    }
+    setIsBreakDialogOpen(false);
+  };
+  
+  const handleDeleteBreak = (breakName: string) => {
+    setBreaks(prev => prev.filter(b => b.name !== breakName));
   };
   
   if (!isClient) return null;
@@ -583,26 +637,56 @@ export default function SettingsPage() {
 
          <TabsContent value="breaks" className="space-y-4">
              <Card>
-                <CardHeader>
-                    <CardTitle className="font-headline">Gestión de Descansos</CardTitle>
-                    <CardDescription>Configura los descansos, ya sean remunerados o no.</CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle className="font-headline">Gestión de Descansos</CardTitle>
+                        <CardDescription>Configura los descansos, ya sean remunerados o no.</CardDescription>
+                    </div>
+                    <Dialog open={isBreakDialogOpen} onOpenChange={setIsBreakDialogOpen}>
+                        <DialogTrigger asChild>
+                            <Button onClick={openAddBreakDialog}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Descanso</Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-md">
+                            <DialogHeader>
+                                <DialogTitle className="font-headline">{dialogBreakMode === 'add' ? 'Añadir Nuevo Descanso' : 'Editar Descanso'}</DialogTitle>
+                            </DialogHeader>
+                            <form onSubmit={handleBreakFormSubmit}>
+                                <div className="grid gap-4 py-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="break-name">Nombre del Descanso</Label>
+                                        <Input id="break-name" value={breakFormData.name} onChange={(e) => setBreakFormData({...breakFormData, name: e.target.value})} placeholder="Ej. Pausa para Fumar" required/>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="break-duration">Duración (minutos)</Label>
+                                        <Input id="break-duration" type="number" value={breakFormData.duration} onChange={(e) => setBreakFormData({...breakFormData, duration: parseInt(e.target.value) || 0})} placeholder="Ej. 10" required/>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <Switch id="break-remunerated" checked={breakFormData.remunerated} onCheckedChange={(checked) => setBreakFormData({...breakFormData, remunerated: checked})}/>
+                                        <Label htmlFor="break-remunerated">Remunerado</Label>
+                                    </div>
+                                </div>
+                                <DialogFooter>
+                                    <Button type="submit">{dialogBreakMode === 'add' ? 'Añadir' : 'Guardar'}</Button>
+                                </DialogFooter>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                     <div className="flex items-center justify-between rounded-lg border p-4">
-                        <div>
-                            <h3 className="font-semibold">Descanso de Comida</h3>
-                            <p className="text-sm text-muted-foreground">No remunerado, 60 minutos.</p>
+                     {breaks.map((br, index) => (
+                         <div key={index} className="flex items-center justify-between rounded-lg border p-4">
+                            <div>
+                                <h3 className="font-semibold">{br.name}</h3>
+                                <p className="text-sm text-muted-foreground">{br.remunerated ? "Remunerado" : "No remunerado"}, {br.duration} minutos.</p>
+                            </div>
+                            <div className="flex items-center">
+                                <Button variant="ghost" size="sm" onClick={() => openEditBreakDialog(br)}>Editar</Button>
+                                <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDeleteBreak(br.name)}>
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </div>
                         </div>
-                        <Button variant="ghost">Editar</Button>
-                    </div>
-                     <div className="flex items-center justify-between rounded-lg border p-4">
-                        <div>
-                            <h3 className="font-semibold">Pausa para Café</h3>
-                            <p className="text-sm text-muted-foreground">Remunerado, 15 minutos.</p>
-                        </div>
-                        <Button variant="ghost">Editar</Button>
-                    </div>
-                     <Button><PlusCircle className="mr-2 h-4 w-4"/> Añadir Descanso</Button>
+                     ))}
                 </CardContent>
             </Card>
         </TabsContent>
