@@ -18,7 +18,7 @@ const initialState = {
 
 function SubmitButton() {
   const { pending } = useFormStatus();
-  return <Button type="submit" disabled={pending} className="w-full sm:w-auto">{pending ? 'Generating...' : 'Generate Report'}</Button>;
+  return <Button type="submit" disabled={pending} className="w-full sm:w-auto">{pending ? 'Generando...' : 'Generar Informe'}</Button>;
 }
 
 export default function ReportGenerator({ formAction }: { formAction: (prevState: any, formData: FormData) => Promise<any> }) {
@@ -29,40 +29,40 @@ export default function ReportGenerator({ formAction }: { formAction: (prevState
       <Card className="lg:col-span-1 h-fit">
         <form action={action}>
           <CardHeader>
-            <CardTitle className="font-headline">New Report</CardTitle>
-            <CardDescription>Fill in the details to generate a custom report.</CardDescription>
+            <CardTitle className="font-headline">Nuevo Informe</CardTitle>
+            <CardDescription>Completa los detalles para generar un informe personalizado.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-                <Label htmlFor="reportType">Report Type</Label>
+                <Label htmlFor="reportType">Tipo de Informe</Label>
                 <Select name="reportType" defaultValue="attendance">
                     <SelectTrigger id="reportType">
-                        <SelectValue placeholder="Select a report type" />
+                        <SelectValue placeholder="Selecciona un tipo de informe" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="attendance">Attendance</SelectItem>
-                        <SelectItem value="absences">Absences & PTO</SelectItem>
-                        <SelectItem value="project costs">Project Costs</SelectItem>
+                        <SelectItem value="attendance">Asistencia</SelectItem>
+                        <SelectItem value="absences">Ausencias y Tiempo Libre</SelectItem>
+                        <SelectItem value="project costs">Costos de Proyecto</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="dateRange">Date Range</Label>
-              <Input id="dateRange" name="dateRange" placeholder="e.g., Last Month, Q3 2024" defaultValue="Last 30 days" />
+              <Label htmlFor="dateRange">Rango de Fechas</Label>
+              <Input id="dateRange" name="dateRange" placeholder="Ej., Último Mes, T3 2024" defaultValue="Últimos 30 días" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="timeRange">Time Range</Label>
-              <Input id="timeRange" name="timeRange" placeholder="e.g., 9am-5pm" defaultValue="All day"/>
+              <Label htmlFor="timeRange">Rango Horario</Label>
+              <Input id="timeRange" name="timeRange" placeholder="Ej., 9am-5pm" defaultValue="Todo el día"/>
             </div>
              <div className="space-y-2">
-              <Label htmlFor="informationDetails">Specific Information</Label>
-              <Textarea id="informationDetails" name="informationDetails" placeholder="e.g., Include overtime hours, filter by Engineering department" />
+              <Label htmlFor="informationDetails">Información Específica</Label>
+              <Textarea id="informationDetails" name="informationDetails" placeholder="Ej., Incluir horas extra, filtrar por el departamento de Ingeniería" />
             </div>
              <div className="space-y-2">
-                <Label htmlFor="format">Format</Label>
+                <Label htmlFor="format">Formato</Label>
                 <Select name="format" defaultValue="pdf">
                     <SelectTrigger id="format">
-                        <SelectValue placeholder="Select format" />
+                        <SelectValue placeholder="Seleccionar formato" />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="PDF">PDF</SelectItem>
@@ -82,8 +82,8 @@ export default function ReportGenerator({ formAction }: { formAction: (prevState
         {state.success && state.report && (
             <Card>
                 <CardHeader>
-                    <CardTitle className="font-headline">Generated Report</CardTitle>
-                    <CardDescription>Here is the report generated based on your criteria.</CardDescription>
+                    <CardTitle className="font-headline">Informe Generado</CardTitle>
+                    <CardDescription>Aquí está el informe generado según tus criterios.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <pre className="bg-muted p-4 rounded-md whitespace-pre-wrap font-code text-sm">{state.report}</pre>
@@ -100,8 +100,8 @@ export default function ReportGenerator({ formAction }: { formAction: (prevState
         {!state.report && !state.error && (
             <div className="flex items-center justify-center h-full rounded-lg border-2 border-dashed border-muted-foreground/30">
                 <div className="text-center p-8">
-                    <h3 className="text-lg font-semibold text-muted-foreground">Your report will appear here</h3>
-                    <p className="text-sm text-muted-foreground/80 mt-2">Fill out the form and click "Generate Report" to get started.</p>
+                    <h3 className="text-lg font-semibold text-muted-foreground">Tu informe aparecerá aquí</h3>
+                    <p className="text-sm text-muted-foreground/80 mt-2">Completa el formulario y haz clic en "Generar Informe" para empezar.</p>
                 </div>
             </div>
         )}

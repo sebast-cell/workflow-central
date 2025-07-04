@@ -10,7 +10,7 @@ import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'WorkFlow Central',
-  description: 'The central hub for managing your team effortlessly.',
+  description: 'El centro para gestionar a tu equipo sin esfuerzo.',
 };
 
 export default function RootLayout({
@@ -19,7 +19,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="es" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -42,11 +42,11 @@ export default function RootLayout({
             <SidebarFooter>
               <div className="flex items-center gap-3">
                  <Avatar className="h-9 w-9">
-                   <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="user avatar" alt="Admin User" />
+                   <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="user avatar" alt="Usuario Administrador" />
                    <AvatarFallback>AU</AvatarFallback>
                  </Avatar>
                  <div className="flex flex-col">
-                   <span className="text-sm font-semibold text-sidebar-foreground">Admin User</span>
+                   <span className="text-sm font-semibold text-sidebar-foreground">Usuario Administrador</span>
                    <span className="text-xs text-sidebar-foreground/70">admin@workflow.com</span>
                  </div>
               </div>

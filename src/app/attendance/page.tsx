@@ -6,26 +6,26 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Briefcase, Coffee, Globe, Home, UserCheck, UserX } from "lucide-react";
 
 const attendanceLog = [
-  { time: "09:01 AM", employee: "Olivia Martin", status: "Clocked In", location: "Office" },
-  { time: "09:03 AM", employee: "Jackson Lee", status: "Clocked In", location: "Remote" },
-  { time: "11:30 AM", employee: "Isabella Nguyen", status: "On Break", location: "Office" },
-  { time: "12:15 PM", employee: "Isabella Nguyen", status: "Clocked In", location: "Office" },
-  { time: "02:00 PM", employee: "William Kim", status: "Clocked In", location: "Office" },
-  { time: "05:05 PM", employee: "Olivia Martin", status: "Clocked Out", location: "Office" },
+  { time: "09:01 AM", employee: "Olivia Martin", status: "Entrada Marcada", location: "Oficina" },
+  { time: "09:03 AM", employee: "Jackson Lee", status: "Entrada Marcada", location: "Remoto" },
+  { time: "11:30 AM", employee: "Isabella Nguyen", status: "En Descanso", location: "Oficina" },
+  { time: "12:15 PM", employee: "Isabella Nguyen", status: "Entrada Marcada", location: "Oficina" },
+  { time: "02:00 PM", employee: "William Kim", status: "Entrada Marcada", location: "Oficina" },
+  { time: "05:05 PM", employee: "Olivia Martin", status: "Salida Marcada", location: "Oficina" },
 ];
 
 export default function AttendancePage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-headline font-bold tracking-tight">Time & Attendance</h1>
-        <p className="text-muted-foreground">Monitor daily clock-ins, status, and timelines.</p>
+        <h1 className="text-3xl font-headline font-bold tracking-tight">Tiempo y Asistencia</h1>
+        <p className="text-muted-foreground">Monitorea las entradas diarias, estados y cronogramas.</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">In Office</CardTitle>
+            <CardTitle className="text-sm font-medium">En Oficina</CardTitle>
             <Home className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -34,7 +34,7 @@ export default function AttendancePage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Working Remotely</CardTitle>
+            <CardTitle className="text-sm font-medium">Trabajo Remoto</CardTitle>
             <Globe className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -43,7 +43,7 @@ export default function AttendancePage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">On Break</CardTitle>
+            <CardTitle className="text-sm font-medium">En Descanso</CardTitle>
             <Coffee className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -52,7 +52,7 @@ export default function AttendancePage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">On Vacation</CardTitle>
+            <CardTitle className="text-sm font-medium">De Vacaciones</CardTitle>
             <Briefcase className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -61,7 +61,7 @@ export default function AttendancePage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Absent</CardTitle>
+            <CardTitle className="text-sm font-medium">Ausente</CardTitle>
             <UserX className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -72,25 +72,25 @@ export default function AttendancePage() {
       
       <Card>
         <CardHeader>
-          <CardTitle className="font-headline">Attendance Timeline</CardTitle>
-          <CardDescription>A real-time log of today's clock-in events.</CardDescription>
+          <CardTitle className="font-headline">Línea de Tiempo de Asistencia</CardTitle>
+          <CardDescription>Un registro en tiempo real de los eventos de entrada de hoy.</CardDescription>
           <div className="flex flex-col sm:flex-row gap-2 pt-2">
               <Select>
                 <SelectTrigger className="w-full sm:w-[200px]">
-                  <SelectValue placeholder="Filter by Location" />
+                  <SelectValue placeholder="Filtrar por Ubicación" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="office">Office</SelectItem>
-                  <SelectItem value="remote">Remote</SelectItem>
+                  <SelectItem value="office">Oficina</SelectItem>
+                  <SelectItem value="remote">Remoto</SelectItem>
                 </SelectContent>
               </Select>
               <Select>
                 <SelectTrigger className="w-full sm:w-[200px]">
-                  <SelectValue placeholder="Filter by Department" />
+                  <SelectValue placeholder="Filtrar por Departamento" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="engineering">Engineering</SelectItem>
-                  <SelectItem value="design">Design</SelectItem>
+                  <SelectItem value="engineering">Ingeniería</SelectItem>
+                  <SelectItem value="design">Diseño</SelectItem>
                   <SelectItem value="marketing">Marketing</SelectItem>
                 </SelectContent>
               </Select>
@@ -100,10 +100,10 @@ export default function AttendancePage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[100px]">Time</TableHead>
-                <TableHead>Employee</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Location</TableHead>
+                <TableHead className="w-[100px]">Hora</TableHead>
+                <TableHead>Empleado</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead className="text-right">Ubicación</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -115,8 +115,8 @@ export default function AttendancePage() {
                     <Badge 
                       variant="outline"
                       className={
-                        log.status === "Clocked In" ? "border-green-500 text-green-700" :
-                        log.status === "Clocked Out" ? "border-red-500 text-red-700" :
+                        log.status === "Entrada Marcada" ? "border-green-500 text-green-700" :
+                        log.status === "Salida Marcada" ? "border-red-500 text-red-700" :
                         "border-yellow-500 text-yellow-700"
                       }
                     >{log.status}</Badge>

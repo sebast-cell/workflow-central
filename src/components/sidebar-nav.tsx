@@ -19,17 +19,17 @@ import {
 } from '@/components/ui/sidebar';
 
 const navItems = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/employees', label: 'Employees', icon: Users },
-  { href: '/attendance', label: 'Attendance', icon: Clock },
-  { href: '/absences', label: 'Absences & PTO', icon: CalendarOff },
-  { href: '/projects', label: 'Projects', icon: Briefcase },
-  { href: '/documents', label: 'Documents', icon: Folder },
-  { href: '/reports', label: 'Reports', icon: FileText },
+  { href: '/', label: 'Panel', icon: LayoutDashboard },
+  { href: '/employees', label: 'Empleados', icon: Users },
+  { href: '/attendance', label: 'Asistencia', icon: Clock },
+  { href: '/absences', label: 'Ausencias y TL', icon: CalendarOff },
+  { href: '/projects', label: 'Proyectos', icon: Briefcase },
+  { href: '/documents', label: 'Documentos', icon: Folder },
+  { href: '/reports', label: 'Informes', icon: FileText },
 ];
 
 const secondaryNavItems = [
-    { href: '/settings', label: 'Settings', icon: Settings },
+    { href: '/settings', label: 'Configuración', icon: Settings },
 ]
 
 export default function SidebarNav() {

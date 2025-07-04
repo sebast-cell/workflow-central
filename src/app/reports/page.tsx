@@ -7,9 +7,9 @@ import { Download, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 const latestReports = [
-  { id: "REP-001", type: "Attendance", dateRange: "Last Month", format: "PDF", status: "Completed" },
-  { id: "REP-002", type: "Project Costs", dateRange: "Q3 2024", format: "Excel", status: "Completed" },
-  { id: "REP-003", type: "Absences", dateRange: "Last 30 Days", format: "CSV", status: "Completed" },
+  { id: "REP-001", type: "Asistencia", dateRange: "Último Mes", format: "PDF", status: "Completado" },
+  { id: "REP-002", type: "Costos de Proyecto", dateRange: "T3 2024", format: "Excel", status: "Completado" },
+  { id: "REP-003", type: "Ausencias", dateRange: "Últimos 30 Días", format: "CSV", status: "Completado" },
 ];
 
 export default function ReportsPage() {
@@ -32,35 +32,35 @@ export default function ReportsPage() {
             return { success: true, report: result.report, error: null };
         } catch (error) {
             console.error(error);
-            const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-            return { success: false, report: null, error: `Failed to generate report: ${errorMessage}` };
+            const errorMessage = error instanceof Error ? error.message : 'Ocurrió un error desconocido.';
+            return { success: false, report: null, error: `No se pudo generar el informe: ${errorMessage}` };
         }
     }
 
     return (
         <div className="space-y-8">
             <div>
-                <h1 className="text-3xl font-headline font-bold tracking-tight">Reporting Tool</h1>
-                <p className="text-muted-foreground">Generate customizable reports on key employee management processes.</p>
+                <h1 className="text-3xl font-headline font-bold tracking-tight">Herramienta de Informes</h1>
+                <p className="text-muted-foreground">Genera informes personalizables sobre procesos clave de gestión de empleados.</p>
             </div>
             
             <ReportGenerator formAction={generateReportAction} />
 
             <Card>
                 <CardHeader>
-                    <CardTitle className="font-headline">Latest Reports</CardTitle>
-                    <CardDescription>A history of recently exported reports for easy download.</CardDescription>
+                    <CardTitle className="font-headline">Últimos Informes</CardTitle>
+                    <CardDescription>Un historial de informes exportados recientemente para una descarga fácil.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Report ID</TableHead>
-                                <TableHead>Type</TableHead>
-                                <TableHead>Date Range</TableHead>
-                                <TableHead>Format</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead><span className="sr-only">Actions</span></TableHead>
+                                <TableHead>ID de Informe</TableHead>
+                                <TableHead>Tipo</TableHead>
+                                <TableHead>Rango de Fechas</TableHead>
+                                <TableHead>Formato</TableHead>
+                                <TableHead>Estado</TableHead>
+                                <TableHead><span className="sr-only">Acciones</span></TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -77,7 +77,7 @@ export default function ReportsPage() {
                                     <TableCell className="text-right">
                                         <Button variant="outline" size="sm">
                                             <Download className="mr-2 h-4 w-4" />
-                                            Download
+                                            Descargar
                                         </Button>
                                     </TableCell>
                                 </TableRow>

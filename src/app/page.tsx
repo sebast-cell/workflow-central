@@ -11,69 +11,69 @@ import Link from "next/link"
 
 export default function Dashboard() {
   const chartData = [
-    { name: "Mon", hours: 180 },
-    { name: "Tue", hours: 195 },
-    { name: "Wed", hours: 210 },
-    { name: "Thu", hours: 200 },
-    { name: "Fri", hours: 220 },
-    { name: "Sat", hours: 40 },
-    { name: "Sun", hours: 10 },
+    { name: "Lun", hours: 180 },
+    { name: "Mar", hours: 195 },
+    { name: "Mié", hours: 210 },
+    { name: "Jue", hours: 200 },
+    { name: "Vie", hours: 220 },
+    { name: "Sáb", hours: 40 },
+    { name: "Dom", hours: 10 },
   ]
 
   const recentActivities = [
-    { name: "Olivia Martin", activity: "clocked in", time: "5m ago", avatar: "OM" },
-    { name: "Jackson Lee", activity: "requested time off", time: "15m ago", avatar: "JL" },
-    { name: "Isabella Nguyen", activity: "completed 'UI Design' task", time: "30m ago", avatar: "IN" },
-    { name: "William Kim", activity: "is on break", time: "45m ago", avatar: "WK" },
-    { name: "Sophia Davis", activity: "clocked out", time: "1h ago", avatar: "SD" },
+    { name: "Olivia Martin", activity: "marcó entrada", time: "hace 5m", avatar: "OM" },
+    { name: "Jackson Lee", activity: "solicitó tiempo libre", time: "hace 15m", avatar: "JL" },
+    { name: "Isabella Nguyen", activity: "completó la tarea 'Diseño de UI'", time: "hace 30m", avatar: "IN" },
+    { name: "William Kim", activity: "está en descanso", time: "hace 45m", avatar: "WK" },
+    { name: "Sophia Davis", activity: "marcó salida", time: "hace 1h", avatar: "SD" },
   ]
   
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-3xl font-headline font-bold tracking-tight">Admin Dashboard</h1>
-        <p className="text-muted-foreground">An overview of all management tasks for your team.</p>
+        <h1 className="text-3xl font-headline font-bold tracking-tight">Panel de Administración</h1>
+        <p className="text-muted-foreground">Un resumen de todas las tareas de gestión para tu equipo.</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Employees</CardTitle>
+            <CardTitle className="text-sm font-medium">Empleados Activos</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">42 / 50</div>
-            <p className="text-xs text-muted-foreground">+2 since last hour</p>
+            <p className="text-xs text-muted-foreground">+2 desde la última hora</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Projects In Progress</CardTitle>
+            <CardTitle className="text-sm font-medium">Proyectos en Progreso</CardTitle>
             <Zap className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">5</div>
-            <p className="text-xs text-muted-foreground">+1 since yesterday</p>
+            <p className="text-xs text-muted-foreground">+1 desde ayer</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Requests</CardTitle>
+            <CardTitle className="text-sm font-medium">Solicitudes Pendientes</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground">3 vacation, 9 time changes</p>
+            <p className="text-xs text-muted-foreground">3 vacaciones, 9 cambios de horario</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed Tasks Today</CardTitle>
+            <CardTitle className="text-sm font-medium">Tareas Completadas Hoy</CardTitle>
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">87</div>
-            <p className="text-xs text-muted-foreground">+15% from last week</p>
+            <p className="text-xs text-muted-foreground">+15% desde la semana pasada</p>
           </CardContent>
         </Card>
       </div>
@@ -81,8 +81,8 @@ export default function Dashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="lg:col-span-4">
           <CardHeader>
-            <CardTitle className="font-headline">Team Hours Overview</CardTitle>
-            <CardDescription>Total hours logged this week.</CardDescription>
+            <CardTitle className="font-headline">Resumen de Horas del Equipo</CardTitle>
+            <CardDescription>Total de horas registradas esta semana.</CardDescription>
           </CardHeader>
           <CardContent className="pl-2">
             <ResponsiveContainer width="100%" height={300}>
@@ -110,8 +110,8 @@ export default function Dashboard() {
 
         <Card className="lg:col-span-3">
           <CardHeader>
-            <CardTitle className="font-headline">Recent Activity</CardTitle>
-            <CardDescription>What your team has been up to.</CardDescription>
+            <CardTitle className="font-headline">Actividad Reciente</CardTitle>
+            <CardDescription>Lo que tu equipo ha estado haciendo.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -137,14 +137,14 @@ export default function Dashboard() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <CardTitle className="font-headline">Team Overview</CardTitle>
+                <CardTitle className="font-headline">Resumen del Equipo</CardTitle>
                 <CardDescription>
-                  A quick look at your team's current status.
+                  Un vistazo rápido al estado actual de tu equipo.
                 </CardDescription>
               </div>
               <Button asChild size="sm">
                 <Link href="/employees">
-                  View All
+                  Ver Todos
                   <ArrowUpRight className="h-4 w-4 ml-2" />
                 </Link>
               </Button>
@@ -154,10 +154,10 @@ export default function Dashboard() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Employee</TableHead>
-                  <TableHead>Department</TableHead>
-                  <TableHead className="hidden sm:table-cell">Status</TableHead>
-                  <TableHead className="text-right">Schedule</TableHead>
+                  <TableHead>Empleado</TableHead>
+                  <TableHead>Departamento</TableHead>
+                  <TableHead className="hidden sm:table-cell">Estado</TableHead>
+                  <TableHead className="text-right">Horario</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -166,8 +166,8 @@ export default function Dashboard() {
                     <div className="font-medium">Liam Johnson</div>
                     <div className="text-sm text-muted-foreground hidden md:inline">liam@workflow.com</div>
                   </TableCell>
-                  <TableCell>Engineering</TableCell>
-                  <TableCell className="hidden sm:table-cell"><Badge variant="secondary" className="bg-green-100 text-green-800">Clocked In</Badge></TableCell>
+                  <TableCell>Ingeniería</TableCell>
+                  <TableCell className="hidden sm:table-cell"><Badge variant="secondary" className="bg-green-100 text-green-800">Entrada Marcada</Badge></TableCell>
                   <TableCell className="text-right">9:00 AM - 5:00 PM</TableCell>
                 </TableRow>
                  <TableRow>
@@ -176,7 +176,7 @@ export default function Dashboard() {
                     <div className="text-sm text-muted-foreground hidden md:inline">emma@workflow.com</div>
                   </TableCell>
                   <TableCell>Marketing</TableCell>
-                  <TableCell className="hidden sm:table-cell"><Badge variant="secondary" className="bg-green-100 text-green-800">Clocked In</Badge></TableCell>
+                  <TableCell className="hidden sm:table-cell"><Badge variant="secondary" className="bg-green-100 text-green-800">Entrada Marcada</Badge></TableCell>
                   <TableCell className="text-right">10:00 AM - 6:00 PM</TableCell>
                 </TableRow>
                  <TableRow>
@@ -184,8 +184,8 @@ export default function Dashboard() {
                     <div className="font-medium">Noah Brown</div>
                     <div className="text-sm text-muted-foreground hidden md:inline">noah@workflow.com</div>
                   </TableCell>
-                  <TableCell>Design</TableCell>
-                  <TableCell className="hidden sm:table-cell"><Badge variant="secondary" className="bg-yellow-100 text-yellow-800">On Break</Badge></TableCell>
+                  <TableCell>Diseño</TableCell>
+                  <TableCell className="hidden sm:table-cell"><Badge variant="secondary" className="bg-yellow-100 text-yellow-800">En Descanso</Badge></TableCell>
                   <TableCell className="text-right">9:30 AM - 5:30 PM</TableCell>
                 </TableRow>
                  <TableRow>
@@ -193,8 +193,8 @@ export default function Dashboard() {
                     <div className="font-medium">Ava Smith</div>
                     <div className="text-sm text-muted-foreground hidden md:inline">ava@workflow.com</div>
                   </TableCell>
-                  <TableCell>Sales</TableCell>
-                   <TableCell className="hidden sm:table-cell"><Badge variant="outline">Clocked Out</Badge></TableCell>
+                  <TableCell>Ventas</TableCell>
+                   <TableCell className="hidden sm:table-cell"><Badge variant="outline">Salida Marcada</Badge></TableCell>
                   <TableCell className="text-right">9:00 AM - 5:00 PM</TableCell>
                 </TableRow>
               </TableBody>

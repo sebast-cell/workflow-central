@@ -5,18 +5,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Folder, File, PenSquare, Upload, MoreHorizontal } from "lucide-react";
 
 const folders = [
-  { name: "Employment Documents", count: 12 },
-  { name: "Paystubs", count: 48 },
-  { name: "Receipts & Tickets", count: 34 },
-  { name: "Justifications", count: 8 },
-  { name: "ID & Check Photos", count: 21 },
+  { name: "Documentos Laborales", count: 12 },
+  { name: "Nóminas", count: 48 },
+  { name: "Recibos y Tickets", count: 34 },
+  { name: "Justificantes", count: 8 },
+  { name: "Fotos de ID y Cheques", count: 21 },
 ];
 
 const recentFiles = [
-    { name: "Contract_Olivia_Martin.pdf", size: "2.1 MB", uploaded: "2024-08-10", signature: "Pending" },
-    { name: "Receipt_August_Internet.png", size: "300 KB", uploaded: "2024-08-09", signature: null },
-    { name: "Justification_Medical_JLee.pdf", size: "500 KB", uploaded: "2024-08-08", signature: "Signed" },
-    { name: "Paystub_July_2024.pdf", size: "1.2 MB", uploaded: "2024-08-01", signature: null },
+    { name: "Contrato_Olivia_Martin.pdf", size: "2.1 MB", uploaded: "2024-08-10", signature: "Pendiente" },
+    { name: "Recibo_Agosto_Internet.png", size: "300 KB", uploaded: "2024-08-09", signature: null },
+    { name: "Justificante_Medico_JLee.pdf", size: "500 KB", uploaded: "2024-08-08", signature: "Firmado" },
+    { name: "Nomina_Julio_2024.pdf", size: "1.2 MB", uploaded: "2024-08-01", signature: null },
 ]
 
 export default function DocumentsPage() {
@@ -24,12 +24,12 @@ export default function DocumentsPage() {
     <div className="space-y-8">
        <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-headline font-bold tracking-tight">Document Management</h1>
-          <p className="text-muted-foreground">Upload, organize, and manage company and employee documents.</p>
+          <h1 className="text-3xl font-headline font-bold tracking-tight">Gestión de Documentos</h1>
+          <p className="text-muted-foreground">Sube, organiza y gestiona documentos de la empresa y los empleados.</p>
         </div>
          <Button>
             <Upload className="mr-2 h-4 w-4" />
-            Upload Document
+            Subir Documento
         </Button>
       </div>
 
@@ -39,7 +39,7 @@ export default function DocumentsPage() {
                 <CardContent className="pt-6">
                     <div className="flex items-center justify-between">
                         <Folder className="h-8 w-8 text-primary"/>
-                        <span className="text-xs text-muted-foreground">{folder.count} files</span>
+                        <span className="text-xs text-muted-foreground">{folder.count} archivos</span>
                     </div>
                     <p className="font-semibold mt-4">{folder.name}</p>
                 </CardContent>
@@ -49,18 +49,18 @@ export default function DocumentsPage() {
 
       <Card>
         <CardHeader>
-            <CardTitle className="font-headline">Recently Uploaded Files</CardTitle>
-            <CardDescription>A list of the most recently added documents.</CardDescription>
+            <CardTitle className="font-headline">Archivos Subidos Recientemente</CardTitle>
+            <CardDescription>Una lista de los documentos añadidos más recientemente.</CardDescription>
         </CardHeader>
         <CardContent>
              <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead>File Name</TableHead>
-                        <TableHead>Size</TableHead>
-                        <TableHead>Date Uploaded</TableHead>
-                        <TableHead>Signature Status</TableHead>
-                        <TableHead><span className="sr-only">Actions</span></TableHead>
+                        <TableHead>Nombre del Archivo</TableHead>
+                        <TableHead>Tamaño</TableHead>
+                        <TableHead>Fecha de Subida</TableHead>
+                        <TableHead>Estado de Firma</TableHead>
+                        <TableHead><span className="sr-only">Acciones</span></TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -74,9 +74,9 @@ export default function DocumentsPage() {
                             <TableCell>{file.uploaded}</TableCell>
                             <TableCell>
                                 {file.signature ? (
-                                    <Badge variant={file.signature === 'Signed' ? 'secondary' : 'default'} className={
-                                        file.signature === 'Signed' ? 'bg-green-100 text-green-800' :
-                                        file.signature === 'Pending' ? 'bg-yellow-100 text-yellow-800' : ''
+                                    <Badge variant={file.signature === 'Firmado' ? 'secondary' : 'default'} className={
+                                        file.signature === 'Firmado' ? 'bg-green-100 text-green-800' :
+                                        file.signature === 'Pendiente' ? 'bg-yellow-100 text-yellow-800' : ''
                                     }>
                                         {file.signature}
                                     </Badge>
@@ -88,7 +88,7 @@ export default function DocumentsPage() {
                                 {file.name.endsWith('.pdf') && !file.signature && (
                                     <Button variant="ghost" size="sm">
                                         <PenSquare className="mr-2 h-4 w-4"/>
-                                        Request Signature
+                                        Solicitar Firma
                                     </Button>
                                 )}
                             </TableCell>

@@ -1,11 +1,11 @@
 // This file is machine-generated - edit with caution!
 'use server';
 /**
- * @fileOverview A flow for generating customizable reports on employee data using AI.
+ * @fileOverview Un flujo para generar informes personalizables sobre datos de empleados usando IA.
  *
- * - generateEmployeeReport - A function that generates the employee report.
- * - GenerateEmployeeReportInput - The input type for the generateEmployeeReport function.
- * - GenerateEmployeeReportOutput - The return type for the generateEmployeeReport function.
+ * - generateEmployeeReport - Una función que genera el informe del empleado.
+ * - GenerateEmployeeReportInput - El tipo de entrada para la función generateEmployeeReport.
+ * - GenerateEmployeeReportOutput - El tipo de retorno para la función generateEmployeeReport.
  */
 
 import {ai} from '@/ai/genkit';
@@ -15,21 +15,21 @@ const GenerateEmployeeReportInputSchema = z.object({
   reportType: z
     .string()
     .describe(
-      'The type of report to generate (attendance, absences, project costs, etc.)'
+      'El tipo de informe a generar (asistencia, ausencias, costos de proyecto, etc.)'
     ),
   informationDetails: z
     .string()
-    .describe('Specific information to include in the report.'),
-  dateRange: z.string().describe('The date range for the report (e.g., last month, Q1 2024).'),
-  timeRange: z.string().describe('The time range for the report.'),
+    .describe('Información específica para incluir en el informe.'),
+  dateRange: z.string().describe('El rango de fechas para el informe (ej., último mes, T1 2024).'),
+  timeRange: z.string().describe('El rango de tiempo para el informe.'),
   format: z
     .string()
-    .describe('The desired format for the report (PDF, Excel, CSV).'),
+    .describe('El formato deseado para el informe (PDF, Excel, CSV).'),
 });
 export type GenerateEmployeeReportInput = z.infer<typeof GenerateEmployeeReportInputSchema>;
 
 const GenerateEmployeeReportOutputSchema = z.object({
-  report: z.string().describe('The generated employee report in the specified format.'),
+  report: z.string().describe('El informe del empleado generado en el formato especificado.'),
 });
 export type GenerateEmployeeReportOutput = z.infer<typeof GenerateEmployeeReportOutputSchema>;
 
@@ -43,17 +43,17 @@ const generateEmployeeReportPrompt = ai.definePrompt({
   name: 'generateEmployeeReportPrompt',
   input: {schema: GenerateEmployeeReportInputSchema},
   output: {schema: GenerateEmployeeReportOutputSchema},
-  prompt: `You are an AI assistant specialized in generating reports based on employee data.
+  prompt: `Eres un asistente de IA especializado en generar informes basados en datos de empleados.
 
-  Based on the provided criteria, generate a comprehensive and well-formatted report.
+  Basado en los criterios proporcionados, genera un informe completo y bien formateado.
 
-  Report Type: {{{reportType}}}
-  Information Details: {{{informationDetails}}}
-  Date Range: {{{dateRange}}}
-  Time Range: {{{timeRange}}}
-  Format: {{{format}}}
+  Tipo de Informe: {{{reportType}}}
+  Detalles de Información: {{{informationDetails}}}
+  Rango de Fechas: {{{dateRange}}}
+  Rango de Tiempo: {{{timeRange}}}
+  Formato: {{{format}}}
 
-  Ensure the report is accurate, insightful, and easy to understand for administrators to make data-driven decisions.`,
+  Asegúrate de que el informe sea preciso, revelador y fácil de entender para que los administradores tomen decisiones basadas en datos.`,
 });
 
 const generateEmployeeReportFlow = ai.defineFlow(
