@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -264,6 +264,10 @@ export default function SettingsPage() {
   const [holidayFormData, setHolidayFormData] = useState<{name: string, date: Date | undefined}>({ name: "", date: undefined });
   
   const allSchedules = ['Horario Fijo', 'Horario Flexible', ...shifts.map(s => s.name)];
+
+  const handleHolidayDateSelect = useCallback((date: Date | undefined) => {
+    setHolidayFormData(prev => ({ ...prev, date: date }));
+  }, []);
 
   useEffect(() => {
     setIsClient(true);
@@ -1017,7 +1021,7 @@ export default function SettingsPage() {
                                     <Label htmlFor={`range-end-${index}`}>Fin</Label>
                                     <Input id={`range-end-${index}`} type="time" value={range.end} onChange={e => setFixedScheduleFormData(prev => ({...prev, ranges: prev.ranges.map(r => r.id === range.id ? {...r, end: e.target.value} : r)}))}/>
                                 </div>
-                                <Button variant="ghost" size="icon" disabled={fixedScheduleFormData.ranges.length <= 1} onClick={() => setFixedScheduleFormData(prev => ({...prev, ranges: prev.ranges.filter(r => r.id !== range.id)}))}>
+                                <Button type="button" variant="ghost" size="icon" disabled={fixedScheduleFormData.ranges.length <= 1} onClick={() => setFixedScheduleFormData(prev => ({...prev, ranges: prev.ranges.filter(r => r.id !== range.id)}))}>
                                     <Trash2 className="h-4 w-4 text-destructive"/>
                                 </Button>
                              </div>
@@ -1362,12 +1366,12 @@ export default function SettingsPage() {
                                                     <Label>Fecha</Label>
                                                     <Popover>
                                                         <PopoverTrigger asChild>
-                                                            <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !holidayFormData.date && "text-muted-foreground")}>
+                                                            <Button type="button" variant="outline" className={cn("w-full justify-start text-left font-normal", !holidayFormData.date && "text-muted-foreground")}>
                                                                 <CalendarIcon className="mr-2 h-4 w-4" />
                                                                 {holidayFormData.date ? format(holidayFormData.date, "PPP") : <span>Elige una fecha</span>}
                                                             </Button>
                                                         </PopoverTrigger>
-                                                        <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={holidayFormData.date} onSelect={date => setHolidayFormData({...holidayFormData, date})} initialFocus/></PopoverContent>
+                                                        <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={holidayFormData.date} onSelect={handleHolidayDateSelect} initialFocus/></PopoverContent>
                                                     </Popover>
                                                 </div>
                                             </div>
