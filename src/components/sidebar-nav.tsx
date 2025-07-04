@@ -10,6 +10,7 @@ import {
   Folder,
   LayoutDashboard,
   Settings,
+  TrendingUp,
   Users,
 } from 'lucide-react';
 import {
@@ -24,6 +25,7 @@ const navItems = [
   { href: '/attendance', label: 'Asistencia', icon: Clock },
   { href: '/absences', label: 'Ausencias y TL', icon: CalendarOff },
   { href: '/projects', label: 'Proyectos', icon: Briefcase },
+  { href: '/performance', label: 'Desempeño', icon: TrendingUp },
   { href: '/documents', label: 'Documentos', icon: Folder },
   { href: '/reports', label: 'Informes', icon: FileText },
 ];
