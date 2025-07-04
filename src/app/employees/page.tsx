@@ -2,8 +2,18 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Download, MoreHorizontal, PlusCircle, Search } from "lucide-react";
@@ -52,10 +62,68 @@ export default function EmployeesPage() {
                 <Download className="mr-2 h-4 w-4" />
                 Exportar Excel
               </Button>
-              <Button className="w-full sm:w-auto">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Añadir Empleado
-              </Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button className="w-full sm:w-auto">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Añadir Empleado
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle className="font-headline">Añadir Nuevo Empleado</DialogTitle>
+                    <DialogDescription>
+                      Rellena los datos para añadir un nuevo miembro al equipo.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="name" className="text-right">
+                        Nombre
+                      </Label>
+                      <Input id="name" placeholder="Ej. Juan Pérez" className="col-span-3" />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="email" className="text-right">
+                        Email
+                      </Label>
+                      <Input id="email" type="email" placeholder="juan@ejemplo.com" className="col-span-3" />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="department" className="text-right">
+                        Departamento
+                      </Label>
+                      <Select>
+                        <SelectTrigger id="department" className="col-span-3">
+                          <SelectValue placeholder="Seleccionar" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="engineering">Ingeniería</SelectItem>
+                          <SelectItem value="design">Diseño</SelectItem>
+                          <SelectItem value="marketing">Marketing</SelectItem>
+                          <SelectItem value="sales">Ventas</SelectItem>
+                          <SelectItem value="hr">RRHH</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="role" className="text-right">
+                        Rol
+                      </Label>
+                      <Input id="role" placeholder="Ej. Desarrollador Frontend" className="col-span-3" />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="schedule" className="text-right">
+                        Horario
+                      </Label>
+                      <Input id="schedule" placeholder="Ej. 9-5" className="col-span-3" />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button type="submit">Añadir Empleado</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </CardHeader>
