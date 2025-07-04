@@ -14,6 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const allPermissions = [
   { id: 'view_dashboard', label: 'Ver Panel Principal' },
@@ -50,6 +51,11 @@ type Break = {
   duration: number; // in minutes
 }
 
+type ClockInType = {
+  name: string;
+  color: string;
+};
+
 const initialCenters: Center[] = [
   { name: "Oficina Central", address: "123 Calle Principal, Anytown", radius: 100 },
   { name: "Almacén Norte", address: "456 Avenida Industrial, Anytown", radius: 150 },
@@ -71,11 +77,26 @@ const initialBreaks: Break[] = [
     { name: "Descanso de Comida", remunerated: false, duration: 60 },
     { name: "Pausa para Café", remunerated: true, duration: 15 },
 ]
+const initialClockInTypes: ClockInType[] = [
+    { name: "Reunión", color: "bg-blue-500" },
+    { name: "Viaje de Trabajo", color: "bg-purple-500" },
+    { name: "Comida de negocios", color: "bg-orange-500" },
+];
 
 const CENTERS_STORAGE_KEY = 'workflow-central-centers';
 const DEPARTMENTS_STORAGE_KEY = 'workflow-central-departments';
 const ROLES_STORAGE_KEY = 'workflow-central-roles';
 const BREAKS_STORAGE_KEY = 'workflow-central-breaks';
+const CLOCK_IN_TYPES_STORAGE_KEY = 'workflow-central-clock-in-types';
+
+const projectColors = [
+    { value: 'bg-blue-500', label: 'Azul' },
+    { value: 'bg-purple-500', label: 'Morado' },
+    { value: 'bg-green-500', label: 'Verde' },
+    { value: 'bg-orange-500', label: 'Naranja' },
+    { value: 'bg-red-500', label: 'Rojo' },
+    { value: 'bg-gray-500', label: 'Gris' },
+];
 
 export default function SettingsPage() {
   const [isClient, setIsClient] = useState(false);
@@ -84,6 +105,7 @@ export default function SettingsPage() {
   const [departments, setDepartments] = useState<Department[]>(initialDepartments);
   const [roles, setRoles] = useState<Role[]>(initialRoles);
   const [breaks, setBreaks] = useState<Break[]>(initialBreaks);
+  const [clockInTypes, setClockInTypes] = useState<ClockInType[]>(initialClockInTypes);
   
   const [isCenterDialogOpen, setIsCenterDialogOpen] = useState(false);
   const [dialogCenterMode, setDialogCenterMode] = useState<'add' | 'edit'>('add');
@@ -104,6 +126,11 @@ export default function SettingsPage() {
   const [dialogBreakMode, setDialogBreakMode] = useState<'add' | 'edit'>('add');
   const [selectedBreak, setSelectedBreak] = useState<Break | null>(null);
   const [breakFormData, setBreakFormData] = useState<Break>({ name: "", remunerated: false, duration: 30 });
+  
+  const [isClockInTypeDialogOpen, setIsClockInTypeDialogOpen] = useState(false);
+  const [dialogClockInTypeMode, setDialogClockInTypeMode] = useState<'add' | 'edit'>('add');
+  const [selectedClockInType, setSelectedClockInType] = useState<ClockInType | null>(null);
+  const [clockInTypeFormData, setClockInTypeFormData] = useState<ClockInType>({ name: "", color: "bg-blue-500" });
 
   const absenceTypes = [
     { name: "Vacaciones", remunerated: true, limit: "Anual" },
@@ -140,6 +167,10 @@ export default function SettingsPage() {
         if (storedBreaks) setBreaks(JSON.parse(storedBreaks));
         else localStorage.setItem(BREAKS_STORAGE_KEY, JSON.stringify(initialBreaks));
 
+        const storedClockInTypes = localStorage.getItem(CLOCK_IN_TYPES_STORAGE_KEY);
+        if (storedClockInTypes) setClockInTypes(JSON.parse(storedClockInTypes));
+        else localStorage.setItem(CLOCK_IN_TYPES_STORAGE_KEY, JSON.stringify(initialClockInTypes));
+
       } catch (error) {
         console.error("Failed to access localStorage", error);
       }
@@ -152,8 +183,9 @@ export default function SettingsPage() {
       localStorage.setItem(DEPARTMENTS_STORAGE_KEY, JSON.stringify(departments));
       localStorage.setItem(ROLES_STORAGE_KEY, JSON.stringify(roles));
       localStorage.setItem(BREAKS_STORAGE_KEY, JSON.stringify(breaks));
+      localStorage.setItem(CLOCK_IN_TYPES_STORAGE_KEY, JSON.stringify(clockInTypes));
     }
-  }, [centers, departments, roles, breaks, isClient]);
+  }, [centers, departments, roles, breaks, clockInTypes, isClient]);
 
 
   const openAddRoleDialog = () => {
@@ -277,6 +309,36 @@ export default function SettingsPage() {
     setBreaks(prev => prev.filter(b => b.name !== breakName));
   };
   
+  const openAddClockInTypeDialog = () => {
+    setDialogClockInTypeMode('add');
+    setSelectedClockInType(null);
+    setClockInTypeFormData({ name: "", color: "bg-blue-500" });
+    setIsClockInTypeDialogOpen(true);
+  };
+
+  const openEditClockInTypeDialog = (type: ClockInType) => {
+    setDialogClockInTypeMode('edit');
+    setSelectedClockInType(type);
+    setClockInTypeFormData(type);
+    setIsClockInTypeDialogOpen(true);
+  };
+
+  const handleClockInTypeFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!clockInTypeFormData.name) return;
+
+    if (dialogClockInTypeMode === 'add') {
+      setClockInTypes(prev => [...prev, clockInTypeFormData]);
+    } else if (dialogClockInTypeMode === 'edit' && selectedClockInType) {
+      setClockInTypes(prev => prev.map(t => (t.name === selectedClockInType.name ? clockInTypeFormData : t)));
+    }
+    setIsClockInTypeDialogOpen(false);
+  };
+
+  const handleDeleteClockInType = (typeName: string) => {
+    setClockInTypes(prev => prev.filter(t => t.name !== typeName));
+  };
+
   if (!isClient) return null;
 
   return (
@@ -691,6 +753,66 @@ export default function SettingsPage() {
             </Card>
         </TabsContent>
         
+        <TabsContent value="checkin-types" className="space-y-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="font-headline">Tipos de Fichaje</CardTitle>
+                <CardDescription>Marca fichajes diferentes al normal, asignando un color para diferenciarlos.</CardDescription>
+              </div>
+              <Dialog open={isClockInTypeDialogOpen} onOpenChange={setIsClockInTypeDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button onClick={openAddClockInTypeDialog}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Tipo</Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle className="font-headline">{dialogClockInTypeMode === 'add' ? 'Añadir Nuevo Tipo de Fichaje' : 'Editar Tipo de Fichaje'}</DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={handleClockInTypeFormSubmit}>
+                    <div className="grid gap-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="clockintype-name">Nombre del Tipo</Label>
+                        <Input id="clockintype-name" value={clockInTypeFormData.name} onChange={(e) => setClockInTypeFormData({...clockInTypeFormData, name: e.target.value})} placeholder="Ej. Reunión Cliente" required/>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Color</Label>
+                        <RadioGroup value={clockInTypeFormData.color} onValueChange={(value) => setClockInTypeFormData({...clockInTypeFormData, color: value})} className="flex flex-wrap gap-4 pt-2">
+                          {projectColors.map(color => (
+                            <div key={color.value} className="flex items-center space-x-2">
+                              <RadioGroupItem value={color.value} id={`color-${color.value}`} className="h-6 w-6">
+                                <div className={`h-6 w-6 rounded-full ${color.value}`}></div>
+                              </RadioGroupItem>
+                            </div>
+                          ))}
+                        </RadioGroup>
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button type="submit">{dialogClockInTypeMode === 'add' ? 'Añadir' : 'Guardar'}</Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {clockInTypes.map((type, index) => (
+                <div key={index} className="flex items-center justify-between rounded-lg border p-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`h-4 w-4 rounded-full ${type.color}`}></div>
+                    <h3 className="font-semibold">{type.name}</h3>
+                  </div>
+                  <div className="flex items-center">
+                    <Button variant="ghost" size="sm" onClick={() => openEditClockInTypeDialog(type)}>Editar</Button>
+                    <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDeleteClockInType(type.name)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="vacations" className="space-y-4">
             <Card>
                 <CardHeader>
