@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,11 +43,39 @@ const initialEmployees: Employee[] = [
   { id: 6, name: "Liam Garcia", email: "liam.garcia@example.com", department: "RRHH", role: "Generalista de RRHH", status: "Activo", schedule: "8-4", avatar: "LG", workCenter: "Oficina Central", manager: "Noah Brown" },
 ];
 
+const EMPLOYEES_STORAGE_KEY = 'workflow-central-employees';
+
 export default function EmployeesPage() {
-  const [employees, setEmployees] = useState(initialEmployees);
+  const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add');
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (isClient) {
+      try {
+        const storedEmployees = localStorage.getItem(EMPLOYEES_STORAGE_KEY);
+        if (storedEmployees) {
+          setEmployees(JSON.parse(storedEmployees));
+        } else {
+          localStorage.setItem(EMPLOYEES_STORAGE_KEY, JSON.stringify(initialEmployees));
+        }
+      } catch (error) {
+        console.error("Failed to access localStorage for employees", error);
+      }
+    }
+  }, [isClient]);
+
+  useEffect(() => {
+    if (isClient) {
+      localStorage.setItem(EMPLOYEES_STORAGE_KEY, JSON.stringify(employees));
+    }
+  }, [employees, isClient]);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -111,6 +139,10 @@ export default function EmployeesPage() {
 
     setIsDialogOpen(false);
   };
+  
+  if (!isClient) {
+    return null; // or a loading skeleton
+  }
 
   return (
     <div className="space-y-8">

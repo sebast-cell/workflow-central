@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -12,12 +12,35 @@ import Link from "next/link";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 
-const initialProjects = [
-  { id: 1, name: "Rediseño del Sitio Web", client: "Innovate Inc.", progress: 75, color: "bg-blue-500" },
-  { id: 2, name: "Desarrollo de App Móvil", client: "Tech Solutions", progress: 40, color: "bg-purple-500" },
-  { id: 3, name: "Campaña de Marketing", client: "Growth Co.", progress: 90, color: "bg-green-500" },
-  { id: 4, name: "Integración de API", client: "Connective", progress: 25, color: "bg-orange-500" },
-  { id: 5, name: "Análisis de Informe T3", client: "Interno", progress: 100, color: "bg-gray-500" },
+type Task = {
+    id: number;
+    name: string;
+    assignee: string;
+    status: "Completado" | "En Progreso" | "Pendiente";
+    hours: number;
+};
+
+type Project = {
+    id: number;
+    name: string;
+    client: string;
+    progress: number;
+    color: string;
+    members: string[];
+    tasks: Task[];
+};
+
+const initialProjects: Project[] = [
+  { id: 1, name: "Rediseño del Sitio Web", client: "Innovate Inc.", progress: 75, color: "bg-blue-500", members: ["OM", "JL", "IN"], tasks: [
+    {id: 1, name: "Investigación y Análisis", assignee: "Olivia Martin", status: "Completado", hours: 20},
+    {id: 2, name: "Diseño de Wireframes", assignee: "Jackson Lee", status: "En Progreso", hours: 15},
+    {id: 3, name: "Desarrollo de Componentes UI", assignee: "Olivia Martin", status: "En Progreso", hours: 25},
+    {id: 4, name: "Pruebas de Usuario", assignee: "Isabella Nguyen", status: "Pendiente", hours: 10},
+  ] },
+  { id: 2, name: "Desarrollo de App Móvil", client: "Tech Solutions", progress: 40, color: "bg-purple-500", members: ["WK", "SD"], tasks: [] },
+  { id: 3, name: "Campaña de Marketing", client: "Growth Co.", progress: 90, color: "bg-green-500", members: ["IN", "LG"], tasks: [] },
+  { id: 4, name: "Integración de API", client: "Connective", progress: 25, color: "bg-orange-500", members: ["WK"], tasks: [] },
+  { id: 5, name: "Análisis de Informe T3", client: "Interno", progress: 100, color: "bg-gray-500", members: ["LG"], tasks: [] },
 ];
 
 const projectColors = [
@@ -29,9 +52,13 @@ const projectColors = [
     { value: 'bg-gray-500', label: 'Gris' },
 ];
 
+const PROJECTS_STORAGE_KEY = 'workflow-central-projects';
+
 export default function ProjectsPage() {
-  const [projects, setProjects] = useState(initialProjects);
+  const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+  
   const [newProjectData, setNewProjectData] = useState({
     name: "",
     client: "",
@@ -39,6 +66,31 @@ export default function ProjectsPage() {
     color: "bg-blue-500",
     isPrivate: false,
   });
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (isClient) {
+      try {
+        const storedProjects = localStorage.getItem(PROJECTS_STORAGE_KEY);
+        if (storedProjects) {
+          setProjects(JSON.parse(storedProjects));
+        } else {
+          localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(initialProjects));
+        }
+      } catch (error) {
+        console.error("Failed to access localStorage for projects", error);
+      }
+    }
+  }, [isClient]);
+
+  useEffect(() => {
+    if (isClient) {
+      localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(projects));
+    }
+  }, [projects, isClient]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -57,12 +109,14 @@ export default function ProjectsPage() {
     e.preventDefault();
     if (!newProjectData.name) return;
 
-    const newProject = {
+    const newProject: Project = {
       id: projects.length > 0 ? Math.max(...projects.map(p => p.id)) + 1 : 1,
       name: newProjectData.name,
       client: newProjectData.client || "Interno",
       progress: 0,
       color: newProjectData.color,
+      members: [],
+      tasks: [],
     };
 
     setProjects(prev => [...prev, newProject]);
@@ -75,6 +129,10 @@ export default function ProjectsPage() {
       isPrivate: false,
     });
   };
+
+  if (!isClient) {
+    return null; // Or a loading skeleton
+  }
 
   return (
     <div className="space-y-8">

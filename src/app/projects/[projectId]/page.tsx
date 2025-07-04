@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,20 +34,6 @@ type Project = {
     tasks: Task[];
 };
 
-// Mock data - In a real app, this would be fetched from an API
-const initialProjects: Project[] = [
-  { id: 1, name: "Rediseño del Sitio Web", client: "Innovate Inc.", progress: 75, color: "bg-blue-500", members: ["OM", "JL", "IN"], tasks: [
-    {id: 1, name: "Investigación y Análisis", assignee: "Olivia Martin", status: "Completado", hours: 20},
-    {id: 2, name: "Diseño de Wireframes", assignee: "Jackson Lee", status: "En Progreso", hours: 15},
-    {id: 3, name: "Desarrollo de Componentes UI", assignee: "Olivia Martin", status: "En Progreso", hours: 25},
-    {id: 4, name: "Pruebas de Usuario", assignee: "Isabella Nguyen", status: "Pendiente", hours: 10},
-  ] },
-  { id: 2, name: "Desarrollo de App Móvil", client: "Tech Solutions", progress: 40, color: "bg-purple-500", members: ["WK", "SD"], tasks: [] },
-  { id: 3, name: "Campaña de Marketing", client: "Growth Co.", progress: 90, color: "bg-green-500", members: ["IN", "LG"], tasks: [] },
-  { id: 4, name: "Integración de API", client: "Connective", progress: 25, color: "bg-orange-500", members: ["WK"], tasks: [] },
-  { id: 5, name: "Análisis de Informe T3", client: "Interno", progress: 100, color: "bg-gray-500", members: ["LG"], tasks: [] },
-];
-
 const membersData: {[key: string]: { name: string, role: string, avatar: string }} = {
     "OM": { name: "Olivia Martin", role: "Desarrollador Frontend", avatar: "OM"},
     "JL": { name: "Jackson Lee", role: "Diseñador UI/UX", avatar: "JL" },
@@ -57,34 +43,75 @@ const membersData: {[key: string]: { name: string, role: string, avatar: string 
     "LG": { name: "Liam Garcia", role: "Generalista de RRHH", avatar: "LG" },
 }
 
+const PROJECTS_STORAGE_KEY = 'workflow-central-projects';
+
 export default function ProjectDetailsPage() {
     const params = useParams();
     const projectId = params.projectId;
-    const [project, setProject] = useState(initialProjects.find(p => p.id.toString() === projectId));
+    const [projects, setProjects] = useState<Project[]>([]);
+    const [isClient, setIsClient] = useState(false);
+    const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
 
-    if (!project) {
-        return <div className="p-8">Proyecto no encontrado.</div>
-    }
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
+
+    useEffect(() => {
+        if (isClient) {
+            try {
+                const storedProjects = localStorage.getItem(PROJECTS_STORAGE_KEY);
+                if (storedProjects) {
+                    setProjects(JSON.parse(storedProjects));
+                }
+            } catch (error) {
+                console.error("Failed to load projects from localStorage", error);
+            }
+        }
+    }, [isClient]);
+
+    useEffect(() => {
+        if (isClient) {
+            localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(projects));
+        }
+    }, [projects, isClient]);
+
+    const project = projects.find(p => p.id.toString() === projectId);
 
     const handleAddTask = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
         const name = formData.get('taskName') as string;
-        const assignee = formData.get('assignee') as string;
+        const assigneeKey = formData.get('assignee') as string;
         const status = formData.get('status') as "Completado" | "En Progreso" | "Pendiente";
         
-        if (!name || !assignee || !status) return;
+        if (!name || !assigneeKey || !status) return;
 
         const newTask: Task = {
             id: Date.now(),
             name,
-            assignee: membersData[assignee].name,
+            assignee: membersData[assigneeKey].name,
             status,
             hours: 0,
         }
         
-        setProject(prev => prev ? {...prev, tasks: [...prev.tasks, newTask]} : undefined);
+        setProjects(prevProjects => 
+            prevProjects.map(p => 
+                p.id.toString() === projectId ? { ...p, tasks: [...p.tasks, newTask] } : p
+            )
+        );
+        setIsTaskDialogOpen(false);
     }
+    
+    const handleDeleteTask = (taskId: number) => {
+        setProjects(prevProjects => 
+            prevProjects.map(p => {
+                if (p.id.toString() === projectId) {
+                    return { ...p, tasks: p.tasks.filter(t => t.id !== taskId) };
+                }
+                return p;
+            })
+        );
+    };
 
     const getStatusBadge = (status: string) => {
         switch(status) {
@@ -93,6 +120,14 @@ export default function ProjectDetailsPage() {
             case "Pendiente": return "bg-gray-100 text-gray-800";
             default: return "bg-gray-100 text-gray-800";
         }
+    }
+    
+    if (!isClient) {
+        return <div className="p-8">Cargando proyecto...</div>;
+    }
+
+    if (!project) {
+        return <div className="p-8">Proyecto no encontrado.</div>
     }
 
     return (
@@ -139,7 +174,7 @@ export default function ProjectDetailsPage() {
                              <CardTitle className="font-headline">Lista de Tareas</CardTitle>
                              <CardDescription>Seguimiento de todas las tareas asociadas al proyecto.</CardDescription>
                            </div>
-                           <Dialog>
+                           <Dialog open={isTaskDialogOpen} onOpenChange={setIsTaskDialogOpen}>
                                <DialogTrigger asChild>
                                     <Button><PlusCircle className="mr-2 h-4 w-4"/> Nueva Tarea</Button>
                                </DialogTrigger>
@@ -206,7 +241,9 @@ export default function ProjectDetailsPage() {
                                             <TableCell><Badge variant="secondary" className={getStatusBadge(task.status)}>{task.status}</Badge></TableCell>
                                             <TableCell className="text-right">{task.hours}h</TableCell>
                                             <TableCell className="text-right">
-                                                <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                                                <Button variant="ghost" size="icon" onClick={() => handleDeleteTask(task.id)}>
+                                                    <Trash2 className="h-4 w-4 text-destructive"/>
+                                                </Button>
                                             </TableCell>
                                         </TableRow>
                                     ))}
