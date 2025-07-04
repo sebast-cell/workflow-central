@@ -12,16 +12,27 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Download, MoreHorizontal, PlusCircle, Search } from "lucide-react";
+import { Download, MoreHorizontal, PlusCircle, Search, UploadCloud, Link as LinkIcon } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-const initialEmployees = [
+type Employee = {
+    id: number;
+    name: string;
+    email: string;
+    department: string;
+    role: string;
+    status: string;
+    schedule: string;
+    avatar: string;
+}
+
+const initialEmployees: Employee[] = [
   { id: 1, name: "Olivia Martin", email: "olivia.martin@example.com", department: "Ingeniería", role: "Desarrollador Frontend", status: "Activo", schedule: "9-5", avatar: "OM" },
   { id: 2, name: "Jackson Lee", email: "jackson.lee@example.com", department: "Diseño", role: "Diseñador UI/UX", status: "Activo", schedule: "10-6", avatar: "JL" },
   { id: 3, name: "Isabella Nguyen", email: "isabella.nguyen@example.com", department: "Marketing", role: "Estratega de Contenido", status: "Activo", schedule: "9-5", avatar: "IN" },
@@ -33,7 +44,10 @@ const initialEmployees = [
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState(initialEmployees);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [newEmployee, setNewEmployee] = useState({
+  const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add');
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+
+  const [formData, setFormData] = useState({
     name: "",
     email: "",
     department: "",
@@ -43,28 +57,52 @@ export default function EmployeesPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
-    setNewEmployee((prev) => ({ ...prev, [id]: value }));
+    setFormData((prev) => ({ ...prev, [id]: value }));
   };
 
   const handleSelectChange = (id: string, value: string) => {
-    setNewEmployee((prev) => ({ ...prev, [id]: value }));
+    setFormData((prev) => ({ ...prev, [id]: value }));
   };
 
-  const handleAddEmployee = (e: React.FormEvent) => {
+  const openAddDialog = () => {
+    setDialogMode('add');
+    setSelectedEmployee(null);
+    setFormData({ name: "", email: "", department: "", role: "", schedule: "" });
+    setIsDialogOpen(true);
+  }
+
+  const openEditDialog = (employee: Employee) => {
+    setDialogMode('edit');
+    setSelectedEmployee(employee);
+    setFormData({
+        name: employee.name,
+        email: employee.email,
+        department: employee.department,
+        role: employee.role,
+        schedule: employee.schedule,
+    });
+    setIsDialogOpen(true);
+  }
+
+  const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newEmployee.name || !newEmployee.email) return; 
+    if (!formData.name || !formData.email) return; 
 
-    const newId = employees.length > 0 ? Math.max(...employees.map(emp => emp.id)) + 1 : 1;
-    const avatar = newEmployee.name.split(' ').map(n => n[0]).join('').toUpperCase();
-    
-    setEmployees(prev => [...prev, {
-      id: newId,
-      ...newEmployee,
-      status: "Activo",
-      avatar: avatar,
-    }]);
+    if (dialogMode === 'add') {
+        const newId = employees.length > 0 ? Math.max(...employees.map(emp => emp.id)) + 1 : 1;
+        const avatar = formData.name.split(' ').map(n => n[0]).join('').toUpperCase();
+        setEmployees(prev => [...prev, {
+          id: newId,
+          ...formData,
+          status: "Activo",
+          avatar: avatar,
+        }]);
+    } else if (dialogMode === 'edit' && selectedEmployee) {
+        setEmployees(prev => prev.map(emp => 
+            emp.id === selectedEmployee.id ? { ...emp, ...formData } : emp
+        ));
+    }
 
-    setNewEmployee({ name: "", email: "", department: "", role: "", schedule: "" });
     setIsDialogOpen(false);
   };
 
@@ -85,7 +123,7 @@ export default function EmployeesPage() {
                 className="pl-8 w-full"
               />
             </div>
-            <div className="flex gap-2 w-full sm:w-auto">
+            <div className="flex gap-2 w-full sm:w-auto flex-wrap">
               <Select>
                 <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="Filtrar por Departamento" />
@@ -102,70 +140,10 @@ export default function EmployeesPage() {
                 <Download className="mr-2 h-4 w-4" />
                 Exportar Excel
               </Button>
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="w-full sm:w-auto">
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Añadir Empleado
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                  <DialogHeader>
-                    <DialogTitle className="font-headline">Añadir Nuevo Empleado</DialogTitle>
-                    <DialogDescription>
-                      Rellena los datos para añadir un nuevo miembro al equipo.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <form onSubmit={handleAddEmployee}>
-                    <div className="grid gap-4 py-4">
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="name" className="text-right">
-                          Nombre
-                        </Label>
-                        <Input id="name" value={newEmployee.name} onChange={handleInputChange} placeholder="Ej. Juan Pérez" className="col-span-3" required />
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="email" className="text-right">
-                          Email
-                        </Label>
-                        <Input id="email" type="email" value={newEmployee.email} onChange={handleInputChange} placeholder="juan@ejemplo.com" className="col-span-3" required />
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="department" className="text-right">
-                          Departamento
-                        </Label>
-                         <Select value={newEmployee.department} onValueChange={(value) => handleSelectChange('department', value)}>
-                          <SelectTrigger id="department" className="col-span-3">
-                            <SelectValue placeholder="Seleccionar" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Ingeniería">Ingeniería</SelectItem>
-                            <SelectItem value="Diseño">Diseño</SelectItem>
-                            <SelectItem value="Marketing">Marketing</SelectItem>
-                            <SelectItem value="Ventas">Ventas</SelectItem>
-                            <SelectItem value="RRHH">RRHH</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="role" className="text-right">
-                          Rol
-                        </Label>
-                        <Input id="role" value={newEmployee.role} onChange={handleInputChange} placeholder="Ej. Desarrollador Frontend" className="col-span-3" />
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="schedule" className="text-right">
-                          Horario
-                        </Label>
-                        <Input id="schedule" value={newEmployee.schedule} onChange={handleInputChange} placeholder="Ej. 9-5" className="col-span-3" />
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button type="submit">Añadir Empleado</Button>
-                    </DialogFooter>
-                  </form>
-                </DialogContent>
-              </Dialog>
+              <Button onClick={openAddDialog} className="w-full sm:w-auto">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Añadir Empleado
+              </Button>
             </div>
           </div>
         </CardHeader>
@@ -214,7 +192,7 @@ export default function EmployeesPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                        <DropdownMenuItem>Editar</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openEditDialog(employee)}>Editar</DropdownMenuItem>
                         <DropdownMenuItem>Ver Perfil</DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem className="text-destructive">Desactivar</DropdownMenuItem>
@@ -227,6 +205,75 @@ export default function EmployeesPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="font-headline">
+                {dialogMode === 'add' ? 'Añadir Nuevo Empleado' : 'Editar Empleado'}
+              </DialogTitle>
+              <DialogDescription>
+                {dialogMode === 'add' ? 'Rellena los datos para añadir un nuevo miembro al equipo.' : `Editando el perfil de ${selectedEmployee?.name}.`}
+              </DialogDescription>
+            </DialogHeader>
+            <Tabs defaultValue="individual" className="w-full">
+                {dialogMode === 'add' && (
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="individual">Individual</TabsTrigger>
+                        <TabsTrigger value="multiple">Múltiple</TabsTrigger>
+                    </TabsList>
+                )}
+                <TabsContent value="individual">
+                    <form onSubmit={handleFormSubmit}>
+                      <div className="grid gap-4 py-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="name">Nombre</Label>
+                          <Input id="name" value={formData.name} onChange={handleInputChange} placeholder="Ej. Juan Pérez" required />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="email">Email</Label>
+                          <Input id="email" type="email" value={formData.email} onChange={handleInputChange} placeholder="juan@ejemplo.com" required />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="department">Departamento</Label>
+                           <Select value={formData.department} onValueChange={(value) => handleSelectChange('department', value)}>
+                            <SelectTrigger id="department">
+                              <SelectValue placeholder="Seleccionar" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Ingeniería">Ingeniería</SelectItem>
+                              <SelectItem value="Diseño">Diseño</SelectItem>
+                              <SelectItem value="Marketing">Marketing</SelectItem>
+                              <SelectItem value="Ventas">Ventas</SelectItem>
+                              <SelectItem value="RRHH">RRHH</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="role">Rol</Label>
+                          <Input id="role" value={formData.role} onChange={handleInputChange} placeholder="Ej. Desarrollador Frontend" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="schedule">Horario</Label>
+                          <Input id="schedule" value={formData.schedule} onChange={handleInputChange} placeholder="Ej. 9-5" />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button type="submit">{dialogMode === 'add' ? 'Añadir Empleado' : 'Guardar Cambios'}</Button>
+                      </DialogFooter>
+                    </form>
+                </TabsContent>
+                <TabsContent value="multiple">
+                    <div className="py-4 space-y-4 text-center">
+                        <p className="text-muted-foreground">Sube un archivo de Excel o envía un enlace de invitación para añadir múltiples empleados a la vez.</p>
+                        <Button variant="outline"><UploadCloud className="mr-2 h-4 w-4" /> Subir Excel</Button>
+                        <Button variant="outline"><LinkIcon className="mr-2 h-4 w-4" /> Enviar Invitaciones</Button>
+                    </div>
+                </TabsContent>
+            </Tabs>
+          </DialogContent>
+        </Dialog>
+
     </div>
   )
 }

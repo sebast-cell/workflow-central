@@ -1,11 +1,28 @@
+'use client';
+
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { List, PlusCircle } from "lucide-react";
 
 export default function SettingsPage() {
+  const [centers, setCenters] = useState([
+    { name: "Oficina Central", address: "123 Calle Principal, Anytown", radius: 100 },
+    { name: "Almacén Norte", address: "456 Avenida Industrial, Anytown", radius: 150 },
+  ]);
+  const [departments, setDepartments] = useState([
+    { name: "Ingeniería" },
+    { name: "Diseño" },
+    { name: "Marketing" },
+    { name: "Ventas" },
+    { name: "RRHH" },
+  ]);
+
   return (
     <div className="space-y-8">
       <div>
@@ -16,6 +33,8 @@ export default function SettingsPage() {
       <Tabs defaultValue="general" className="space-y-4">
         <TabsList>
           <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="centers">Centros de Trabajo</TabsTrigger>
+          <TabsTrigger value="departments">Departamentos</TabsTrigger>
           <TabsTrigger value="security">Seguridad</TabsTrigger>
           <TabsTrigger value="integrations">Integraciones</TabsTrigger>
           <TabsTrigger value="notifications">Notificaciones</TabsTrigger>
@@ -36,6 +55,93 @@ export default function SettingsPage() {
                 <Label htmlFor="companyLogo">Logo de la Empresa</Label>
                 <Input id="companyLogo" type="file" />
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="centers" className="space-y-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="font-headline">Centros de Trabajo</CardTitle>
+                <CardDescription>Configura las ubicaciones de tu empresa para fichajes con geolocalización.</CardDescription>
+              </div>
+               <Dialog>
+                <DialogTrigger asChild>
+                    <Button><PlusCircle className="mr-2 h-4 w-4"/> Añadir Centro</Button>
+                </DialogTrigger>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="font-headline">Nuevo Centro de Trabajo</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="center-name">Nombre del Centro</Label>
+                            <Input id="center-name" placeholder="Ej. Oficina Principal"/>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="center-address">Dirección</Label>
+                            <Input id="center-address" placeholder="Ej. 123 Calle Falsa"/>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="center-radius">Radio de Geolocalización (metros)</Label>
+                            <Input id="center-radius" type="number" placeholder="Ej. 100"/>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button>Guardar Centro</Button>
+                    </DialogFooter>
+                </DialogContent>
+               </Dialog>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {centers.map((center, index) => (
+                <div key={index} className="flex items-center justify-between rounded-lg border p-4">
+                  <div>
+                    <h3 className="font-semibold">{center.name}</h3>
+                    <p className="text-sm text-muted-foreground">{center.address} (Radio: {center.radius}m)</p>
+                  </div>
+                  <Button variant="ghost" size="sm">Editar</Button>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="departments" className="space-y-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="font-headline">Departamentos</CardTitle>
+                <CardDescription>Organiza a tus empleados en diferentes departamentos.</CardDescription>
+              </div>
+               <Dialog>
+                <DialogTrigger asChild>
+                    <Button><PlusCircle className="mr-2 h-4 w-4"/> Añadir Depto.</Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-xs">
+                    <DialogHeader>
+                        <DialogTitle className="font-headline">Nuevo Departamento</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="dept-name">Nombre del Departamento</Label>
+                            <Input id="dept-name" placeholder="Ej. Soporte Técnico"/>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button>Guardar</Button>
+                    </DialogFooter>
+                </DialogContent>
+               </Dialog>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {departments.map((dept, index) => (
+                <div key={index} className="flex items-center justify-between rounded-lg border p-4">
+                  <h3 className="font-semibold">{dept.name}</h3>
+                  <Button variant="ghost" size="sm">Editar</Button>
+                </div>
+              ))}
             </CardContent>
           </Card>
         </TabsContent>
