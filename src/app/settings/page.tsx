@@ -28,17 +28,27 @@ const allPermissions = [
   { id: 'manage_roles', label: 'Gestionar Roles y Permisos' },
 ];
 
+type Center = {
+  name: string;
+  address: string;
+  radius: number;
+};
+
+type Department = {
+  name: string;
+};
+
 type Role = {
   name: string;
   description: string;
   permissions: string[];
 };
 
-const initialCenters = [
+const initialCenters: Center[] = [
   { name: "Oficina Central", address: "123 Calle Principal, Anytown", radius: 100 },
   { name: "Almacén Norte", address: "456 Avenida Industrial, Anytown", radius: 150 },
 ];
-const initialDepartments = [
+const initialDepartments: Department[] = [
   { name: "Ingeniería" },
   { name: "Diseño" },
   { name: "Marketing" },
@@ -59,14 +69,18 @@ const ROLES_STORAGE_KEY = 'workflow-central-roles';
 export default function SettingsPage() {
   const [isClient, setIsClient] = useState(false);
 
-  const [centers, setCenters] = useState(initialCenters);
-  const [departments, setDepartments] = useState(initialDepartments);
+  const [centers, setCenters] = useState<Center[]>(initialCenters);
+  const [departments, setDepartments] = useState<Department[]>(initialDepartments);
   const [roles, setRoles] = useState<Role[]>(initialRoles);
   
   const [isCenterDialogOpen, setIsCenterDialogOpen] = useState(false);
+  const [dialogCenterMode, setDialogCenterMode] = useState<'add' | 'edit'>('add');
+  const [selectedCenter, setSelectedCenter] = useState<Center | null>(null);
   const [newCenterData, setNewCenterData] = useState({ name: "", address: "", radius: 100 });
   
   const [isDeptDialogOpen, setIsDeptDialogOpen] = useState(false);
+  const [dialogDeptMode, setDialogDeptMode] = useState<'add' | 'edit'>('add');
+  const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
   const [newDepartmentName, setNewDepartmentName] = useState("");
 
   const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
@@ -146,20 +160,67 @@ export default function SettingsPage() {
     setIsRoleDialogOpen(false);
   };
 
-  const handleAddCenter = (e: React.FormEvent) => {
+  const openAddCenterDialog = () => {
+    setDialogCenterMode('add');
+    setSelectedCenter(null);
+    setNewCenterData({ name: "", address: "", radius: 100 });
+    setIsCenterDialogOpen(true);
+  };
+
+  const openEditCenterDialog = (center: Center) => {
+    setDialogCenterMode('edit');
+    setSelectedCenter(center);
+    setNewCenterData(center);
+    setIsCenterDialogOpen(true);
+  };
+
+  const handleCenterFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCenterData.name || !newCenterData.address) return;
-    setCenters(prev => [...prev, { ...newCenterData, radius: Number(newCenterData.radius) }]);
-    setNewCenterData({ name: "", address: "", radius: 100 });
+    const centerPayload = { ...newCenterData, radius: Number(newCenterData.radius) };
+
+    if (dialogCenterMode === 'add') {
+        setCenters(prev => [...prev, centerPayload]);
+    } else if (dialogCenterMode === 'edit' && selectedCenter) {
+        setCenters(prev => prev.map(c => (c.name === selectedCenter.name ? centerPayload : c)));
+    }
     setIsCenterDialogOpen(false);
   };
 
-  const handleAddDepartment = (e: React.FormEvent) => {
+  const handleDeleteCenter = (centerName: string) => {
+    setCenters(prev => prev.filter(c => c.name !== centerName));
+  };
+  
+  const openAddDeptDialog = () => {
+    setDialogDeptMode('add');
+    setSelectedDepartment(null);
+    setNewDepartmentName("");
+    setIsDeptDialogOpen(true);
+  };
+  
+  const openEditDeptDialog = (department: Department) => {
+    setDialogDeptMode('edit');
+    setSelectedDepartment(department);
+    setNewDepartmentName(department.name);
+    setIsDeptDialogOpen(true);
+  };
+
+  const handleDepartmentFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newDepartmentName) return;
-    setDepartments(prev => [...prev, { name: newDepartmentName }]);
+
+    if (dialogDeptMode === 'add') {
+      setDepartments(prev => [...prev, { name: newDepartmentName }]);
+    } else if (dialogDeptMode === 'edit' && selectedDepartment) {
+      setDepartments(prev => prev.map(d => (d.name === selectedDepartment.name ? { name: newDepartmentName } : d)));
+    }
+
     setNewDepartmentName("");
     setIsDeptDialogOpen(false);
+  };
+  
+  const handleDeleteDepartment = (departmentName: string) => {
+      setDepartments(prev => prev.filter(d => d.name !== departmentName));
   };
   
   if (!isClient) return null;
@@ -306,11 +367,11 @@ export default function SettingsPage() {
               </div>
                <Dialog open={isCenterDialogOpen} onOpenChange={setIsCenterDialogOpen}>
                 <DialogTrigger asChild>
-                    <Button><PlusCircle className="mr-2 h-4 w-4"/> Añadir Centro</Button>
+                    <Button onClick={openAddCenterDialog}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Centro</Button>
                 </DialogTrigger>
                 <DialogContent>
-                    <DialogHeader><DialogTitle className="font-headline">Nuevo Centro de Trabajo</DialogTitle></DialogHeader>
-                    <form onSubmit={handleAddCenter}>
+                    <DialogHeader><DialogTitle className="font-headline">{dialogCenterMode === 'add' ? 'Nuevo Centro de Trabajo' : 'Editar Centro de Trabajo'}</DialogTitle></DialogHeader>
+                    <form onSubmit={handleCenterFormSubmit}>
                         <div className="grid gap-4 py-4">
                             <div className="space-y-2">
                                 <Label htmlFor="center-name">Nombre del Centro</Label>
@@ -337,7 +398,12 @@ export default function SettingsPage() {
                     <h3 className="font-semibold">{center.name}</h3>
                     <p className="text-sm text-muted-foreground">{center.address} (Radio: {center.radius}m)</p>
                   </div>
-                  <Button variant="ghost" size="sm">Editar</Button>
+                  <div className="flex items-center">
+                    <Button variant="ghost" size="sm" onClick={() => openEditCenterDialog(center)}>Editar</Button>
+                    <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDeleteCenter(center.name)}>
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </CardContent>
@@ -349,10 +415,10 @@ export default function SettingsPage() {
                 <CardDescription>Organiza a tus empleados en diferentes departamentos.</CardDescription>
               </div>
                <Dialog open={isDeptDialogOpen} onOpenChange={setIsDeptDialogOpen}>
-                <DialogTrigger asChild><Button><PlusCircle className="mr-2 h-4 w-4"/> Añadir Depto.</Button></DialogTrigger>
+                <DialogTrigger asChild><Button onClick={openAddDeptDialog}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Depto.</Button></DialogTrigger>
                 <DialogContent className="sm:max-w-xs">
-                    <DialogHeader><DialogTitle className="font-headline">Nuevo Departamento</DialogTitle></DialogHeader>
-                    <form onSubmit={handleAddDepartment}>
+                    <DialogHeader><DialogTitle className="font-headline">{dialogDeptMode === 'add' ? 'Nuevo Departamento' : 'Editar Departamento'}</DialogTitle></DialogHeader>
+                    <form onSubmit={handleDepartmentFormSubmit}>
                         <div className="grid gap-4 py-4">
                             <div className="space-y-2">
                                 <Label htmlFor="dept-name">Nombre del Departamento</Label>
@@ -368,7 +434,12 @@ export default function SettingsPage() {
               {departments.map((dept, index) => (
                 <div key={index} className="flex items-center justify-between rounded-lg border p-4">
                   <h3 className="font-semibold">{dept.name}</h3>
-                  <Button variant="ghost" size="sm">Editar</Button>
+                  <div className="flex items-center">
+                    <Button variant="ghost" size="sm" onClick={() => openEditDeptDialog(dept)}>Editar</Button>
+                     <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDeleteDepartment(dept.name)}>
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </CardContent>
