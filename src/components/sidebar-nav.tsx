@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/sidebar';
 
 const navItems = [
-  { href: '/', label: 'Panel', icon: LayoutDashboard },
+  { href: '/dashboard', label: 'Panel', icon: LayoutDashboard },
   { href: '/employees', label: 'Empleados', icon: Users },
   { href: '/attendance', label: 'Asistencia', icon: Clock },
   { href: '/absences', label: 'Ausencias y TL', icon: CalendarOff },
