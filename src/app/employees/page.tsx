@@ -47,18 +47,19 @@ type Employee = {
     schedule: string;
     avatar: string;
     workCenter: string;
-    manager: string;
+    vacationManager: string;
+    clockInManager: string;
     calendarId?: string;
     vacationPolicyId?: string;
 }
 
 const initialEmployees: Employee[] = [
-  { id: 1, name: "Olivia Martin", email: "olivia.martin@example.com", department: "Ingeniería", role: "Desarrollador Frontend", status: "Activo", schedule: "9-5", avatar: "OM", workCenter: "Oficina Central", manager: "Noah Brown", calendarId: "default-calendar", vacationPolicyId: "default" },
-  { id: 2, name: "Jackson Lee", email: "jackson.lee@example.com", department: "Diseño", role: "Diseñador UI/UX", status: "Activo", schedule: "10-6", avatar: "JL", workCenter: "Oficina Central", manager: "Noah Brown", calendarId: "default-calendar", vacationPolicyId: "default" },
-  { id: 3, name: "Isabella Nguyen", email: "isabella.nguyen@example.com", department: "Marketing", role: "Estratega de Contenido", status: "Activo", schedule: "9-5", avatar: "IN", workCenter: "Remoto", manager: "Noah Brown", calendarId: "default-calendar", vacationPolicyId: "default" },
-  { id: 4, name: "William Kim", email: "will.kim@example.com", department: "Ingeniería", role: "Desarrollador Backend", status: "De Licencia", schedule: "9-5", avatar: "WK", workCenter: "Oficina Central", manager: "Noah Brown", calendarId: "default-calendar", vacationPolicyId: "default" },
-  { id: 5, name: "Sophia Davis", email: "sophia.davis@example.com", department: "Ventas", role: "Ejecutivo de Cuentas", status: "Activo", schedule: "Flex", avatar: "SD", workCenter: "Almacén Norte", manager: "Noah Brown", calendarId: "default-calendar", vacationPolicyId: "default" },
-  { id: 6, name: "Liam Garcia", email: "liam.garcia@example.com", department: "RRHH", role: "Generalista de RRHH", status: "Activo", schedule: "8-4", avatar: "LG", workCenter: "Oficina Central", manager: "Noah Brown", calendarId: "default-calendar", vacationPolicyId: "default" },
+  { id: 1, name: "Olivia Martin", email: "olivia.martin@example.com", department: "Ingeniería", role: "Desarrollador Frontend", status: "Activo", schedule: "9-5", avatar: "OM", workCenter: "Oficina Central", vacationManager: "Noah Brown", clockInManager: "Noah Brown", calendarId: "default-calendar", vacationPolicyId: "default" },
+  { id: 2, name: "Jackson Lee", email: "jackson.lee@example.com", department: "Diseño", role: "Diseñador UI/UX", status: "Activo", schedule: "10-6", avatar: "JL", workCenter: "Oficina Central", vacationManager: "Noah Brown", clockInManager: "Noah Brown", calendarId: "default-calendar", vacationPolicyId: "default" },
+  { id: 3, name: "Isabella Nguyen", email: "isabella.nguyen@example.com", department: "Marketing", role: "Estratega de Contenido", status: "Activo", schedule: "9-5", avatar: "IN", workCenter: "Remoto", vacationManager: "Noah Brown", clockInManager: "Noah Brown", calendarId: "default-calendar", vacationPolicyId: "default" },
+  { id: 4, name: "William Kim", email: "will.kim@example.com", department: "Ingeniería", role: "Desarrollador Backend", status: "De Licencia", schedule: "9-5", avatar: "WK", workCenter: "Oficina Central", vacationManager: "Noah Brown", clockInManager: "Noah Brown", calendarId: "default-calendar", vacationPolicyId: "default" },
+  { id: 5, name: "Sophia Davis", email: "sophia.davis@example.com", department: "Ventas", role: "Ejecutivo de Cuentas", status: "Activo", schedule: "Flex", avatar: "SD", workCenter: "Almacén Norte", vacationManager: "Noah Brown", clockInManager: "Noah Brown", calendarId: "default-calendar", vacationPolicyId: "default" },
+  { id: 6, name: "Liam Garcia", email: "liam.garcia@example.com", department: "RRHH", role: "Generalista de RRHH", status: "Activo", schedule: "8-4", avatar: "LG", workCenter: "Oficina Central", vacationManager: "Noah Brown", clockInManager: "Noah Brown", calendarId: "default-calendar", vacationPolicyId: "default" },
 ];
 
 const EMPLOYEES_STORAGE_KEY = 'workflow-central-employees';
@@ -117,7 +118,8 @@ export default function EmployeesPage() {
     role: "",
     schedule: "",
     workCenter: "",
-    manager: "",
+    vacationManager: "",
+    clockInManager: "",
     calendarId: "",
     vacationPolicyId: "",
   });
@@ -134,7 +136,7 @@ export default function EmployeesPage() {
   const openAddDialog = () => {
     setDialogMode('add');
     setSelectedEmployee(null);
-    setFormData({ name: "", email: "", department: "", role: "", schedule: "", workCenter: "", manager: "", calendarId: "", vacationPolicyId: "" });
+    setFormData({ name: "", email: "", department: "", role: "", schedule: "", workCenter: "", vacationManager: "", clockInManager: "", calendarId: "", vacationPolicyId: "" });
     setIsDialogOpen(true);
   }
 
@@ -148,7 +150,8 @@ export default function EmployeesPage() {
         role: employee.role,
         schedule: employee.schedule,
         workCenter: employee.workCenter,
-        manager: employee.manager,
+        vacationManager: employee.vacationManager || "",
+        clockInManager: employee.clockInManager || "",
         calendarId: employee.calendarId || "",
         vacationPolicyId: employee.vacationPolicyId || "",
     });
@@ -173,10 +176,36 @@ export default function EmployeesPage() {
             emp.id === selectedEmployee.id ? { ...emp, ...formData, avatar: emp.avatar, status: emp.status } : emp
         ));
     }
-
     setIsDialogOpen(false);
   };
   
+  const handleToggleStatus = (employeeId: number) => {
+    setEmployees(prev => prev.map(emp => {
+      if (emp.id === employeeId) {
+        const newStatus = emp.status === "Activo" ? "Deshabilitado" : "Activo";
+        return { ...emp, status: newStatus };
+      }
+      return emp;
+    }));
+  };
+
+  const handleDeleteEmployee = (employeeId: number) => {
+    setEmployees(prev => prev.filter(emp => emp.id !== employeeId));
+  };
+  
+  const getStatusBadgeClass = (status: string) => {
+      switch (status) {
+          case "Activo":
+              return "bg-green-100 text-green-800";
+          case "Deshabilitado":
+              return "bg-gray-100 text-gray-800";
+          case "De Licencia":
+              return "bg-yellow-100 text-yellow-800";
+          default:
+              return "";
+      }
+  }
+
   if (!isClient) {
     return null; // or a loading skeleton
   }
@@ -252,7 +281,7 @@ export default function EmployeesPage() {
                   </TableCell>
                   <TableCell className="hidden lg:table-cell">{employee.department}</TableCell>
                   <TableCell>
-                    <Badge variant={employee.status === 'Activo' ? 'secondary' : 'outline'} className={employee.status === 'Activo' ? "bg-green-100 text-green-800" : ""}>
+                    <Badge variant="secondary" className={getStatusBadgeClass(employee.status)}>
                       {employee.status}
                     </Badge>
                   </TableCell>
@@ -270,7 +299,12 @@ export default function EmployeesPage() {
                         <DropdownMenuItem onClick={() => openEditDialog(employee)}>Editar</DropdownMenuItem>
                         <DropdownMenuItem>Ver Perfil</DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive">Desactivar</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleToggleStatus(employee.id)}>
+                            {employee.status === 'Activo' ? 'Deshabilitar' : 'Habilitar'}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteEmployee(employee.id)}>
+                            Eliminar
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -342,15 +376,26 @@ export default function EmployeesPage() {
                           </Select>
                         </div>
                          <div className="space-y-2">
-                          <Label htmlFor="manager">Responsable de Aprobación</Label>
-                           <Select value={formData.manager} onValueChange={(value) => handleSelectChange('manager', value)}>
-                            <SelectTrigger id="manager">
-                              <SelectValue placeholder="Seleccionar" />
-                            </SelectTrigger>
-                            <SelectContent>
-                               {employees.map(e => <SelectItem key={e.id} value={e.name}>{e.name}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
+                            <Label htmlFor="vacationManager">Responsable de Aprobación de Vacaciones</Label>
+                            <Select value={formData.vacationManager} onValueChange={(value) => handleSelectChange('vacationManager', value)}>
+                                <SelectTrigger id="vacationManager">
+                                    <SelectValue placeholder="Seleccionar" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {employees.map(e => <SelectItem key={`${e.id}-vac`} value={e.name}>{e.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="clockInManager">Responsable de Aprobación de Fichajes</Label>
+                            <Select value={formData.clockInManager} onValueChange={(value) => handleSelectChange('clockInManager', value)}>
+                                <SelectTrigger id="clockInManager">
+                                    <SelectValue placeholder="Seleccionar" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {employees.map(e => <SelectItem key={`${e.id}-clock`} value={e.name}>{e.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="schedule">Horario</Label>
