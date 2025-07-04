@@ -47,6 +47,7 @@ type Employee = {
     avatar: string;
     workCenter: string;
     manager: string;
+    calendarId?: string;
 };
 
 const EMPLOYEES_STORAGE_KEY = 'workflow-central-employees';
@@ -641,14 +642,14 @@ export default function SettingsPage() {
   };
   
   const handleImportHolidays = () => {
-      // This is a mock implementation
       if (!selectedCalendarId) return;
-      const timestamp = Date.now();
+      
       const mockHolidays: Holiday[] = [
-          { id: `mock1-${timestamp}`, name: 'Año Nuevo', date: new Date(new Date().getFullYear(), 0, 1).toISOString() },
-          { id: `mock2-${timestamp}`, name: 'Día del Trabajador', date: new Date(new Date().getFullYear(), 4, 1).toISOString() },
-          { id: `mock3-${timestamp}`, name: 'Navidad', date: new Date(new Date().getFullYear(), 11, 25).toISOString() },
+          { id: `mock-1-${Date.now()}-${Math.random()}`, name: 'Año Nuevo', date: new Date(new Date().getFullYear(), 0, 1).toISOString() },
+          { id: `mock-2-${Date.now()}-${Math.random()}`, name: 'Día del Trabajador', date: new Date(new Date().getFullYear(), 4, 1).toISOString() },
+          { id: `mock-3-${Date.now()}-${Math.random()}`, name: 'Navidad', date: new Date(new Date().getFullYear(), 11, 25).toISOString() },
       ];
+      
       setCalendars(prev => prev.map(cal => 
           cal.id === selectedCalendarId ? { ...cal, holidays: [...cal.holidays, ...mockHolidays] } : cal
       ));
@@ -1370,7 +1371,7 @@ export default function SettingsPage() {
                                                                 {holidayFormData.date ? format(holidayFormData.date, "PPP") : <span>Elige una fecha</span>}
                                                             </Button>
                                                         </PopoverTrigger>
-                                                        <PopoverContent className="w-auto p-0">
+                                                        <PopoverContent className="w-auto p-0" onInteractOutside={(e) => e.preventDefault()}>
                                                             <Calendar 
                                                                 mode="single" 
                                                                 selected={holidayFormData.date} 
