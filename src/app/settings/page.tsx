@@ -29,6 +29,21 @@ const allPermissions = [
   { id: 'manage_roles', label: 'Gestionar Roles y Permisos' },
 ];
 
+type Employee = {
+    id: number;
+    name: string;
+    email: string;
+    department: string;
+    role: string;
+    status: string;
+    schedule: string;
+    avatar: string;
+    workCenter: string;
+    manager: string;
+};
+
+const EMPLOYEES_STORAGE_KEY = 'workflow-central-employees';
+
 type Center = {
   name: string;
   address: string;
@@ -54,6 +69,8 @@ type Break = {
 type ClockInType = {
   name: string;
   color: string;
+  assignment: 'all' | 'specific';
+  assignedTo: string[];
 };
 
 const initialCenters: Center[] = [
@@ -78,9 +95,9 @@ const initialBreaks: Break[] = [
     { name: "Pausa para Café", remunerated: true, duration: 15 },
 ]
 const initialClockInTypes: ClockInType[] = [
-    { name: "Reunión", color: "bg-blue-500" },
-    { name: "Viaje de Trabajo", color: "bg-purple-500" },
-    { name: "Comida de negocios", color: "bg-orange-500" },
+    { name: "Reunión", color: "bg-blue-500", assignment: 'all', assignedTo: [] },
+    { name: "Viaje de Trabajo", color: "bg-purple-500", assignment: 'all', assignedTo: [] },
+    { name: "Comida de negocios", color: "bg-orange-500", assignment: 'all', assignedTo: [] },
 ];
 
 const CENTERS_STORAGE_KEY = 'workflow-central-centers';
@@ -106,6 +123,7 @@ export default function SettingsPage() {
   const [roles, setRoles] = useState<Role[]>(initialRoles);
   const [breaks, setBreaks] = useState<Break[]>(initialBreaks);
   const [clockInTypes, setClockInTypes] = useState<ClockInType[]>(initialClockInTypes);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   
   const [isCenterDialogOpen, setIsCenterDialogOpen] = useState(false);
   const [dialogCenterMode, setDialogCenterMode] = useState<'add' | 'edit'>('add');
@@ -130,7 +148,7 @@ export default function SettingsPage() {
   const [isClockInTypeDialogOpen, setIsClockInTypeDialogOpen] = useState(false);
   const [dialogClockInTypeMode, setDialogClockInTypeMode] = useState<'add' | 'edit'>('add');
   const [selectedClockInType, setSelectedClockInType] = useState<ClockInType | null>(null);
-  const [clockInTypeFormData, setClockInTypeFormData] = useState<ClockInType>({ name: "", color: "bg-blue-500" });
+  const [clockInTypeFormData, setClockInTypeFormData] = useState<ClockInType>({ name: "", color: "bg-blue-500", assignment: 'all', assignedTo: [] });
 
   const absenceTypes = [
     { name: "Vacaciones", remunerated: true, limit: "Anual" },
@@ -168,8 +186,19 @@ export default function SettingsPage() {
         else localStorage.setItem(BREAKS_STORAGE_KEY, JSON.stringify(initialBreaks));
 
         const storedClockInTypes = localStorage.getItem(CLOCK_IN_TYPES_STORAGE_KEY);
-        if (storedClockInTypes) setClockInTypes(JSON.parse(storedClockInTypes));
+        if (storedClockInTypes) {
+            const parsed = JSON.parse(storedClockInTypes);
+            const migrated = parsed.map((t: any) => ({
+                ...t,
+                assignment: t.assignment || 'all',
+                assignedTo: t.assignedTo || [],
+            }));
+            setClockInTypes(migrated);
+        }
         else localStorage.setItem(CLOCK_IN_TYPES_STORAGE_KEY, JSON.stringify(initialClockInTypes));
+        
+        const storedEmployees = localStorage.getItem(EMPLOYEES_STORAGE_KEY);
+        if (storedEmployees) setEmployees(JSON.parse(storedEmployees));
 
       } catch (error) {
         console.error("Failed to access localStorage", error);
@@ -312,7 +341,7 @@ export default function SettingsPage() {
   const openAddClockInTypeDialog = () => {
     setDialogClockInTypeMode('add');
     setSelectedClockInType(null);
-    setClockInTypeFormData({ name: "", color: "bg-blue-500" });
+    setClockInTypeFormData({ name: "", color: "bg-blue-500", assignment: 'all', assignedTo: [] });
     setIsClockInTypeDialogOpen(true);
   };
 
@@ -770,22 +799,63 @@ export default function SettingsPage() {
                   </DialogHeader>
                   <form onSubmit={handleClockInTypeFormSubmit}>
                     <div className="grid gap-4 py-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="clockintype-name">Nombre del Tipo</Label>
-                        <Input id="clockintype-name" value={clockInTypeFormData.name} onChange={(e) => setClockInTypeFormData({...clockInTypeFormData, name: e.target.value})} placeholder="Ej. Reunión Cliente" required/>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Color</Label>
-                        <RadioGroup value={clockInTypeFormData.color} onValueChange={(value) => setClockInTypeFormData({...clockInTypeFormData, color: value})} className="flex flex-wrap gap-4 pt-2">
-                          {projectColors.map(color => (
-                            <div key={color.value} className="flex items-center space-x-2">
-                              <RadioGroupItem value={color.value} id={`color-${color.value}`} className="h-6 w-6">
-                                <div className={`h-6 w-6 rounded-full ${color.value}`}></div>
-                              </RadioGroupItem>
+                        <div className="space-y-2">
+                            <Label htmlFor="clockintype-name">Nombre del Tipo</Label>
+                            <Input id="clockintype-name" value={clockInTypeFormData.name} onChange={(e) => setClockInTypeFormData({...clockInTypeFormData, name: e.target.value})} placeholder="Ej. Reunión Cliente" required/>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Color</Label>
+                            <RadioGroup value={clockInTypeFormData.color} onValueChange={(value) => setClockInTypeFormData({...clockInTypeFormData, color: value})} className="flex flex-wrap gap-4 pt-2">
+                            {projectColors.map(color => (
+                                <div key={color.value} className="flex items-center space-x-2">
+                                <RadioGroupItem value={color.value} id={`color-${color.value}`} className="h-6 w-6">
+                                    <div className={`h-6 w-6 rounded-full ${color.value}`}></div>
+                                </RadioGroupItem>
+                                </div>
+                            ))}
+                            </RadioGroup>
+                        </div>
+                        <Separator />
+                        <div className="space-y-2">
+                            <Label>Asignar a</Label>
+                            <RadioGroup 
+                                value={clockInTypeFormData.assignment} 
+                                onValueChange={(value: 'all' | 'specific') => setClockInTypeFormData({...clockInTypeFormData, assignment: value})} 
+                                className="flex gap-4 pt-2">
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="all" id="r-all"/>
+                                    <Label htmlFor="r-all">Toda la empresa</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="specific" id="r-specific"/>
+                                    <Label htmlFor="r-specific">Empleados específicos</Label>
+                                </div>
+                            </RadioGroup>
+                        </div>
+                        {clockInTypeFormData.assignment === 'specific' && (
+                            <div className="space-y-2">
+                                <Label>Empleados</Label>
+                                <ScrollArea className="h-40 rounded-md border p-4">
+                                    <div className="space-y-2">
+                                        {employees.map(employee => (
+                                            <div key={employee.id} className="flex items-center space-x-2">
+                                                <Checkbox 
+                                                    id={`emp-${employee.id}`}
+                                                    checked={clockInTypeFormData.assignedTo.includes(employee.name)}
+                                                    onCheckedChange={(checked) => {
+                                                        const newAssignedTo = checked 
+                                                            ? [...clockInTypeFormData.assignedTo, employee.name]
+                                                            : clockInTypeFormData.assignedTo.filter(name => name !== employee.name);
+                                                        setClockInTypeFormData({...clockInTypeFormData, assignedTo: newAssignedTo});
+                                                    }}
+                                                />
+                                                <Label htmlFor={`emp-${employee.id}`} className="font-normal">{employee.name}</Label>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </ScrollArea>
                             </div>
-                          ))}
-                        </RadioGroup>
-                      </div>
+                        )}
                     </div>
                     <DialogFooter>
                       <Button type="submit">{dialogClockInTypeMode === 'add' ? 'Añadir' : 'Guardar'}</Button>
@@ -797,10 +867,17 @@ export default function SettingsPage() {
             <CardContent className="space-y-4">
               {clockInTypes.map((type, index) => (
                 <div key={index} className="flex items-center justify-between rounded-lg border p-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`h-4 w-4 rounded-full ${type.color}`}></div>
-                    <h3 className="font-semibold">{type.name}</h3>
-                  </div>
+                   <div>
+                        <div className="flex items-center gap-3">
+                            <div className={`h-4 w-4 rounded-full ${type.color}`}></div>
+                            <h3 className="font-semibold">{type.name}</h3>
+                        </div>
+                        <p className="text-sm text-muted-foreground pl-7">
+                            {type.assignment === 'all' 
+                                ? 'Asignado a: Toda la empresa' 
+                                : `Asignado a: ${type.assignedTo.length} empleado(s)`}
+                        </p>
+                    </div>
                   <div className="flex items-center">
                     <Button variant="ghost" size="sm" onClick={() => openEditClockInTypeDialog(type)}>Editar</Button>
                     <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDeleteClockInType(type.name)}>
