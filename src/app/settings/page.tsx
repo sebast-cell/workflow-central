@@ -79,6 +79,35 @@ type ClockInType = {
   assignedTo: string[];
 };
 
+type FlexibleSchedule = {
+  id: string;
+  name: string;
+  workDays: string[];
+  hoursPerDay: number;
+  noWeeklyHours: boolean;
+};
+
+type FixedScheduleRange = {
+  id: string;
+  start: string;
+  end: string;
+};
+
+type FixedSchedule = {
+  id: string;
+  name: string;
+  workDays: string[];
+  ranges: FixedScheduleRange[];
+  isNightShift: boolean;
+};
+
+type Shift = {
+  id: string;
+  name: string;
+  start: string;
+  end: string;
+};
+
 const initialCenters: Center[] = [
   { name: "Oficina Central", address: "123 Calle Principal, Anytown", radius: 100 },
   { name: "Almacén Norte", address: "456 Avenida Industrial, Anytown", radius: 150 },
@@ -105,12 +134,21 @@ const initialClockInTypes: ClockInType[] = [
     { name: "Viaje de Trabajo", color: "bg-purple-500", assignment: 'all', assignedTo: [] },
     { name: "Comida de negocios", color: "bg-orange-500", assignment: 'all', assignedTo: [] },
 ];
+const initialShifts: Shift[] = [
+    { id: "1", name: "Turno de Mañana", start: "06:00", end: "14:00" },
+    { id: "2", name: "Turno de Tarde", start: "14:00", end: "22:00" },
+    { id: "3", name: "Turno de Noche", start: "22:00", end: "06:00" },
+];
 
 const CENTERS_STORAGE_KEY = 'workflow-central-centers';
 const DEPARTMENTS_STORAGE_KEY = 'workflow-central-departments';
 const ROLES_STORAGE_KEY = 'workflow-central-roles';
 const BREAKS_STORAGE_KEY = 'workflow-central-breaks';
 const CLOCK_IN_TYPES_STORAGE_KEY = 'workflow-central-clock-in-types';
+const SHIFTS_STORAGE_KEY = 'workflow-central-shifts';
+const FLEXIBLE_SCHEDULES_STORAGE_KEY = 'workflow-central-flexible-schedules';
+const FIXED_SCHEDULES_STORAGE_KEY = 'workflow-central-fixed-schedules';
+
 
 const projectColors = [
     { value: 'bg-blue-500', label: 'Azul' },
@@ -121,6 +159,8 @@ const projectColors = [
     { value: 'bg-gray-500', label: 'Gris' },
 ];
 
+const weekDays = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+
 export default function SettingsPage() {
   const [isClient, setIsClient] = useState(false);
 
@@ -130,6 +170,9 @@ export default function SettingsPage() {
   const [breaks, setBreaks] = useState<Break[]>(initialBreaks);
   const [clockInTypes, setClockInTypes] = useState<ClockInType[]>(initialClockInTypes);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [shifts, setShifts] = useState<Shift[]>(initialShifts);
+  const [flexibleSchedules, setFlexibleSchedules] = useState<FlexibleSchedule[]>([]);
+  const [fixedSchedules, setFixedSchedules] = useState<FixedSchedule[]>([]);
   
   const [isCenterDialogOpen, setIsCenterDialogOpen] = useState(false);
   const [dialogCenterMode, setDialogCenterMode] = useState<'add' | 'edit'>('add');
@@ -155,17 +198,26 @@ export default function SettingsPage() {
   const [dialogClockInTypeMode, setDialogClockInTypeMode] = useState<'add' | 'edit'>('add');
   const [selectedClockInType, setSelectedClockInType] = useState<ClockInType | null>(null);
   const [clockInTypeFormData, setClockInTypeFormData] = useState<ClockInType>({ name: "", color: "bg-blue-500", assignment: 'all', assignedTo: [] });
+  
+  const [isShiftDialogOpen, setIsShiftDialogOpen] = useState(false);
+  const [dialogShiftMode, setDialogShiftMode] = useState<'add' | 'edit'>('add');
+  const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
+  const [shiftFormData, setShiftFormData] = useState<Omit<Shift, 'id'>>({ name: "", start: "", end: "" });
+
+  const [isFlexibleScheduleDialogOpen, setIsFlexibleScheduleDialogOpen] = useState(false);
+  const [dialogFlexibleScheduleMode, setDialogFlexibleScheduleMode] = useState<'add' | 'edit'>('add');
+  const [selectedFlexibleSchedule, setSelectedFlexibleSchedule] = useState<FlexibleSchedule | null>(null);
+  const [flexibleScheduleFormData, setFlexibleScheduleFormData] = useState<Omit<FlexibleSchedule, 'id'>>({ name: "", workDays: [], hoursPerDay: 8, noWeeklyHours: false });
+  
+  const [isFixedScheduleDialogOpen, setIsFixedScheduleDialogOpen] = useState(false);
+  const [dialogFixedScheduleMode, setDialogFixedScheduleMode] = useState<'add' | 'edit'>('add');
+  const [selectedFixedSchedule, setSelectedFixedSchedule] = useState<FixedSchedule | null>(null);
+  const [fixedScheduleFormData, setFixedScheduleFormData] = useState<Omit<FixedSchedule, 'id'>>({ name: "", workDays: [], ranges: [{id: Date.now().toString(), start: "09:00", end: "17:00"}], isNightShift: false });
 
   const absenceTypes = [
     { name: "Vacaciones", remunerated: true, limit: "Anual" },
     { name: "Licencia por enfermedad", remunerated: true, limit: "Sin límite" },
     { name: "Teletrabajo", remunerated: true, limit: "Sin límite" },
-  ];
-
-  const shifts = [
-    { name: "Turno de Mañana", start: "06:00", end: "14:00" },
-    { name: "Turno de Tarde", start: "14:00", end: "22:00" },
-    { name: "Turno de Noche", start: "22:00", end: "06:00" },
   ];
   const allSchedules = ['Horario Fijo', 'Horario Flexible', ...shifts.map(s => s.name)];
 
@@ -175,63 +227,40 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (isClient) {
-      try {
-        const storedCenters = localStorage.getItem(CENTERS_STORAGE_KEY);
-        if (storedCenters) {
-          setCenters(JSON.parse(storedCenters));
-        } else {
-          setCenters(initialCenters);
-          localStorage.setItem(CENTERS_STORAGE_KEY, JSON.stringify(initialCenters));
+      const loadFromStorage = (key: string, setter: (data: any) => void, initialData: any, migration?: (data: any) => any) => {
+        try {
+            let storedData = localStorage.getItem(key);
+            if (storedData) {
+                let parsedData = JSON.parse(storedData);
+                if (migration) {
+                    parsedData = migration(parsedData);
+                }
+                setter(parsedData);
+            } else {
+                setter(initialData);
+                localStorage.setItem(key, JSON.stringify(initialData));
+            }
+        } catch (error) {
+            console.error(`Failed to access localStorage for key "${key}"`, error);
+            setter(initialData);
         }
+      };
+      
+      const breakMigration = (data: any[]) => data.map((b: any) => ({ ...b, assignedTo: Array.isArray(b.assignedTo) ? b.assignedTo : [] }));
+      const clockInMigration = (data: any[]) => data.map((t: any) => ({ ...t, assignment: t.assignment || 'all', assignedTo: Array.isArray(t.assignedTo) ? t.assignedTo : []}));
 
-        const storedDepts = localStorage.getItem(DEPARTMENTS_STORAGE_KEY);
-        if (storedDepts) {
-          setDepartments(JSON.parse(storedDepts));
-        } else {
-          setDepartments(initialDepartments);
-          localStorage.setItem(DEPARTMENTS_STORAGE_KEY, JSON.stringify(initialDepartments));
-        }
-        
-        const storedRoles = localStorage.getItem(ROLES_STORAGE_KEY);
-        if (storedRoles) {
-          setRoles(JSON.parse(storedRoles));
-        } else {
-          setRoles(initialRoles);
-          localStorage.setItem(ROLES_STORAGE_KEY, JSON.stringify(initialRoles));
-        }
-        
-        const storedBreaks = localStorage.getItem(BREAKS_STORAGE_KEY);
-        if (storedBreaks) {
-          const parsed = JSON.parse(storedBreaks);
-          // Data migration: ensure `assignedTo` is always an array to prevent crashes from old data.
-          const migrated = parsed.map((b: any) => ({...b, assignedTo: b.assignedTo || []}));
-          setBreaks(migrated);
-        } else {
-          setBreaks(initialBreaks);
-          localStorage.setItem(BREAKS_STORAGE_KEY, JSON.stringify(initialBreaks));
-        }
+      loadFromStorage(CENTERS_STORAGE_KEY, setCenters, initialCenters);
+      loadFromStorage(DEPARTMENTS_STORAGE_KEY, setDepartments, initialDepartments);
+      loadFromStorage(ROLES_STORAGE_KEY, setRoles, initialRoles);
+      loadFromStorage(BREAKS_STORAGE_KEY, setBreaks, initialBreaks, breakMigration);
+      loadFromStorage(CLOCK_IN_TYPES_STORAGE_KEY, setClockInTypes, initialClockInTypes, clockInMigration);
+      loadFromStorage(SHIFTS_STORAGE_KEY, setShifts, initialShifts);
+      loadFromStorage(FLEXIBLE_SCHEDULES_STORAGE_KEY, setFlexibleSchedules, []);
+      loadFromStorage(FIXED_SCHEDULES_STORAGE_KEY, setFixedSchedules, []);
 
-        const storedClockInTypes = localStorage.getItem(CLOCK_IN_TYPES_STORAGE_KEY);
-        if (storedClockInTypes) {
-            const parsed = JSON.parse(storedClockInTypes);
-            const migrated = parsed.map((t: any) => ({
-                ...t,
-                assignment: t.assignment || 'all',
-                assignedTo: t.assignedTo || [],
-            }));
-            setClockInTypes(migrated);
-        }
-        else {
-            setClockInTypes(initialClockInTypes);
-            localStorage.setItem(CLOCK_IN_TYPES_STORAGE_KEY, JSON.stringify(initialClockInTypes));
-        }
-        
-        const storedEmployees = localStorage.getItem(EMPLOYEES_STORAGE_KEY);
-        if (storedEmployees) setEmployees(JSON.parse(storedEmployees));
+      const storedEmployees = localStorage.getItem(EMPLOYEES_STORAGE_KEY);
+      if (storedEmployees) setEmployees(JSON.parse(storedEmployees));
 
-      } catch (error) {
-        console.error("Failed to access localStorage", error);
-      }
     }
   }, [isClient]);
 
@@ -242,8 +271,11 @@ export default function SettingsPage() {
       localStorage.setItem(ROLES_STORAGE_KEY, JSON.stringify(roles));
       localStorage.setItem(BREAKS_STORAGE_KEY, JSON.stringify(breaks));
       localStorage.setItem(CLOCK_IN_TYPES_STORAGE_KEY, JSON.stringify(clockInTypes));
+      localStorage.setItem(SHIFTS_STORAGE_KEY, JSON.stringify(shifts));
+      localStorage.setItem(FLEXIBLE_SCHEDULES_STORAGE_KEY, JSON.stringify(flexibleSchedules));
+      localStorage.setItem(FIXED_SCHEDULES_STORAGE_KEY, JSON.stringify(fixedSchedules));
     }
-  }, [centers, departments, roles, breaks, clockInTypes, isClient]);
+  }, [centers, departments, roles, breaks, clockInTypes, shifts, flexibleSchedules, fixedSchedules, isClient]);
 
 
   const openAddRoleDialog = () => {
@@ -396,6 +428,94 @@ export default function SettingsPage() {
   const handleDeleteClockInType = (typeName: string) => {
     setClockInTypes(prev => prev.filter(t => t.name !== typeName));
   };
+  
+  const openAddShiftDialog = () => {
+    setDialogShiftMode('add');
+    setSelectedShift(null);
+    setShiftFormData({ name: "", start: "09:00", end: "17:00" });
+    setIsShiftDialogOpen(true);
+  };
+
+  const openEditShiftDialog = (shift: Shift) => {
+    setDialogShiftMode('edit');
+    setSelectedShift(shift);
+    setShiftFormData({ name: shift.name, start: shift.start, end: shift.end });
+    setIsShiftDialogOpen(true);
+  };
+
+  const handleShiftFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!shiftFormData.name) return;
+    if (dialogShiftMode === 'add') {
+      setShifts(prev => [...prev, { id: Date.now().toString(), ...shiftFormData }]);
+    } else if (selectedShift) {
+      setShifts(prev => prev.map(s => s.id === selectedShift.id ? { ...s, ...shiftFormData } : s));
+    }
+    setIsShiftDialogOpen(false);
+  };
+
+  const handleDeleteShift = (shiftId: string) => {
+    setShifts(prev => prev.filter(s => s.id !== shiftId));
+  };
+
+  const openAddFlexibleScheduleDialog = () => {
+    setDialogFlexibleScheduleMode('add');
+    setSelectedFlexibleSchedule(null);
+    setFlexibleScheduleFormData({ name: "", workDays: [], hoursPerDay: 8, noWeeklyHours: false });
+    setIsFlexibleScheduleDialogOpen(true);
+  };
+
+  const openEditFlexibleScheduleDialog = (schedule: FlexibleSchedule) => {
+    setDialogFlexibleScheduleMode('edit');
+    setSelectedFlexibleSchedule(schedule);
+    setFlexibleScheduleFormData(schedule);
+    setIsFlexibleScheduleDialogOpen(true);
+  };
+  
+  const handleFlexibleScheduleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!flexibleScheduleFormData.name) return;
+    if (dialogFlexibleScheduleMode === 'add') {
+      setFlexibleSchedules(prev => [...prev, { id: Date.now().toString(), ...flexibleScheduleFormData }]);
+    } else if (selectedFlexibleSchedule) {
+      setFlexibleSchedules(prev => prev.map(s => s.id === selectedFlexibleSchedule.id ? { id: s.id, ...flexibleScheduleFormData } : s));
+    }
+    setIsFlexibleScheduleDialogOpen(false);
+  };
+
+  const handleDeleteFlexibleSchedule = (scheduleId: string) => {
+    setFlexibleSchedules(prev => prev.filter(s => s.id !== scheduleId));
+  };
+  
+  const openAddFixedScheduleDialog = () => {
+    setDialogFixedScheduleMode('add');
+    setSelectedFixedSchedule(null);
+    setFixedScheduleFormData({ name: "", workDays: [], ranges: [{ id: Date.now().toString(), start: "09:00", end: "17:00" }], isNightShift: false });
+    setIsFixedScheduleDialogOpen(true);
+  };
+  
+  const openEditFixedScheduleDialog = (schedule: FixedSchedule) => {
+    setDialogFixedScheduleMode('edit');
+    setSelectedFixedSchedule(schedule);
+    setFixedScheduleFormData(schedule);
+    setIsFixedScheduleDialogOpen(true);
+  };
+
+  const handleFixedScheduleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!fixedScheduleFormData.name) return;
+    if (dialogFixedScheduleMode === 'add') {
+        setFixedSchedules(prev => [...prev, { id: Date.now().toString(), ...fixedScheduleFormData }]);
+    } else if (selectedFixedSchedule) {
+        setFixedSchedules(prev => prev.map(s => s.id === selectedFixedSchedule.id ? { id: s.id, ...fixedScheduleFormData } : s));
+    }
+    setIsFixedScheduleDialogOpen(false);
+  };
+
+  const handleDeleteFixedSchedule = (scheduleId: string) => {
+      setFixedSchedules(prev => prev.filter(s => s.id !== scheduleId));
+  };
+
 
   if (!isClient) return null;
 
@@ -621,139 +741,182 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="schedules" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="font-headline">Tipos de Horario</CardTitle>
-              <CardDescription>Configura los diferentes tipos de horarios que los empleados pueden tener.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between rounded-lg border p-4">
-                <div>
-                  <h3 className="font-semibold">Flexible</h3>
-                  <p className="text-sm text-muted-foreground">Se establecen días laborables y un total de horas a cumplir.</p>
-                </div>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button variant="outline">Configurar</Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle className="font-headline">Configurar Horario Flexible</DialogTitle>
-                      <DialogDescription>Establece los días laborables y el total de horas a cumplir.</DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="weekly-hours">Total de horas semanales</Label>
-                        <Input id="weekly-hours" type="number" defaultValue="40" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Días laborables</Label>
-                        <div className="flex gap-4 flex-wrap pt-2">
-                          {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((day, i) => (
-                            <div key={day} className="flex items-center gap-1.5">
-                              <Checkbox id={`day-${i}`} defaultChecked={i < 5} />
-                              <Label htmlFor={`day-${i}`} className="font-normal">{day}</Label>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle className="font-headline">Horarios Flexibles</CardTitle>
+                    <Button onClick={openAddFlexibleScheduleDialog}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Horario Flexible</Button>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {flexibleSchedules.map(schedule => (
+                        <div key={schedule.id} className="flex items-center justify-between rounded-lg border p-4">
+                            <div>
+                                <h3 className="font-semibold">{schedule.name}</h3>
+                                <p className="text-sm text-muted-foreground">{schedule.noWeeklyHours ? "Sin límite de horas" : `${schedule.hoursPerDay * schedule.workDays.length}h semanales (${schedule.workDays.join(', ')})`}</p>
                             </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button>Guardar Cambios</Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </div>
-              <div className="flex items-center justify-between rounded-lg border p-4">
-                <div>
-                  <h3 className="font-semibold">Fijo</h3>
-                  <p className="text-sm text-muted-foreground">Se establecen horas de entrada y salida fijas.</p>
-                </div>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button variant="outline">Configurar</Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle className="font-headline">Configurar Horario Fijo</DialogTitle>
-                      <DialogDescription>Establece las horas de entrada y salida fijas para la jornada.</DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="start-time">Hora de Entrada</Label>
-                          <Input id="start-time" type="time" defaultValue="09:00" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="end-time">Hora de Salida</Label>
-                          <Input id="end-time" type="time" defaultValue="17:00" />
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox id="split-shift" />
-                        <Label htmlFor="split-shift" className="font-normal">Habilitar jornada partida</Label>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Días laborables</Label>
-                        <div className="flex gap-4 flex-wrap pt-2">
-                          {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((day, i) => (
-                            <div key={day} className="flex items-center gap-1.5">
-                              <Checkbox id={`day-fixed-${i}`} defaultChecked={i < 5} />
-                              <Label htmlFor={`day-fixed-${i}`} className="font-normal">{day}</Label>
+                            <div className="flex items-center">
+                                <Button variant="ghost" size="sm" onClick={() => openEditFlexibleScheduleDialog(schedule)}>Editar</Button>
+                                <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDeleteFlexibleSchedule(schedule.id)}>
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
                             </div>
-                          ))}
                         </div>
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button>Guardar Cambios</Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </div>
-              <div className="flex items-center justify-between rounded-lg border p-4">
-                <div>
-                  <h3 className="font-semibold">Turnos</h3>
-                  <p className="text-sm text-muted-foreground">Para horarios rotativos y cambiantes.</p>
-                </div>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button variant="outline">Configurar</Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-lg">
-                    <DialogHeader>
-                      <DialogTitle className="font-headline">Gestionar Turnos</DialogTitle>
-                      <DialogDescription>Crea y edita los diferentes turnos para horarios rotativos. Esta es una vista previa, la asignación se realiza en otra sección.</DialogDescription>
-                    </DialogHeader>
-                    <div className="py-4 space-y-4 max-h-[60vh] overflow-y-auto">
-                      {shifts.map((shift, index) => (
-                        <div key={index} className="flex items-end gap-2 p-3 border rounded-md bg-muted/50">
-                          <div className="flex-1 space-y-2">
-                            <Label htmlFor={`shift-name-${index}`}>Nombre del Turno</Label>
-                            <Input id={`shift-name-${index}`} defaultValue={shift.name} />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor={`shift-start-${index}`}>Inicio</Label>
-                            <Input id={`shift-start-${index}`} type="time" defaultValue={shift.start} className="w-28"/>
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor={`shift-end-${index}`}>Fin</Label>
-                            <Input id={`shift-end-${index}`} type="time" defaultValue={shift.end} className="w-28"/>
-                          </div>
-                          <Button variant="ghost" size="icon" className="hover:bg-destructive/10"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    ))}
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle className="font-headline">Horarios Fijos</CardTitle>
+                    <Button onClick={openAddFixedScheduleDialog}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Horario Fijo</Button>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {fixedSchedules.map(schedule => (
+                        <div key={schedule.id} className="flex items-center justify-between rounded-lg border p-4">
+                            <div>
+                                <h3 className="font-semibold">{schedule.name}</h3>
+                                <p className="text-sm text-muted-foreground">{schedule.ranges.map(r => `${r.start}-${r.end}`).join(', ')} ({schedule.workDays.join(', ')})</p>
+                            </div>
+                            <div className="flex items-center">
+                                <Button variant="ghost" size="sm" onClick={() => openEditFixedScheduleDialog(schedule)}>Editar</Button>
+                                <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDeleteFixedSchedule(schedule.id)}>
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </div>
                         </div>
-                      ))}
-                      <Button variant="outline" className="w-full mt-4"><PlusCircle className="mr-2 h-4 w-4"/> Añadir Nuevo Turno</Button>
-                    </div>
-                    <DialogFooter>
-                      <Button>Guardar Cambios</Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </CardContent>
-          </Card>
+                    ))}
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle className="font-headline">Turnos de Trabajo</CardTitle>
+                    <Button onClick={openAddShiftDialog}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Turno</Button>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {shifts.map(shift => (
+                        <div key={shift.id} className="flex items-center justify-between rounded-lg border p-4">
+                            <div>
+                                <h3 className="font-semibold">{shift.name}</h3>
+                                <p className="text-sm text-muted-foreground">{shift.start} - {shift.end}</p>
+                            </div>
+                             <div className="flex items-center">
+                                <Button variant="ghost" size="sm" onClick={() => openEditShiftDialog(shift)}>Editar</Button>
+                                <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDeleteShift(shift.id)}>
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
+                    ))}
+                </CardContent>
+            </Card>
         </TabsContent>
+        <Dialog open={isFlexibleScheduleDialogOpen} onOpenChange={setIsFlexibleScheduleDialogOpen}>
+            <DialogContent>
+                <DialogHeader><DialogTitle className="font-headline">{dialogFlexibleScheduleMode === 'add' ? 'Nuevo Horario Flexible' : 'Editar Horario Flexible'}</DialogTitle></DialogHeader>
+                <form onSubmit={handleFlexibleScheduleFormSubmit} className="space-y-4 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="flex-name">Nombre del Horario</Label>
+                        <Input id="flex-name" value={flexibleScheduleFormData.name} onChange={e => setFlexibleScheduleFormData({...flexibleScheduleFormData, name: e.target.value})} required/>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <Switch id="flex-no-hours" checked={flexibleScheduleFormData.noWeeklyHours} onCheckedChange={checked => setFlexibleScheduleFormData({...flexibleScheduleFormData, noWeeklyHours: checked})} />
+                        <Label htmlFor="flex-no-hours">Crear horario sin horas semanales (solo se fichan los días)</Label>
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Días laborables</Label>
+                        <div className="flex gap-4 flex-wrap pt-2">
+                            {weekDays.map(day => (
+                                <div key={day} className="flex items-center gap-1.5">
+                                    <Checkbox id={`flex-day-${day}`} checked={flexibleScheduleFormData.workDays.includes(day)} onCheckedChange={checked => setFlexibleScheduleFormData(prev => ({...prev, workDays: checked ? [...prev.workDays, day] : prev.workDays.filter(d => d !== day)}))}/>
+                                    <Label htmlFor={`flex-day-${day}`} className="font-normal">{day}</Label>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    {!flexibleScheduleFormData.noWeeklyHours && (
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="flex-hours-day">Horas por día</Label>
+                                <Input id="flex-hours-day" type="number" value={flexibleScheduleFormData.hoursPerDay} onChange={e => setFlexibleScheduleFormData({...flexibleScheduleFormData, hoursPerDay: Number(e.target.value)})} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Total Horas Semanales</Label>
+                                <Input value={flexibleScheduleFormData.hoursPerDay * flexibleScheduleFormData.workDays.length} readOnly disabled/>
+                            </div>
+                        </div>
+                    )}
+                    <DialogFooter><Button type="submit">Guardar</Button></DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+        <Dialog open={isFixedScheduleDialogOpen} onOpenChange={setIsFixedScheduleDialogOpen}>
+            <DialogContent>
+                <DialogHeader><DialogTitle className="font-headline">{dialogFixedScheduleMode === 'add' ? 'Nuevo Horario Fijo' : 'Editar Horario Fijo'}</DialogTitle></DialogHeader>
+                <form onSubmit={handleFixedScheduleFormSubmit} className="space-y-4 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="fixed-name">Nombre del Horario</Label>
+                        <Input id="fixed-name" value={fixedScheduleFormData.name} onChange={e => setFixedScheduleFormData({...fixedScheduleFormData, name: e.target.value})} required/>
+                    </div>
+                     <div className="space-y-2">
+                        <Label>Días laborables</Label>
+                        <div className="flex gap-4 flex-wrap pt-2">
+                            {weekDays.map(day => (
+                                <div key={day} className="flex items-center gap-1.5">
+                                    <Checkbox id={`fixed-day-${day}`} checked={fixedScheduleFormData.workDays.includes(day)} onCheckedChange={checked => setFixedScheduleFormData(prev => ({...prev, workDays: checked ? [...prev.workDays, day] : prev.workDays.filter(d => d !== day)}))}/>
+                                    <Label htmlFor={`fixed-day-${day}`} className="font-normal">{day}</Label>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Rangos Horarios</Label>
+                        {fixedScheduleFormData.ranges.map((range, index) => (
+                             <div key={range.id} className="flex items-end gap-2">
+                                <div className="space-y-1.5 flex-1">
+                                    <Label htmlFor={`range-start-${index}`}>Inicio</Label>
+                                    <Input id={`range-start-${index}`} type="time" value={range.start} onChange={e => setFixedScheduleFormData(prev => ({...prev, ranges: prev.ranges.map(r => r.id === range.id ? {...r, start: e.target.value} : r)}))}/>
+                                </div>
+                                <div className="space-y-1.5 flex-1">
+                                    <Label htmlFor={`range-end-${index}`}>Fin</Label>
+                                    <Input id={`range-end-${index}`} type="time" value={range.end} onChange={e => setFixedScheduleFormData(prev => ({...prev, ranges: prev.ranges.map(r => r.id === range.id ? {...r, end: e.target.value} : r)}))}/>
+                                </div>
+                                <Button variant="ghost" size="icon" disabled={fixedScheduleFormData.ranges.length <= 1} onClick={() => setFixedScheduleFormData(prev => ({...prev, ranges: prev.ranges.filter(r => r.id !== range.id)}))}>
+                                    <Trash2 className="h-4 w-4 text-destructive"/>
+                                </Button>
+                             </div>
+                        ))}
+                        <Button type="button" variant="outline" className="w-full" onClick={() => setFixedScheduleFormData(prev => ({...prev, ranges: [...prev.ranges, {id: Date.now().toString(), start: "", end: ""}]}))}>
+                            <PlusCircle className="mr-2 h-4 w-4"/> Añadir Rango (Jornada Partida)
+                        </Button>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <Switch id="fixed-night-shift" checked={fixedScheduleFormData.isNightShift} onCheckedChange={checked => setFixedScheduleFormData({...fixedScheduleFormData, isNightShift: checked})}/>
+                        <Label htmlFor="fixed-night-shift">Horario Nocturno</Label>
+                    </div>
+                    <DialogFooter><Button type="submit">Guardar</Button></DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+        <Dialog open={isShiftDialogOpen} onOpenChange={setIsShiftDialogOpen}>
+            <DialogContent>
+                <DialogHeader><DialogTitle className="font-headline">{dialogShiftMode === 'add' ? 'Nuevo Turno' : 'Editar Turno'}</DialogTitle></DialogHeader>
+                <form onSubmit={handleShiftFormSubmit} className="space-y-4 py-4">
+                     <div className="space-y-2">
+                        <Label htmlFor="shift-name">Nombre del Turno</Label>
+                        <Input id="shift-name" value={shiftFormData.name} onChange={e => setShiftFormData({...shiftFormData, name: e.target.value})} required/>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                         <div className="space-y-2">
+                            <Label htmlFor="shift-start">Hora de Inicio</Label>
+                            <Input id="shift-start" type="time" value={shiftFormData.start} onChange={e => setShiftFormData({...shiftFormData, start: e.target.value})} required/>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="shift-end">Hora de Fin</Label>
+                            <Input id="shift-end" type="time" value={shiftFormData.end} onChange={e => setShiftFormData({...shiftFormData, end: e.target.value})} required/>
+                        </div>
+                    </div>
+                    <DialogFooter><Button type="submit">Guardar</Button></DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
 
          <TabsContent value="breaks" className="space-y-4">
              <Card>
