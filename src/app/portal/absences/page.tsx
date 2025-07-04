@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import type { DateRange } from 'react-day-picker';
-import { addDays, format } from 'date-fns';
+import { useState, useEffect, useRef } from 'react';
+import type { DateRange, DayProps } from 'react-day-picker';
+import { useDayRender } from 'react-day-picker';
+import { addDays, format, isSameDay } from 'date-fns';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -14,8 +15,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar as CalendarIcon, PlusCircle } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
+// Types needed for this page
+type Holiday = { id: string; name: string; date: string; };
+type CalendarData = { id: string; name: string; holidays: Holiday[]; };
+type Employee = { id: number; name: string; email: string; calendarId?: string; };
+
+const EMPLOYEES_STORAGE_KEY = 'workflow-central-employees';
+const CALENDARS_STORAGE_KEY = 'workflow-central-calendars';
 
 const balances = [
     { type: "Vacaciones", used: 8, total: 20 },
@@ -37,6 +46,36 @@ export default function EmployeeAbsencesPage() {
         to: addDays(new Date(), 4),
     });
 
+    const [holidays, setHolidays] = useState<Holiday[]>([]);
+
+    useEffect(() => {
+        try {
+            const storedEmployees = localStorage.getItem(EMPLOYEES_STORAGE_KEY);
+            const storedCalendars = localStorage.getItem(CALENDARS_STORAGE_KEY);
+            
+            if (storedEmployees && storedCalendars) {
+                const allEmployees: Employee[] = JSON.parse(storedEmployees);
+                const allCalendars: CalendarData[] = JSON.parse(storedCalendars);
+
+                // Assuming Olivia Martin is the logged-in user (as per portal/page.tsx)
+                const currentUser = allEmployees.find(e => e.name === "Olivia Martin");
+                
+                if (currentUser?.calendarId) {
+                    const userCalendar = allCalendars.find(c => c.id === currentUser.calendarId);
+                    if (userCalendar) {
+                        setHolidays(userCalendar.holidays);
+                    }
+                } else {
+                    // Fallback to default calendar if user has no calendar assigned
+                    const defaultCalendar = allCalendars.find(c => c.id === 'default-calendar');
+                    if(defaultCalendar) setHolidays(defaultCalendar.holidays);
+                }
+            }
+        } catch (error) {
+            console.error("Failed to load data from localStorage", error);
+        }
+    }, []);
+
     // Mock dates for the calendar display
     const approvedAbsences = [
         new Date(2024, 7, 12), // Aug 12
@@ -46,6 +85,41 @@ export default function EmployeeAbsencesPage() {
         new Date(2024, 7, 22),
         new Date(2024, 7, 23),
     ];
+
+    const holidayDates = holidays.map(h => new Date(h.date));
+    
+    const modifiers = {
+        approved: approvedAbsences,
+        holiday: holidayDates,
+    };
+    const modifiersClassNames = {
+        approved: 'bg-accent text-accent-foreground rounded-md',
+        holiday: 'bg-destructive text-destructive-foreground rounded-md',
+    };
+
+    function DayWithTooltip(props: DayProps) {
+        const buttonRef = useRef<HTMLButtonElement>(null);
+        const dayRender = useDayRender(props.date, props.displayMonth, buttonRef);
+        const holiday = holidays.find(h => isSameDay(new Date(h.date), props.date));
+
+        if (dayRender.isHidden) return <></>;
+        if (!dayRender.isButton) return <div {...dayRender.divProps} />;
+
+        const dayButton = <button {...dayRender.buttonProps} ref={buttonRef} />;
+
+        if (holiday) {
+            return (
+                <TooltipProvider delayDuration={0}>
+                    <Tooltip>
+                        <TooltipTrigger asChild>{dayButton}</TooltipTrigger>
+                        <TooltipContent><p>{holiday.name}</p></TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            );
+        }
+        return dayButton;
+    }
+
 
     return (
     <div className="space-y-8">
@@ -190,15 +264,26 @@ export default function EmployeeAbsencesPage() {
             <Card>
                  <CardHeader>
                     <CardTitle className="font-headline">Mi Calendario</CardTitle>
-                    <CardDescription>Tus ausencias aprobadas de un vistazo.</CardDescription>
+                    <CardDescription>Tus ausencias y festivos de un vistazo.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Calendar
                         mode="multiple"
-                        selected={approvedAbsences}
+                        modifiers={modifiers}
+                        modifiersClassNames={modifiersClassNames}
                         className="rounded-md border"
-                        disabled={{ before: new Date(2024, 7, 1) }}
+                        components={{ Day: DayWithTooltip }}
                     />
+                    <div className="mt-4 space-y-2 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                            <div className="h-4 w-4 rounded-full bg-destructive" />
+                            <span>Festivo</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <div className="h-4 w-4 rounded-full bg-accent" />
+                            <span>Ausencia/Vacaciones</span>
+                        </div>
+                    </div>
                 </CardContent>
             </Card>
         </div>

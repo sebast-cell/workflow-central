@@ -21,6 +21,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Download, MoreHorizontal, PlusCircle, Search, UploadCloud, Link as LinkIcon } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+type CalendarData = {
+    id: string;
+    name: string;
+    holidays: { id: string, name: string, date: string }[];
+};
+
 type Employee = {
     id: number;
     name: string;
@@ -32,21 +38,24 @@ type Employee = {
     avatar: string;
     workCenter: string;
     manager: string;
+    calendarId?: string;
 }
 
 const initialEmployees: Employee[] = [
-  { id: 1, name: "Olivia Martin", email: "olivia.martin@example.com", department: "Ingeniería", role: "Desarrollador Frontend", status: "Activo", schedule: "9-5", avatar: "OM", workCenter: "Oficina Central", manager: "Noah Brown" },
-  { id: 2, name: "Jackson Lee", email: "jackson.lee@example.com", department: "Diseño", role: "Diseñador UI/UX", status: "Activo", schedule: "10-6", avatar: "JL", workCenter: "Oficina Central", manager: "Noah Brown" },
-  { id: 3, name: "Isabella Nguyen", email: "isabella.nguyen@example.com", department: "Marketing", role: "Estratega de Contenido", status: "Activo", schedule: "9-5", avatar: "IN", workCenter: "Remoto", manager: "Noah Brown" },
-  { id: 4, name: "William Kim", email: "will.kim@example.com", department: "Ingeniería", role: "Desarrollador Backend", status: "De Licencia", schedule: "9-5", avatar: "WK", workCenter: "Oficina Central", manager: "Noah Brown" },
-  { id: 5, name: "Sophia Davis", email: "sophia.davis@example.com", department: "Ventas", role: "Ejecutivo de Cuentas", status: "Activo", schedule: "Flex", avatar: "SD", workCenter: "Almacén Norte", manager: "Noah Brown" },
-  { id: 6, name: "Liam Garcia", email: "liam.garcia@example.com", department: "RRHH", role: "Generalista de RRHH", status: "Activo", schedule: "8-4", avatar: "LG", workCenter: "Oficina Central", manager: "Noah Brown" },
+  { id: 1, name: "Olivia Martin", email: "olivia.martin@example.com", department: "Ingeniería", role: "Desarrollador Frontend", status: "Activo", schedule: "9-5", avatar: "OM", workCenter: "Oficina Central", manager: "Noah Brown", calendarId: "default-calendar" },
+  { id: 2, name: "Jackson Lee", email: "jackson.lee@example.com", department: "Diseño", role: "Diseñador UI/UX", status: "Activo", schedule: "10-6", avatar: "JL", workCenter: "Oficina Central", manager: "Noah Brown", calendarId: "default-calendar" },
+  { id: 3, name: "Isabella Nguyen", email: "isabella.nguyen@example.com", department: "Marketing", role: "Estratega de Contenido", status: "Activo", schedule: "9-5", avatar: "IN", workCenter: "Remoto", manager: "Noah Brown", calendarId: "default-calendar" },
+  { id: 4, name: "William Kim", email: "will.kim@example.com", department: "Ingeniería", role: "Desarrollador Backend", status: "De Licencia", schedule: "9-5", avatar: "WK", workCenter: "Oficina Central", manager: "Noah Brown", calendarId: "default-calendar" },
+  { id: 5, name: "Sophia Davis", email: "sophia.davis@example.com", department: "Ventas", role: "Ejecutivo de Cuentas", status: "Activo", schedule: "Flex", avatar: "SD", workCenter: "Almacén Norte", manager: "Noah Brown", calendarId: "default-calendar" },
+  { id: 6, name: "Liam Garcia", email: "liam.garcia@example.com", department: "RRHH", role: "Generalista de RRHH", status: "Activo", schedule: "8-4", avatar: "LG", workCenter: "Oficina Central", manager: "Noah Brown", calendarId: "default-calendar" },
 ];
 
 const EMPLOYEES_STORAGE_KEY = 'workflow-central-employees';
+const CALENDARS_STORAGE_KEY = 'workflow-central-calendars';
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
+  const [calendars, setCalendars] = useState<CalendarData[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add');
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
@@ -65,8 +74,14 @@ export default function EmployeesPage() {
         } else {
           localStorage.setItem(EMPLOYEES_STORAGE_KEY, JSON.stringify(initialEmployees));
         }
+        
+        const storedCalendars = localStorage.getItem(CALENDARS_STORAGE_KEY);
+        if (storedCalendars) {
+          setCalendars(JSON.parse(storedCalendars));
+        }
+
       } catch (error) {
-        console.error("Failed to access localStorage for employees", error);
+        console.error("Failed to access localStorage", error);
       }
     }
   }, [isClient]);
@@ -85,6 +100,7 @@ export default function EmployeesPage() {
     schedule: "",
     workCenter: "",
     manager: "",
+    calendarId: "",
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -99,7 +115,7 @@ export default function EmployeesPage() {
   const openAddDialog = () => {
     setDialogMode('add');
     setSelectedEmployee(null);
-    setFormData({ name: "", email: "", department: "", role: "", schedule: "", workCenter: "", manager: "" });
+    setFormData({ name: "", email: "", department: "", role: "", schedule: "", workCenter: "", manager: "", calendarId: "" });
     setIsDialogOpen(true);
   }
 
@@ -114,6 +130,7 @@ export default function EmployeesPage() {
         schedule: employee.schedule,
         workCenter: employee.workCenter,
         manager: employee.manager,
+        calendarId: employee.calendarId || "",
     });
     setIsDialogOpen(true);
   }
@@ -318,6 +335,17 @@ export default function EmployeesPage() {
                         <div className="space-y-2">
                           <Label htmlFor="schedule">Horario</Label>
                           <Input id="schedule" value={formData.schedule} onChange={handleInputChange} placeholder="Ej. 9-5, Fijo, Flexible" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="calendarId">Calendario Laboral</Label>
+                            <Select value={formData.calendarId} onValueChange={(value) => handleSelectChange('calendarId', value)}>
+                                <SelectTrigger id="calendarId">
+                                <SelectValue placeholder="Seleccionar Calendario" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {calendars.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
                         </div>
                       </div>
                       <DialogFooter>
