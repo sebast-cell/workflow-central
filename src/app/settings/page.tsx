@@ -63,8 +63,14 @@ type Role = {
 type Break = {
   name: string;
   remunerated: boolean;
-  duration: number; // in minutes
-}
+  limit: number; // in minutes
+  isAutomatic: boolean;
+  intervalStart?: string;
+  intervalEnd?: string;
+  notifyStart: boolean;
+  notifyEnd: boolean;
+  assignedTo: string[];
+};
 
 type ClockInType = {
   name: string;
@@ -91,8 +97,8 @@ const initialRoles: Role[] = [
   { name: "Manager", description: "Gestiona equipos o personas específicas.", permissions: ['view_dashboard', 'manage_attendance', 'manage_absences'] },
 ];
 const initialBreaks: Break[] = [
-    { name: "Descanso de Comida", remunerated: false, duration: 60 },
-    { name: "Pausa para Café", remunerated: true, duration: 15 },
+    { name: "Descanso de Comida", remunerated: false, limit: 60, isAutomatic: false, intervalStart: "13:00", intervalEnd: "15:00", notifyStart: true, notifyEnd: true, assignedTo: ["Turno de Mañana", "Turno de Tarde"] },
+    { name: "Pausa para Café", remunerated: true, limit: 15, isAutomatic: false, intervalStart: "", intervalEnd: "", notifyStart: false, notifyEnd: false, assignedTo: ["Turno de Mañana", "Turno de Tarde", "Turno de Noche"] },
 ]
 const initialClockInTypes: ClockInType[] = [
     { name: "Reunión", color: "bg-blue-500", assignment: 'all', assignedTo: [] },
@@ -143,7 +149,7 @@ export default function SettingsPage() {
   const [isBreakDialogOpen, setIsBreakDialogOpen] = useState(false);
   const [dialogBreakMode, setDialogBreakMode] = useState<'add' | 'edit'>('add');
   const [selectedBreak, setSelectedBreak] = useState<Break | null>(null);
-  const [breakFormData, setBreakFormData] = useState<Break>({ name: "", remunerated: false, duration: 30 });
+  const [breakFormData, setBreakFormData] = useState<Break>({ name: "", remunerated: false, limit: 30, isAutomatic: false, intervalStart: "", intervalEnd: "", notifyStart: false, notifyEnd: false, assignedTo: [] });
   
   const [isClockInTypeDialogOpen, setIsClockInTypeDialogOpen] = useState(false);
   const [dialogClockInTypeMode, setDialogClockInTypeMode] = useState<'add' | 'edit'>('add');
@@ -161,6 +167,7 @@ export default function SettingsPage() {
     { name: "Turno de Tarde", start: "14:00", end: "22:00" },
     { name: "Turno de Noche", start: "22:00", end: "06:00" },
   ];
+  const allSchedules = ['Horario Fijo', 'Horario Flexible', ...shifts.map(s => s.name)];
 
   useEffect(() => {
     setIsClient(true);
@@ -309,7 +316,7 @@ export default function SettingsPage() {
   const openAddBreakDialog = () => {
     setDialogBreakMode('add');
     setSelectedBreak(null);
-    setBreakFormData({ name: "", remunerated: false, duration: 30 });
+    setBreakFormData({ name: "", remunerated: false, limit: 30, isAutomatic: false, intervalStart: "", intervalEnd: "", notifyStart: false, notifyEnd: false, assignedTo: [] });
     setIsBreakDialogOpen(true);
   };
 
@@ -322,9 +329,9 @@ export default function SettingsPage() {
 
   const handleBreakFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!breakFormData.name || !breakFormData.duration) return;
+    if (!breakFormData.name) return;
     
-    const payload = {...breakFormData, duration: Number(breakFormData.duration)};
+    const payload = {...breakFormData, limit: Number(breakFormData.limit)};
 
     if (dialogBreakMode === 'add') {
         setBreaks(prev => [...prev, payload]);
@@ -740,6 +747,7 @@ export default function SettingsPage() {
                         <DialogContent className="sm:max-w-md">
                             <DialogHeader>
                                 <DialogTitle className="font-headline">{dialogBreakMode === 'add' ? 'Añadir Nuevo Descanso' : 'Editar Descanso'}</DialogTitle>
+                                <DialogDescription>Define las propiedades y reglas para este tipo de descanso.</DialogDescription>
                             </DialogHeader>
                             <form onSubmit={handleBreakFormSubmit}>
                                 <div className="grid gap-4 py-4">
@@ -747,14 +755,80 @@ export default function SettingsPage() {
                                         <Label htmlFor="break-name">Nombre del Descanso</Label>
                                         <Input id="break-name" value={breakFormData.name} onChange={(e) => setBreakFormData({...breakFormData, name: e.target.value})} placeholder="Ej. Pausa para Fumar" required/>
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="break-duration">Duración (minutos)</Label>
-                                        <Input id="break-duration" type="number" value={breakFormData.duration} onChange={(e) => setBreakFormData({...breakFormData, duration: parseInt(e.target.value) || 0})} placeholder="Ej. 10" required/>
-                                    </div>
                                     <div className="flex items-center space-x-2">
                                         <Switch id="break-remunerated" checked={breakFormData.remunerated} onCheckedChange={(checked) => setBreakFormData({...breakFormData, remunerated: checked})}/>
-                                        <Label htmlFor="break-remunerated">Remunerado</Label>
+                                        <Label htmlFor="break-remunerated">Remunerado (cuenta como tiempo trabajado)</Label>
                                     </div>
+                                    <div className="flex items-center space-x-2">
+                                        <Switch id="break-automatic" checked={breakFormData.isAutomatic} onCheckedChange={(checked) => setBreakFormData({...breakFormData, isAutomatic: checked})}/>
+                                        <Label htmlFor="break-automatic">Descanso Automático</Label>
+                                    </div>
+
+                                    {breakFormData.isAutomatic ? (
+                                        <div className="grid grid-cols-2 gap-4 p-3 bg-muted/50 rounded-lg">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="break-interval-start">Inicio del Intervalo</Label>
+                                                <Input id="break-interval-start" type="time" value={breakFormData.intervalStart} onChange={(e) => setBreakFormData({...breakFormData, intervalStart: e.target.value})} required/>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="break-interval-end">Fin del Intervalo</Label>
+                                                <Input id="break-interval-end" type="time" value={breakFormData.intervalEnd} onChange={(e) => setBreakFormData({...breakFormData, intervalEnd: e.target.value})} required/>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="break-limit">Límite de Tiempo (minutos)</Label>
+                                                <Input id="break-limit" type="number" value={breakFormData.limit} onChange={(e) => setBreakFormData({...breakFormData, limit: parseInt(e.target.value) || 0})} placeholder="Ej. 10" required/>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="break-interval-start-optional">Inicio Intervalo (Opcional)</Label>
+                                                    <Input id="break-interval-start-optional" type="time" value={breakFormData.intervalStart} onChange={(e) => setBreakFormData({...breakFormData, intervalStart: e.target.value})} />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="break-interval-end-optional">Fin Intervalo (Opcional)</Label>
+                                                    <Input id="break-interval-end-optional" type="time" value={breakFormData.intervalEnd} onChange={(e) => setBreakFormData({...breakFormData, intervalEnd: e.target.value})} />
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+
+                                    <div className="space-y-2">
+                                        <Label>Asignar a Jornadas/Turnos</Label>
+                                        <ScrollArea className="h-32 rounded-md border p-4">
+                                            <div className="space-y-2">
+                                                {allSchedules.map(scheduleName => (
+                                                    <div key={scheduleName} className="flex items-center space-x-2">
+                                                        <Checkbox 
+                                                            id={`assign-${scheduleName}`}
+                                                            checked={breakFormData.assignedTo.includes(scheduleName)}
+                                                            onCheckedChange={(checked) => {
+                                                                const newAssignedTo = checked 
+                                                                    ? [...breakFormData.assignedTo, scheduleName]
+                                                                    : breakFormData.assignedTo.filter(name => name !== scheduleName);
+                                                                setBreakFormData({ ...breakFormData, assignedTo: newAssignedTo });
+                                                            }}
+                                                        />
+                                                        <Label htmlFor={`assign-${scheduleName}`} className="font-normal">{scheduleName}</Label>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </ScrollArea>
+                                    </div>
+                                    
+                                    <div className="space-y-3">
+                                        <Label>Notificaciones</Label>
+                                        <div className="flex items-center space-x-2">
+                                            <Switch id="break-notify-start" checked={breakFormData.notifyStart} onCheckedChange={(checked) => setBreakFormData({...breakFormData, notifyStart: checked})}/>
+                                            <Label htmlFor="break-notify-start">Notificar al empleado al inicio</Label>
+                                        </div>
+                                         <div className="flex items-center space-x-2">
+                                            <Switch id="break-notify-end" checked={breakFormData.notifyEnd} onCheckedChange={(checked) => setBreakFormData({...breakFormData, notifyEnd: checked})}/>
+                                            <Label htmlFor="break-notify-end">Notificar al empleado al finalizar</Label>
+                                        </div>
+                                    </div>
+
                                 </div>
                                 <DialogFooter>
                                     <Button type="submit">{dialogBreakMode === 'add' ? 'Añadir' : 'Guardar'}</Button>
@@ -768,7 +842,15 @@ export default function SettingsPage() {
                          <div key={index} className="flex items-center justify-between rounded-lg border p-4">
                             <div>
                                 <h3 className="font-semibold">{br.name}</h3>
-                                <p className="text-sm text-muted-foreground">{br.remunerated ? "Remunerado" : "No remunerado"}, {br.duration} minutos.</p>
+                                <p className="text-sm text-muted-foreground">
+                                    {br.remunerated ? 'Remunerado' : 'No remunerado'}
+                                    {br.isAutomatic 
+                                        ? `, Automático (${br.intervalStart || 'N/A'}-${br.intervalEnd || 'N/A'})` 
+                                        : `, Límite: ${br.limit} min`}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                    Asignado a: {br.assignedTo.length > 0 ? br.assignedTo.join(', ') : 'Ninguno'}
+                                </p>
                             </div>
                             <div className="flex items-center">
                                 <Button variant="ghost" size="sm" onClick={() => openEditBreakDialog(br)}>Editar</Button>
