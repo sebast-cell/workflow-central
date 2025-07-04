@@ -174,10 +174,10 @@ export default function ProjectsPage() {
                   <RadioGroup value={newProjectData.color} onValueChange={handleColorChange} className="flex flex-wrap gap-4 pt-2">
                     {projectColors.map(color => (
                       <div key={color.value} className="flex items-center space-x-2">
-                          <RadioGroupItem value={color.value} id={color.value} className="h-6 w-6">
-                              <div className={`h-6 w-6 rounded-full ${color.value}`}></div>
+                          <RadioGroupItem value={color.value} id={color.value} className="h-6 w-6 border-0 p-0 data-[state=checked]:ring-2 ring-offset-background ring-ring">
+                              <div className={`h-full w-full rounded-full ${color.value}`}></div>
                           </RadioGroupItem>
-                          <Label htmlFor={color.value} className="sr-only">{color.label}</Label>
+                          <Label htmlFor={color.value} className="cursor-pointer">{color.label}</Label>
                       </div>
                     ))}
                   </RadioGroup>

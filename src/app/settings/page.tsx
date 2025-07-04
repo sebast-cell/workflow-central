@@ -808,9 +808,13 @@ export default function SettingsPage() {
                             <RadioGroup value={clockInTypeFormData.color} onValueChange={(value) => setClockInTypeFormData({...clockInTypeFormData, color: value})} className="flex flex-wrap gap-4 pt-2">
                             {projectColors.map(color => (
                                 <div key={color.value} className="flex items-center space-x-2">
-                                <RadioGroupItem value={color.value} id={`color-${color.value}`} className="h-6 w-6">
-                                    <div className={`h-6 w-6 rounded-full ${color.value}`}></div>
-                                </RadioGroupItem>
+                                    <RadioGroupItem 
+                                        value={color.value} 
+                                        id={`settings-color-${color.value}`}
+                                        className="h-6 w-6 border-0 p-0 data-[state=checked]:ring-2 ring-offset-background ring-ring"
+                                    >
+                                        <div className={`h-full w-full rounded-full ${color.value}`}></div>
+                                    </RadioGroupItem>
                                 </div>
                             ))}
                             </RadioGroup>
