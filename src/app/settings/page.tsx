@@ -13,6 +13,26 @@ import { ShieldCheck, CalendarClock, Briefcase, UserPlus, SlidersHorizontal, Sun
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+const allPermissions = [
+  { id: 'view_dashboard', label: 'Ver Panel Principal' },
+  { id: 'manage_employees', label: 'Gestionar Empleados (Ver, Crear, Editar)' },
+  { id: 'manage_attendance', label: 'Gestionar Asistencia y Fichajes' },
+  { id: 'manage_absences', label: 'Gestionar Ausencias y Aprobaciones' },
+  { id: 'manage_projects', label: 'Gestionar Proyectos y Tareas' },
+  { id: 'manage_performance', label: 'Gestionar Evaluaciones de Desempeño' },
+  { id: 'manage_documents', label: 'Gestionar Documentos de la Empresa' },
+  { id: 'manage_reports', label: 'Generar Informes de Empresa' },
+  { id: 'manage_settings', label: 'Gestionar Configuración de la Empresa' },
+  { id: 'manage_roles', label: 'Gestionar Roles y Permisos' },
+];
+
+type Role = {
+  name: string;
+  description: string;
+  permissions: string[];
+};
 
 export default function SettingsPage() {
   const [centers, setCenters] = useState([
@@ -27,17 +47,17 @@ export default function SettingsPage() {
     { name: "RRHH" },
   ]);
 
-  const [roles, setRoles] = useState([
-    { name: "Propietario", description: "Control total sobre la cuenta." },
-    { name: "Administrador", description: "Acceso a todo excepto la gestión de roles." },
-    { name: "Recursos Humanos", description: "Gestiona personal, but no la configuración." },
-    { name: "Manager", description: "Gestiona equipos o personas específicas." },
+  const [roles, setRoles] = useState<Role[]>([
+    { name: "Propietario", description: "Control total sobre la cuenta.", permissions: allPermissions.map(p => p.id) },
+    { name: "Administrador", description: "Acceso a todo excepto la gestión de roles.", permissions: allPermissions.filter(p => p.id !== 'manage_roles').map(p => p.id) },
+    { name: "Recursos Humanos", description: "Gestiona personal, pero no la configuración.", permissions: ['view_dashboard', 'manage_employees', 'manage_attendance', 'manage_absences', 'manage_performance', 'manage_documents'] },
+    { name: "Manager", description: "Gestiona equipos o personas específicas.", permissions: ['view_dashboard', 'manage_attendance', 'manage_absences'] },
   ]);
 
   const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
   const [dialogRoleMode, setDialogRoleMode] = useState<'add' | 'edit'>('add');
-  const [selectedRole, setSelectedRole] = useState<{ name: string, description: string } | null>(null);
-  const [roleFormData, setRoleFormData] = useState({ name: '', description: '' });
+  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const [roleFormData, setRoleFormData] = useState<Role>({ name: '', description: '', permissions: [] });
 
   const absenceTypes = [
     { name: "Vacaciones", remunerated: true, limit: "Anual" },
@@ -54,14 +74,14 @@ export default function SettingsPage() {
   const openAddRoleDialog = () => {
     setDialogRoleMode('add');
     setSelectedRole(null);
-    setRoleFormData({ name: '', description: '' });
+    setRoleFormData({ name: '', description: '', permissions: [] });
     setIsRoleDialogOpen(true);
   };
 
-  const openEditRoleDialog = (role: { name: string, description: string }) => {
+  const openEditRoleDialog = (role: Role) => {
     setDialogRoleMode('edit');
     setSelectedRole(role);
-    setRoleFormData({ name: role.name, description: role.description });
+    setRoleFormData({ name: role.name, description: role.description, permissions: [...role.permissions] });
     setIsRoleDialogOpen(true);
   };
 
@@ -147,13 +167,13 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
           <Dialog open={isRoleDialogOpen} onOpenChange={setIsRoleDialogOpen}>
-            <DialogContent>
+            <DialogContent className="sm:max-w-lg">
               <DialogHeader>
                 <DialogTitle className="font-headline">
                   {dialogRoleMode === 'add' ? 'Añadir Nuevo Rol' : 'Editar Rol'}
                 </DialogTitle>
                 <DialogDescription>
-                  {dialogRoleMode === 'add' ? 'Define un nuevo rol y su descripción.' : `Editando el rol de ${selectedRole?.name}.`}
+                  {dialogRoleMode === 'add' ? 'Define un nuevo rol y sus permisos.' : `Editando el rol de ${selectedRole?.name}.`}
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleRoleFormSubmit}>
@@ -174,8 +194,32 @@ export default function SettingsPage() {
                       id="role-description" 
                       value={roleFormData.description} 
                       onChange={(e) => setRoleFormData(prev => ({ ...prev, description: e.target.value }))} 
-                      placeholder="Describe los permisos y responsabilidades de este rol." 
+                      placeholder="Describe las responsabilidades de este rol." 
                     />
+                  </div>
+                   <div className="space-y-2">
+                    <Label>Permisos</Label>
+                    <ScrollArea className="h-48 rounded-md border p-4">
+                      <div className="space-y-3">
+                        {allPermissions.map((permission) => (
+                          <div key={permission.id} className="flex items-start space-x-2">
+                            <Checkbox
+                              id={`perm-${permission.id}`}
+                              checked={roleFormData.permissions.includes(permission.id)}
+                              onCheckedChange={(checked) => {
+                                setRoleFormData(prev => ({
+                                  ...prev,
+                                  permissions: checked
+                                    ? [...prev.permissions, permission.id]
+                                    : prev.permissions.filter(p => p !== permission.id)
+                                }));
+                              }}
+                            />
+                            <Label htmlFor={`perm-${permission.id}`} className="font-normal -mt-1 cursor-pointer">{permission.label}</Label>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
                   </div>
                 </div>
                 <DialogFooter>
