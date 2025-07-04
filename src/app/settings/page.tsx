@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -34,25 +34,40 @@ type Role = {
   permissions: string[];
 };
 
-export default function SettingsPage() {
-  const [centers, setCenters] = useState([
-    { name: "Oficina Central", address: "123 Calle Principal, Anytown", radius: 100 },
-    { name: "Almacén Norte", address: "456 Avenida Industrial, Anytown", radius: 150 },
-  ]);
-  const [departments, setDepartments] = useState([
-    { name: "Ingeniería" },
-    { name: "Diseño" },
-    { name: "Marketing" },
-    { name: "Ventas" },
-    { name: "RRHH" },
-  ]);
+const initialCenters = [
+  { name: "Oficina Central", address: "123 Calle Principal, Anytown", radius: 100 },
+  { name: "Almacén Norte", address: "456 Avenida Industrial, Anytown", radius: 150 },
+];
+const initialDepartments = [
+  { name: "Ingeniería" },
+  { name: "Diseño" },
+  { name: "Marketing" },
+  { name: "Ventas" },
+  { name: "RRHH" },
+];
+const initialRoles: Role[] = [
+  { name: "Propietario", description: "Control total sobre la cuenta.", permissions: allPermissions.map(p => p.id) },
+  { name: "Administrador", description: "Acceso a todo excepto la gestión de roles.", permissions: allPermissions.filter(p => p.id !== 'manage_roles').map(p => p.id) },
+  { name: "Recursos Humanos", description: "Gestiona personal, pero no la configuración.", permissions: ['view_dashboard', 'manage_employees', 'manage_attendance', 'manage_absences', 'manage_performance', 'manage_documents'] },
+  { name: "Manager", description: "Gestiona equipos o personas específicas.", permissions: ['view_dashboard', 'manage_attendance', 'manage_absences'] },
+];
 
-  const [roles, setRoles] = useState<Role[]>([
-    { name: "Propietario", description: "Control total sobre la cuenta.", permissions: allPermissions.map(p => p.id) },
-    { name: "Administrador", description: "Acceso a todo excepto la gestión de roles.", permissions: allPermissions.filter(p => p.id !== 'manage_roles').map(p => p.id) },
-    { name: "Recursos Humanos", description: "Gestiona personal, pero no la configuración.", permissions: ['view_dashboard', 'manage_employees', 'manage_attendance', 'manage_absences', 'manage_performance', 'manage_documents'] },
-    { name: "Manager", description: "Gestiona equipos o personas específicas.", permissions: ['view_dashboard', 'manage_attendance', 'manage_absences'] },
-  ]);
+const CENTERS_STORAGE_KEY = 'workflow-central-centers';
+const DEPARTMENTS_STORAGE_KEY = 'workflow-central-departments';
+const ROLES_STORAGE_KEY = 'workflow-central-roles';
+
+export default function SettingsPage() {
+  const [isClient, setIsClient] = useState(false);
+
+  const [centers, setCenters] = useState(initialCenters);
+  const [departments, setDepartments] = useState(initialDepartments);
+  const [roles, setRoles] = useState<Role[]>(initialRoles);
+  
+  const [isCenterDialogOpen, setIsCenterDialogOpen] = useState(false);
+  const [newCenterData, setNewCenterData] = useState({ name: "", address: "", radius: 100 });
+  
+  const [isDeptDialogOpen, setIsDeptDialogOpen] = useState(false);
+  const [newDepartmentName, setNewDepartmentName] = useState("");
 
   const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
   const [dialogRoleMode, setDialogRoleMode] = useState<'add' | 'edit'>('add');
@@ -70,6 +85,40 @@ export default function SettingsPage() {
     { name: "Turno de Tarde", start: "14:00", end: "22:00" },
     { name: "Turno de Noche", start: "22:00", end: "06:00" },
   ];
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (isClient) {
+      try {
+        const storedCenters = localStorage.getItem(CENTERS_STORAGE_KEY);
+        if (storedCenters) setCenters(JSON.parse(storedCenters));
+        else localStorage.setItem(CENTERS_STORAGE_KEY, JSON.stringify(initialCenters));
+
+        const storedDepts = localStorage.getItem(DEPARTMENTS_STORAGE_KEY);
+        if (storedDepts) setDepartments(JSON.parse(storedDepts));
+        else localStorage.setItem(DEPARTMENTS_STORAGE_KEY, JSON.stringify(initialDepartments));
+        
+        const storedRoles = localStorage.getItem(ROLES_STORAGE_KEY);
+        if (storedRoles) setRoles(JSON.parse(storedRoles));
+        else localStorage.setItem(ROLES_STORAGE_KEY, JSON.stringify(initialRoles));
+
+      } catch (error) {
+        console.error("Failed to access localStorage", error);
+      }
+    }
+  }, [isClient]);
+
+  useEffect(() => {
+    if (isClient) {
+      localStorage.setItem(CENTERS_STORAGE_KEY, JSON.stringify(centers));
+      localStorage.setItem(DEPARTMENTS_STORAGE_KEY, JSON.stringify(departments));
+      localStorage.setItem(ROLES_STORAGE_KEY, JSON.stringify(roles));
+    }
+  }, [centers, departments, roles, isClient]);
+
 
   const openAddRoleDialog = () => {
     setDialogRoleMode('add');
@@ -96,6 +145,24 @@ export default function SettingsPage() {
     }
     setIsRoleDialogOpen(false);
   };
+
+  const handleAddCenter = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCenterData.name || !newCenterData.address) return;
+    setCenters(prev => [...prev, { ...newCenterData, radius: Number(newCenterData.radius) }]);
+    setNewCenterData({ name: "", address: "", radius: 100 });
+    setIsCenterDialogOpen(false);
+  };
+
+  const handleAddDepartment = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newDepartmentName) return;
+    setDepartments(prev => [...prev, { name: newDepartmentName }]);
+    setNewDepartmentName("");
+    setIsDeptDialogOpen(false);
+  };
+  
+  if (!isClient) return null;
 
   return (
     <div className="space-y-8">
@@ -237,18 +304,29 @@ export default function SettingsPage() {
                 <CardTitle className="font-headline">Centros de Trabajo</CardTitle>
                 <CardDescription>Configura las ubicaciones de tu empresa para fichajes con geolocalización.</CardDescription>
               </div>
-               <Dialog>
+               <Dialog open={isCenterDialogOpen} onOpenChange={setIsCenterDialogOpen}>
                 <DialogTrigger asChild>
                     <Button><PlusCircle className="mr-2 h-4 w-4"/> Añadir Centro</Button>
                 </DialogTrigger>
                 <DialogContent>
                     <DialogHeader><DialogTitle className="font-headline">Nuevo Centro de Trabajo</DialogTitle></DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="space-y-2"><Label htmlFor="center-name">Nombre del Centro</Label><Input id="center-name" placeholder="Ej. Oficina Principal"/></div>
-                        <div className="space-y-2"><Label htmlFor="center-address">Dirección</Label><Input id="center-address" placeholder="Ej. 123 Calle Falsa"/></div>
-                        <div className="space-y-2"><Label htmlFor="center-radius">Radio de Geolocalización (metros)</Label><Input id="center-radius" type="number" placeholder="Ej. 100"/></div>
-                    </div>
-                    <DialogFooter><Button>Guardar Centro</Button></DialogFooter>
+                    <form onSubmit={handleAddCenter}>
+                        <div className="grid gap-4 py-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="center-name">Nombre del Centro</Label>
+                                <Input id="center-name" placeholder="Ej. Oficina Principal" value={newCenterData.name} onChange={(e) => setNewCenterData({...newCenterData, name: e.target.value})} required/>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="center-address">Dirección</Label>
+                                <Input id="center-address" placeholder="Ej. 123 Calle Falsa" value={newCenterData.address} onChange={(e) => setNewCenterData({...newCenterData, address: e.target.value})} required/>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="center-radius">Radio de Geolocalización (metros)</Label>
+                                <Input id="center-radius" type="number" placeholder="Ej. 100" value={newCenterData.radius} onChange={(e) => setNewCenterData({...newCenterData, radius: parseInt(e.target.value) || 0})}/>
+                            </div>
+                        </div>
+                        <DialogFooter><Button type="submit">Guardar Centro</Button></DialogFooter>
+                    </form>
                 </DialogContent>
                </Dialog>
             </CardHeader>
@@ -270,14 +348,19 @@ export default function SettingsPage() {
                 <CardTitle className="font-headline">Departamentos</CardTitle>
                 <CardDescription>Organiza a tus empleados en diferentes departamentos.</CardDescription>
               </div>
-               <Dialog>
+               <Dialog open={isDeptDialogOpen} onOpenChange={setIsDeptDialogOpen}>
                 <DialogTrigger asChild><Button><PlusCircle className="mr-2 h-4 w-4"/> Añadir Depto.</Button></DialogTrigger>
                 <DialogContent className="sm:max-w-xs">
                     <DialogHeader><DialogTitle className="font-headline">Nuevo Departamento</DialogTitle></DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="space-y-2"><Label htmlFor="dept-name">Nombre del Departamento</Label><Input id="dept-name" placeholder="Ej. Soporte Técnico"/></div>
-                    </div>
-                    <DialogFooter><Button>Guardar</Button></DialogFooter>
+                    <form onSubmit={handleAddDepartment}>
+                        <div className="grid gap-4 py-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="dept-name">Nombre del Departamento</Label>
+                                <Input id="dept-name" placeholder="Ej. Soporte Técnico" value={newDepartmentName} onChange={(e) => setNewDepartmentName(e.target.value)} required/>
+                            </div>
+                        </div>
+                        <DialogFooter><Button type="submit">Guardar</Button></DialogFooter>
+                    </form>
                 </DialogContent>
                </Dialog>
             </CardHeader>
@@ -624,5 +707,3 @@ export default function SettingsPage() {
     </div>
   )
 }
-
-    
