@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ShieldCheck, CalendarClock, Briefcase, UserPlus, SlidersHorizontal, Sun, Moon, Coffee, Timer, CalendarDays, Plane, Bell, Bot, Lock, Puzzle, List, PlusCircle } from "lucide-react";
+import { ShieldCheck, CalendarClock, Briefcase, UserPlus, SlidersHorizontal, Sun, Moon, Coffee, Timer, CalendarDays, Plane, Bell, Bot, Lock, Puzzle, List, PlusCircle, Trash2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function SettingsPage() {
   const [centers, setCenters] = useState([
@@ -35,6 +36,12 @@ export default function SettingsPage() {
     { name: "Vacaciones", remunerated: true, limit: "Anual" },
     { name: "Licencia por enfermedad", remunerated: true, limit: "Sin límite" },
     { name: "Teletrabajo", remunerated: true, limit: "Sin límite" },
+  ];
+
+  const shifts = [
+    { name: "Turno de Mañana", start: "06:00", end: "14:00" },
+    { name: "Turno de Tarde", start: "14:00", end: "22:00" },
+    { name: "Turno de Noche", start: "22:00", end: "06:00" },
   ];
 
   return (
@@ -171,26 +178,138 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="schedules" className="space-y-4">
-             <Card>
-                <CardHeader>
-                    <CardTitle className="font-headline">Tipos de Horario</CardTitle>
-                    <CardDescription>Configura los diferentes tipos de horarios que los empleados pueden tener.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                     <div className="flex items-center justify-between rounded-lg border p-4">
-                        <div><h3 className="font-semibold">Flexible</h3><p className="text-sm text-muted-foreground">Se establecen días laborables y un total de horas a cumplir.</p></div>
-                        <Button variant="outline">Configurar</Button>
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-headline">Tipos de Horario</CardTitle>
+              <CardDescription>Configura los diferentes tipos de horarios que los empleados pueden tener.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between rounded-lg border p-4">
+                <div>
+                  <h3 className="font-semibold">Flexible</h3>
+                  <p className="text-sm text-muted-foreground">Se establecen días laborables y un total de horas a cumplir.</p>
+                </div>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline">Configurar</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle className="font-headline">Configurar Horario Flexible</DialogTitle>
+                      <DialogDescription>Establece los días laborables y el total de horas a cumplir.</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="weekly-hours">Total de horas semanales</Label>
+                        <Input id="weekly-hours" type="number" defaultValue="40" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Días laborables</Label>
+                        <div className="flex gap-4 flex-wrap pt-2">
+                          {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((day, i) => (
+                            <div key={day} className="flex items-center gap-1.5">
+                              <Checkbox id={`day-${i}`} defaultChecked={i < 5} />
+                              <Label htmlFor={`day-${i}`} className="font-normal">{day}</Label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between rounded-lg border p-4">
-                        <div><h3 className="font-semibold">Fijo</h3><p className="text-sm text-muted-foreground">Se establecen horas de entrada y salida fijas.</p></div>
-                        <Button variant="outline">Configurar</Button>
+                    <DialogFooter>
+                      <Button>Guardar Cambios</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+              <div className="flex items-center justify-between rounded-lg border p-4">
+                <div>
+                  <h3 className="font-semibold">Fijo</h3>
+                  <p className="text-sm text-muted-foreground">Se establecen horas de entrada y salida fijas.</p>
+                </div>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline">Configurar</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle className="font-headline">Configurar Horario Fijo</DialogTitle>
+                      <DialogDescription>Establece las horas de entrada y salida fijas para la jornada.</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="start-time">Hora de Entrada</Label>
+                          <Input id="start-time" type="time" defaultValue="09:00" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="end-time">Hora de Salida</Label>
+                          <Input id="end-time" type="time" defaultValue="17:00" />
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="split-shift" />
+                        <Label htmlFor="split-shift" className="font-normal">Habilitar jornada partida</Label>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Días laborables</Label>
+                        <div className="flex gap-4 flex-wrap pt-2">
+                          {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((day, i) => (
+                            <div key={day} className="flex items-center gap-1.5">
+                              <Checkbox id={`day-fixed-${i}`} defaultChecked={i < 5} />
+                              <Label htmlFor={`day-fixed-${i}`} className="font-normal">{day}</Label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between rounded-lg border p-4">
-                        <div><h3 className="font-semibold">Turnos</h3><p className="text-sm text-muted-foreground">Para horarios rotativos y cambiantes.</p></div>
-                        <Button variant="outline">Configurar</Button>
+                    <DialogFooter>
+                      <Button>Guardar Cambios</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+              <div className="flex items-center justify-between rounded-lg border p-4">
+                <div>
+                  <h3 className="font-semibold">Turnos</h3>
+                  <p className="text-sm text-muted-foreground">Para horarios rotativos y cambiantes.</p>
+                </div>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline">Configurar</Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-lg">
+                    <DialogHeader>
+                      <DialogTitle className="font-headline">Gestionar Turnos</DialogTitle>
+                      <DialogDescription>Crea y edita los diferentes turnos para horarios rotativos. Esta es una vista previa, la asignación se realiza en otra sección.</DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4 space-y-4 max-h-[60vh] overflow-y-auto">
+                      {shifts.map((shift, index) => (
+                        <div key={index} className="flex items-end gap-2 p-3 border rounded-md bg-muted/50">
+                          <div className="flex-1 space-y-2">
+                            <Label htmlFor={`shift-name-${index}`}>Nombre del Turno</Label>
+                            <Input id={`shift-name-${index}`} defaultValue={shift.name} />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor={`shift-start-${index}`}>Inicio</Label>
+                            <Input id={`shift-start-${index}`} type="time" defaultValue={shift.start} className="w-28"/>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor={`shift-end-${index}`}>Fin</Label>
+                            <Input id={`shift-end-${index}`} type="time" defaultValue={shift.end} className="w-28"/>
+                          </div>
+                          <Button variant="ghost" size="icon" className="hover:bg-destructive/10"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                        </div>
+                      ))}
+                      <Button variant="outline" className="w-full mt-4"><PlusCircle className="mr-2 h-4 w-4"/> Añadir Nuevo Turno</Button>
                     </div>
-                </CardContent>
-            </Card>
+                    <DialogFooter>
+                      <Button>Guardar Cambios</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
          <TabsContent value="breaks" className="space-y-4">
