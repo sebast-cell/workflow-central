@@ -262,16 +262,9 @@ export default function SettingsPage() {
   const [newCalendarName, setNewCalendarName] = useState("");
   const [isHolidayDialogOpen, setIsHolidayDialogOpen] = useState(false);
   const [holidayFormData, setHolidayFormData] = useState<{name: string, date: Date | undefined}>({ name: "", date: undefined });
+  const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
   
   const allSchedules = ['Horario Fijo', 'Horario Flexible', ...shifts.map(s => s.name)];
-
-  const handleHolidayDateSelect = (date: Date | undefined) => {
-    setHolidayFormData(prev => ({ ...prev, date }));
-    if (date) {
-        // This is a common pattern to close a popover after selection
-        // but we'll manage the popover state manually for more control in the form
-    }
-  };
 
   useEffect(() => {
     setIsClient(true);
@@ -627,7 +620,7 @@ export default function SettingsPage() {
     if (!holidayFormData.name || !holidayFormData.date || !selectedCalendarId) return;
     
     const newHoliday: Holiday = {
-      id: Date.now().toString(),
+      id: `custom-${Date.now()}`,
       name: holidayFormData.name,
       date: holidayFormData.date.toISOString(),
     };
@@ -1370,7 +1363,7 @@ export default function SettingsPage() {
                                                 </div>
                                                 <div className="space-y-2">
                                                     <Label>Fecha</Label>
-                                                    <Popover>
+                                                    <Popover open={isDatePopoverOpen} onOpenChange={setIsDatePopoverOpen}>
                                                         <PopoverTrigger asChild>
                                                             <Button type="button" variant="outline" className={cn("w-full justify-start text-left font-normal", !holidayFormData.date && "text-muted-foreground")}>
                                                                 <CalendarIcon className="mr-2 h-4 w-4" />
@@ -1383,6 +1376,7 @@ export default function SettingsPage() {
                                                                 selected={holidayFormData.date} 
                                                                 onSelect={(date) => {
                                                                     setHolidayFormData(prev => ({...prev, date}));
+                                                                    setIsDatePopoverOpen(false);
                                                                 }}
                                                                 initialFocus
                                                             />
