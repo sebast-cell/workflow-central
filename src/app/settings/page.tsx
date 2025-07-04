@@ -9,12 +9,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ShieldCheck, CalendarClock, Briefcase, UserPlus, SlidersHorizontal, Sun, Moon, Coffee, Timer, CalendarDays, Plane, Bell, Bot, Lock, Puzzle, List, PlusCircle, Trash2 } from "lucide-react";
+import { ShieldCheck, CalendarClock, Briefcase, UserPlus, SlidersHorizontal, Sun, Moon, Coffee, Timer, CalendarDays, Plane, Bell, Bot, Lock, Puzzle, List, PlusCircle, Trash2, ArrowLeft, Calendar as CalendarIcon } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
 
 const allPermissions = [
   { id: 'view_dashboard', label: 'Ver Panel Principal' },
@@ -108,6 +115,25 @@ type Shift = {
   end: string;
 };
 
+type AbsenceType = {
+  id: string;
+  name: string;
+  remunerated: boolean;
+  unit: 'days' | 'hours';
+};
+
+type Holiday = {
+    id: string;
+    name: string;
+    date: string; // ISO string for localStorage
+};
+
+type CalendarData = {
+    id: string;
+    name: string;
+    holidays: Holiday[];
+};
+
 const initialCenters: Center[] = [
   { name: "Oficina Central", address: "123 Calle Principal, Anytown", radius: 100 },
   { name: "Almacén Norte", address: "456 Avenida Industrial, Anytown", radius: 150 },
@@ -139,6 +165,14 @@ const initialShifts: Shift[] = [
     { id: "2", name: "Turno de Tarde", start: "14:00", end: "22:00" },
     { id: "3", name: "Turno de Noche", start: "22:00", end: "06:00" },
 ];
+const initialAbsenceTypes: AbsenceType[] = [
+    { id: 'vacations', name: "Vacaciones", remunerated: true, unit: 'days' },
+    { id: 'sick_leave', name: "Licencia por enfermedad", remunerated: true, unit: 'days' },
+    { id: 'telework', name: "Teletrabajo", remunerated: true, unit: 'days' },
+];
+const initialCalendars: CalendarData[] = [
+    { id: 'default-calendar', name: 'Calendario General', holidays: [] }
+];
 
 const CENTERS_STORAGE_KEY = 'workflow-central-centers';
 const DEPARTMENTS_STORAGE_KEY = 'workflow-central-departments';
@@ -148,6 +182,8 @@ const CLOCK_IN_TYPES_STORAGE_KEY = 'workflow-central-clock-in-types';
 const SHIFTS_STORAGE_KEY = 'workflow-central-shifts';
 const FLEXIBLE_SCHEDULES_STORAGE_KEY = 'workflow-central-flexible-schedules';
 const FIXED_SCHEDULES_STORAGE_KEY = 'workflow-central-fixed-schedules';
+const ABSENCE_TYPES_STORAGE_KEY = 'workflow-central-absence-types';
+const CALENDARS_STORAGE_KEY = 'workflow-central-calendars';
 
 
 const projectColors = [
@@ -173,6 +209,8 @@ export default function SettingsPage() {
   const [shifts, setShifts] = useState<Shift[]>(initialShifts);
   const [flexibleSchedules, setFlexibleSchedules] = useState<FlexibleSchedule[]>([]);
   const [fixedSchedules, setFixedSchedules] = useState<FixedSchedule[]>([]);
+  const [absenceTypes, setAbsenceTypes] = useState<AbsenceType[]>(initialAbsenceTypes);
+  const [calendars, setCalendars] = useState<CalendarData[]>(initialCalendars);
   
   const [isCenterDialogOpen, setIsCenterDialogOpen] = useState(false);
   const [dialogCenterMode, setDialogCenterMode] = useState<'add' | 'edit'>('add');
@@ -213,12 +251,18 @@ export default function SettingsPage() {
   const [dialogFixedScheduleMode, setDialogFixedScheduleMode] = useState<'add' | 'edit'>('add');
   const [selectedFixedSchedule, setSelectedFixedSchedule] = useState<FixedSchedule | null>(null);
   const [fixedScheduleFormData, setFixedScheduleFormData] = useState<Omit<FixedSchedule, 'id'>>({ name: "", workDays: [], ranges: [{id: Date.now().toString(), start: "09:00", end: "17:00"}], isNightShift: false });
+  
+  const [isAbsenceTypeDialogOpen, setIsAbsenceTypeDialogOpen] = useState(false);
+  const [dialogAbsenceTypeMode, setDialogAbsenceTypeMode] = useState<'add' | 'edit'>('add');
+  const [selectedAbsenceType, setSelectedAbsenceType] = useState<AbsenceType | null>(null);
+  const [absenceTypeFormData, setAbsenceTypeFormData] = useState<Omit<AbsenceType, 'id'>>({ name: "", remunerated: true, unit: 'days' });
 
-  const absenceTypes = [
-    { name: "Vacaciones", remunerated: true, limit: "Anual" },
-    { name: "Licencia por enfermedad", remunerated: true, limit: "Sin límite" },
-    { name: "Teletrabajo", remunerated: true, limit: "Sin límite" },
-  ];
+  const [selectedCalendarId, setSelectedCalendarId] = useState<string | null>(null);
+  const [isCalendarDialogOpen, setIsCalendarDialogOpen] = useState(false);
+  const [newCalendarName, setNewCalendarName] = useState("");
+  const [isHolidayDialogOpen, setIsHolidayDialogOpen] = useState(false);
+  const [holidayFormData, setHolidayFormData] = useState<{name: string, date: Date | undefined}>({ name: "", date: undefined });
+  
   const allSchedules = ['Horario Fijo', 'Horario Flexible', ...shifts.map(s => s.name)];
 
   useEffect(() => {
@@ -257,6 +301,8 @@ export default function SettingsPage() {
       loadFromStorage(SHIFTS_STORAGE_KEY, setShifts, initialShifts);
       loadFromStorage(FLEXIBLE_SCHEDULES_STORAGE_KEY, setFlexibleSchedules, []);
       loadFromStorage(FIXED_SCHEDULES_STORAGE_KEY, setFixedSchedules, []);
+      loadFromStorage(ABSENCE_TYPES_STORAGE_KEY, setAbsenceTypes, initialAbsenceTypes);
+      loadFromStorage(CALENDARS_STORAGE_KEY, setCalendars, initialCalendars);
 
       const storedEmployees = localStorage.getItem(EMPLOYEES_STORAGE_KEY);
       if (storedEmployees) setEmployees(JSON.parse(storedEmployees));
@@ -274,8 +320,10 @@ export default function SettingsPage() {
       localStorage.setItem(SHIFTS_STORAGE_KEY, JSON.stringify(shifts));
       localStorage.setItem(FLEXIBLE_SCHEDULES_STORAGE_KEY, JSON.stringify(flexibleSchedules));
       localStorage.setItem(FIXED_SCHEDULES_STORAGE_KEY, JSON.stringify(fixedSchedules));
+      localStorage.setItem(ABSENCE_TYPES_STORAGE_KEY, JSON.stringify(absenceTypes));
+      localStorage.setItem(CALENDARS_STORAGE_KEY, JSON.stringify(calendars));
     }
-  }, [centers, departments, roles, breaks, clockInTypes, shifts, flexibleSchedules, fixedSchedules, isClient]);
+  }, [centers, departments, roles, breaks, clockInTypes, shifts, flexibleSchedules, fixedSchedules, absenceTypes, calendars, isClient]);
 
 
   const openAddRoleDialog = () => {
@@ -515,6 +563,97 @@ export default function SettingsPage() {
   const handleDeleteFixedSchedule = (scheduleId: string) => {
       setFixedSchedules(prev => prev.filter(s => s.id !== scheduleId));
   };
+
+  const openAddAbsenceTypeDialog = () => {
+    setDialogAbsenceTypeMode('add');
+    setSelectedAbsenceType(null);
+    setAbsenceTypeFormData({ name: '', remunerated: true, unit: 'days' });
+    setIsAbsenceTypeDialogOpen(true);
+  };
+
+  const openEditAbsenceTypeDialog = (type: AbsenceType) => {
+    setDialogAbsenceTypeMode('edit');
+    setSelectedAbsenceType(type);
+    setAbsenceTypeFormData({ name: type.name, remunerated: type.remunerated, unit: type.unit });
+    setIsAbsenceTypeDialogOpen(true);
+  };
+
+  const handleAbsenceTypeFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!absenceTypeFormData.name) return;
+
+    if (dialogAbsenceTypeMode === 'add') {
+        setAbsenceTypes(prev => [...prev, { id: Date.now().toString(), ...absenceTypeFormData }]);
+    } else if (selectedAbsenceType) {
+        setAbsenceTypes(prev => prev.map(t => t.id === selectedAbsenceType.id ? { ...t, ...absenceTypeFormData } : t));
+    }
+    setIsAbsenceTypeDialogOpen(false);
+  };
+
+  const handleDeleteAbsenceType = (id: string) => {
+    setAbsenceTypes(prev => prev.filter(t => t.id !== id));
+  };
+  
+  const handleSelectCalendar = (id: string) => {
+    setSelectedCalendarId(id);
+  };
+
+  const handleBackToCalendars = () => {
+    setSelectedCalendarId(null);
+  };
+  
+  const handleCalendarFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCalendarName) return;
+    setCalendars(prev => [...prev, { id: Date.now().toString(), name: newCalendarName, holidays: [] }]);
+    setNewCalendarName("");
+    setIsCalendarDialogOpen(false);
+  };
+
+  const handleDeleteCalendar = (id: string) => {
+    setCalendars(prev => prev.filter(c => c.id !== id));
+  };
+  
+  const handleHolidayFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!holidayFormData.name || !holidayFormData.date || !selectedCalendarId) return;
+    
+    const newHoliday: Holiday = {
+      id: Date.now().toString(),
+      name: holidayFormData.name,
+      date: holidayFormData.date.toISOString(),
+    };
+    
+    setCalendars(prev => prev.map(cal => 
+      cal.id === selectedCalendarId ? { ...cal, holidays: [...cal.holidays, newHoliday] } : cal
+    ));
+    
+    setIsHolidayDialogOpen(false);
+    setHolidayFormData({ name: "", date: undefined });
+  };
+
+  const handleDeleteHoliday = (holidayId: string) => {
+    if (!selectedCalendarId) return;
+    setCalendars(prev => prev.map(cal => 
+      cal.id === selectedCalendarId ? { ...cal, holidays: cal.holidays.filter(h => h.id !== holidayId) } : cal
+    ));
+  };
+  
+  const handleImportHolidays = () => {
+      // This is a mock implementation
+      if (!selectedCalendarId) return;
+      const mockHolidays: Holiday[] = [
+          { id: 'mock1', name: 'Año Nuevo', date: new Date(new Date().getFullYear(), 0, 1).toISOString() },
+          { id: 'mock2', name: 'Día del Trabajador', date: new Date(new Date().getFullYear(), 4, 1).toISOString() },
+          { id: 'mock3', name: 'Navidad', date: new Date(new Date().getFullYear(), 11, 25).toISOString() },
+      ];
+      setCalendars(prev => prev.map(cal => 
+          cal.id === selectedCalendarId ? { ...cal, holidays: [...cal.holidays, ...mockHolidays] } : cal
+      ));
+  };
+
+  const selectedCalendar = calendars.find(c => c.id === selectedCalendarId);
+  const holidayDates = selectedCalendar?.holidays.map(h => new Date(h.date)) || [];
 
 
   if (!isClient) return null;
@@ -1034,7 +1173,7 @@ export default function SettingsPage() {
                                         : `, Límite: ${br.limit} min`}
                                 </p>
                                 <p className="text-sm text-muted-foreground">
-                                    Asignado a: {br.assignedTo?.length > 0 ? br.assignedTo.join(', ') : 'Ninguno'}
+                                    Asignado a: {(br.assignedTo || []).length > 0 ? (br.assignedTo || []).join(', ') : 'Ninguno'}
                                 </p>
                             </div>
                             <div className="flex items-center">
@@ -1161,6 +1300,112 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="calendars" className="space-y-4">
+            {!selectedCalendarId ? (
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <div>
+                            <CardTitle className="font-headline">Calendarios de Festivos</CardTitle>
+                            <CardDescription>Gestiona calendarios para diferentes centros o departamentos.</CardDescription>
+                        </div>
+                        <Dialog open={isCalendarDialogOpen} onOpenChange={setIsCalendarDialogOpen}>
+                            <DialogTrigger asChild><Button><PlusCircle className="mr-2 h-4 w-4" /> Nuevo Calendario</Button></DialogTrigger>
+                            <DialogContent className="sm:max-w-xs">
+                                <DialogHeader><DialogTitle className="font-headline">Crear Nuevo Calendario</DialogTitle></DialogHeader>
+                                <form onSubmit={handleCalendarFormSubmit}>
+                                    <div className="grid gap-4 py-4">
+                                        <Label htmlFor="cal-name">Nombre del Calendario</Label>
+                                        <Input id="cal-name" value={newCalendarName} onChange={e => setNewCalendarName(e.target.value)} required />
+                                    </div>
+                                    <DialogFooter><Button type="submit">Crear</Button></DialogFooter>
+                                </form>
+                            </DialogContent>
+                        </Dialog>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {calendars.map(cal => (
+                            <div key={cal.id} className="flex items-center justify-between rounded-lg border p-4">
+                                <div>
+                                    <h3 className="font-semibold">{cal.name}</h3>
+                                    <p className="text-sm text-muted-foreground">{cal.holidays.length} festivos</p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Button variant="outline" size="sm" onClick={() => handleSelectCalendar(cal.id)}>Gestionar</Button>
+                                    <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDeleteCalendar(cal.id)}><Trash2 className="h-4 w-4"/></Button>
+                                </div>
+                            </div>
+                        ))}
+                    </CardContent>
+                </Card>
+            ) : (
+                <>
+                    <Button variant="ghost" onClick={handleBackToCalendars}><ArrowLeft className="mr-2 h-4 w-4"/> Volver a Calendarios</Button>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div>
+                                <CardTitle className="font-headline">{selectedCalendar?.name}</CardTitle>
+                                <CardDescription>Gestiona los festivos de este calendario.</CardDescription>
+                            </div>
+                            <div className="flex gap-2">
+                                <Button variant="outline" onClick={handleImportHolidays}>Importar Festivos</Button>
+                                <Dialog open={isHolidayDialogOpen} onOpenChange={setIsHolidayDialogOpen}>
+                                    <DialogTrigger asChild><Button><PlusCircle className="mr-2 h-4 w-4"/> Añadir Festivo</Button></DialogTrigger>
+                                    <DialogContent>
+                                        <DialogHeader><DialogTitle className="font-headline">Añadir Festivo Personalizado</DialogTitle></DialogHeader>
+                                        <form onSubmit={handleHolidayFormSubmit}>
+                                            <div className="grid gap-4 py-4">
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="holiday-name">Nombre del Festivo</Label>
+                                                    <Input id="holiday-name" value={holidayFormData.name} onChange={e => setHolidayFormData({...holidayFormData, name: e.target.value})} required/>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label>Fecha</Label>
+                                                    <Popover>
+                                                        <PopoverTrigger asChild>
+                                                            <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !holidayFormData.date && "text-muted-foreground")}>
+                                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                                {holidayFormData.date ? format(holidayFormData.date, "PPP") : <span>Elige una fecha</span>}
+                                                            </Button>
+                                                        </PopoverTrigger>
+                                                        <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={holidayFormData.date} onSelect={date => setHolidayFormData({...holidayFormData, date})} initialFocus/></PopoverContent>
+                                                    </Popover>
+                                                </div>
+                                            </div>
+                                            <DialogFooter><Button type="submit">Añadir Festivo</Button></DialogFooter>
+                                        </form>
+                                    </DialogContent>
+                                </Dialog>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="grid md:grid-cols-2 gap-8">
+                            <div>
+                                <Calendar mode="multiple" selected={holidayDates} className="rounded-md border"/>
+                            </div>
+                            <div className="space-y-2">
+                                <h4 className="font-medium">Lista de Festivos</h4>
+                                <ScrollArea className="h-72">
+                                    <Table>
+                                        <TableHeader><TableRow><TableHead>Nombre</TableHead><TableHead>Fecha</TableHead><TableHead className="text-right"></TableHead></TableRow></TableHeader>
+                                        <TableBody>
+                                        {selectedCalendar?.holidays.map(holiday => (
+                                            <TableRow key={holiday.id}>
+                                                <TableCell>{holiday.name}</TableCell>
+                                                <TableCell>{format(new Date(holiday.date), "PPP")}</TableCell>
+                                                <TableCell className="text-right">
+                                                    <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDeleteHoliday(holiday.id)}><Trash2 className="h-4 w-4"/></Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                        </TableBody>
+                                    </Table>
+                                </ScrollArea>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </>
+            )}
+        </TabsContent>
+
         <TabsContent value="vacations" className="space-y-4">
             <Card>
                 <CardHeader>
@@ -1191,20 +1436,54 @@ export default function SettingsPage() {
                         <CardTitle className="font-headline">Tipos de Ausencia</CardTitle>
                         <CardDescription>Crea y configura diferentes tipos de permisos y ausencias.</CardDescription>
                     </div>
-                    <Button><PlusCircle className="mr-2 h-4 w-4"/> Añadir Tipo</Button>
+                    <Button onClick={openAddAbsenceTypeDialog}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Tipo</Button>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {absenceTypes.map((absence, index) => (
-                        <div key={index} className="flex items-center justify-between rounded-lg border p-4">
+                    {absenceTypes.map((absence) => (
+                        <div key={absence.id} className="flex items-center justify-between rounded-lg border p-4">
                             <div>
                                 <h3 className="font-semibold">{absence.name}</h3>
-                                <p className="text-sm text-muted-foreground">Remunerado: {absence.remunerated ? 'Sí' : 'No'} | Límite: {absence.limit}</p>
+                                <p className="text-sm text-muted-foreground">
+                                    Remunerado: {absence.remunerated ? 'Sí' : 'No'} | Unidad: {absence.unit === 'days' ? 'Días' : 'Horas'}
+                                </p>
                             </div>
-                            <Button variant="ghost">Editar</Button>
+                            <div className="flex items-center">
+                                <Button variant="ghost" size="sm" onClick={() => openEditAbsenceTypeDialog(absence)}>Editar</Button>
+                                <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDeleteAbsenceType(absence.id)}>
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </div>
                         </div>
                     ))}
                 </CardContent>
             </Card>
+            <Dialog open={isAbsenceTypeDialogOpen} onOpenChange={setIsAbsenceTypeDialogOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="font-headline">{dialogAbsenceTypeMode === 'add' ? 'Añadir Tipo de Ausencia' : 'Editar Tipo de Ausencia'}</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleAbsenceTypeFormSubmit}>
+                        <div className="grid gap-4 py-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="absence-name">Nombre de la Ausencia</Label>
+                                <Input id="absence-name" value={absenceTypeFormData.name} onChange={e => setAbsenceTypeFormData({...absenceTypeFormData, name: e.target.value})} required/>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Switch id="absence-remunerated" checked={absenceTypeFormData.remunerated} onCheckedChange={checked => setAbsenceTypeFormData({...absenceTypeFormData, remunerated: checked})} />
+                                <Label htmlFor="absence-remunerated">Remunerado (cuenta como tiempo trabajado)</Label>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Contabilizar en</Label>
+                                <RadioGroup value={absenceTypeFormData.unit} onValueChange={(value: 'days' | 'hours') => setAbsenceTypeFormData({...absenceTypeFormData, unit: value})} className="flex gap-4">
+                                    <div className="flex items-center space-x-2"><RadioGroupItem value="days" id="unit-days"/><Label htmlFor="unit-days">Días</Label></div>
+                                    <div className="flex items-center space-x-2"><RadioGroupItem value="hours" id="unit-hours"/><Label htmlFor="unit-hours">Horas</Label></div>
+                                </RadioGroup>
+                            </div>
+                        </div>
+                        <DialogFooter><Button type="submit">Guardar</Button></DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </TabsContent>
         
         <TabsContent value="automations" className="space-y-4">
