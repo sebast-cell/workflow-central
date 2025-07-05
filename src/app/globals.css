@@ -35,11 +35,11 @@ body {
     --radius: 0.5rem;
 
     /* Light Sidebar Theme */
-    --sidebar-background: 220 14% 96%; /* Gray 100 */
+    --sidebar-background: 231 100% 97%; /* Indigo 100 */
     --sidebar-foreground: 222 47% 11%; /* Gray 900 */
     --sidebar-primary: 243 75% 59%; /* Indigo 600 */
     --sidebar-primary-foreground: 0 0% 100%; /* White */
-    --sidebar-accent: 231 100% 97%; /* Indigo 100 */
+    --sidebar-accent: 232 97% 92%; /* Indigo 200 */
     --sidebar-accent-foreground: 243 75% 59%; /* Indigo 600 */
     --sidebar-border: 220 14% 90%; /* Gray 200 */
     --sidebar-ring: 243 75% 59%; /* Indigo 600 */
