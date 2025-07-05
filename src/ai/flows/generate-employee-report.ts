@@ -10,7 +10,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const GenerateEmployeeReportInputSchema = z.object({
+const GenerateEmployeeReportInputSchema = z.object({
   reportType: z.string().describe("The type of report to generate (e.g., Asistencia, Ausencias y Tiempo Libre, Costos de Proyecto)."),
   informationDetails: z.string().describe("Specific details or filters to include in the report (e.g., include overtime, filter by Engineering department)."),
   dateRange: z.string().describe("The date range for the report (e.g., Last Month, Q3 2024, Last 30 days)."),
@@ -19,7 +19,7 @@ export const GenerateEmployeeReportInputSchema = z.object({
 });
 export type GenerateEmployeeReportInput = z.infer<typeof GenerateEmployeeReportInputSchema>;
 
-export const GenerateEmployeeReportOutputSchema = z.object({
+const GenerateEmployeeReportOutputSchema = z.object({
   report: z.string().describe("The generated report content as a string, formatted as plain text, regardless of the requested final format. The text should resemble the requested format."),
 });
 export type GenerateEmployeeReportOutput = z.infer<typeof GenerateEmployeeReportOutputSchema>;
