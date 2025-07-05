@@ -1447,7 +1447,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="space-y-2">
                                                 <Label>Fecha</Label>
-                                                <Popover open={isHolidayPopoverOpen} onOpenChange={setIsHolidayPopoverOpen}>
+                                                <Popover modal={true} open={isHolidayPopoverOpen} onOpenChange={setIsHolidayPopoverOpen}>
                                                     <PopoverTrigger asChild>
                                                         <Button
                                                             type="button"
@@ -1458,7 +1458,7 @@ export default function SettingsPage() {
                                                             {holidayFormData.date ? format(holidayFormData.date, "PPP") : <span>Elige una fecha</span>}
                                                         </Button>
                                                     </PopoverTrigger>
-                                                    <PopoverContent className="w-auto p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
+                                                    <PopoverContent className="w-auto p-0">
                                                         <Calendar 
                                                             mode="single" 
                                                             selected={holidayFormData.date} 
@@ -1600,7 +1600,7 @@ export default function SettingsPage() {
                                     )}
                                 </div>
                                 <div className="flex gap-2 pt-2">
-                                    <Popover open={isBlockedPeriodPopoverOpen} onOpenChange={setIsBlockedPeriodPopoverOpen}>
+                                    <Popover modal={true} open={isBlockedPeriodPopoverOpen} onOpenChange={setIsBlockedPeriodPopoverOpen}>
                                         <PopoverTrigger asChild>
                                             <Button
                                                 type="button"
@@ -1625,7 +1625,7 @@ export default function SettingsPage() {
                                                 )}
                                             </Button>
                                         </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
+                                        <PopoverContent className="w-auto p-0" align="start">
                                             <Calendar
                                                 initialFocus
                                                 mode="range"
@@ -1782,7 +1782,7 @@ export default function SettingsPage() {
                                         )}
                                     </div>
                                     <div className="flex gap-2 pt-2">
-                                        <Popover open={isAbsenceBlockedPeriodPopoverOpen} onOpenChange={setIsAbsenceBlockedPeriodPopoverOpen}>
+                                        <Popover modal={true} open={isAbsenceBlockedPeriodPopoverOpen} onOpenChange={setIsAbsenceBlockedPeriodPopoverOpen}>
                                             <PopoverTrigger asChild>
                                                 <Button
                                                     type="button"
@@ -1807,7 +1807,7 @@ export default function SettingsPage() {
                                                     )}
                                                 </Button>
                                             </PopoverTrigger>
-                                            <PopoverContent className="w-auto p-0" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
+                                            <PopoverContent className="w-auto p-0" align="start">
                                                 <Calendar
                                                     initialFocus
                                                     mode="range"
@@ -2051,4 +2051,3 @@ export default function SettingsPage() {
     </div>
   )
 }
-
