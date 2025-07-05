@@ -33,7 +33,7 @@ type SidebarContext = {
   setOpen: (open: boolean) => void
   openMobile: boolean
   setOpenMobile: (open: boolean) => void
-  isMobile: boolean
+  isMobile: boolean | undefined
   toggleSidebar: () => void
   isPinned: boolean
   togglePin: () => void
@@ -201,6 +201,20 @@ const Sidebar = React.forwardRef<
     ref
   ) => {
     const { isMobile, state, openMobile, setOpenMobile, isPinned, setOpen } = useSidebar()
+
+    if (isMobile === undefined) {
+      return (
+        <div
+          className={cn("group peer hidden md:block text-sidebar-foreground")}
+        >
+          <div
+            className={cn(
+              "relative h-svh bg-transparent w-[--sidebar-width-icon]"
+            )}
+          />
+        </div>
+      )
+    }
 
     if (collapsible === "none") {
       return (
