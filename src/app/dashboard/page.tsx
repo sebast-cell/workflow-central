@@ -55,7 +55,7 @@ export default function Dashboard() {
         <p className="text-muted-foreground">Una vista general de la actividad de tu equipo.</p>
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card className="bg-gradient-accent-to-card">
           <Link href="/employees">
             <>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -69,7 +69,7 @@ export default function Dashboard() {
             </>
           </Link>
         </Card>
-        <Card>
+        <Card className="bg-gradient-accent-to-card">
           <Link href="/projects">
             <>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -83,7 +83,7 @@ export default function Dashboard() {
             </>
           </Link>
         </Card>
-        <Card>
+        <Card className="bg-gradient-accent-to-card">
           <Link href="/absences">
             <>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -97,7 +97,7 @@ export default function Dashboard() {
             </>
           </Link>
         </Card>
-        <Card>
+        <Card className="bg-gradient-accent-to-card">
           <Link href="/projects">
             <>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -174,14 +174,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Empleado</TableHead>
-                  <TableHead>Departamento</TableHead>
-                  <TableHead className="hidden sm:table-cell">Estado</TableHead>
-                  <TableHead className="text-right">Horario</TableHead>
-                </TableRow>
-              </TableHeader>
+              <TableHeader><TableRow><TableHead>Empleado</TableHead><TableHead>Departamento</TableHead><TableHead className="hidden sm:table-cell">Estado</TableHead><TableHead className="text-right">Horario</TableHead></TableRow></TableHeader>
               <TableBody>
                 {teamSummary.map((member, index) => (
                     <TableRow key={index} className="hover:bg-muted/50 cursor-pointer" onClick={() => window.location.href = '/employees'}>
