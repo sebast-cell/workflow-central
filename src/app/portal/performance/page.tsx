@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { CheckCircle, Goal, PlusCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const goals = [
   { name: "Completar certificación de React Avanzado", progress: 75, status: "En Progreso" },
@@ -35,7 +36,10 @@ export default function EmployeePerformancePage() {
                             <div key={index}>
                                 <div className="flex items-center justify-between mb-2">
                                     <p className="font-medium">{goal.name}</p>
-                                    <Badge variant={goal.status === 'Completado' ? 'secondary' : 'outline'} className={goal.status === 'Completado' ? 'bg-green-100 text-green-800' : ''}>
+                                    <Badge variant={goal.status === 'Completado' ? 'secondary' : 'outline'} className={cn(
+                                        goal.status === 'Completado' && "bg-accent text-accent-foreground border-transparent",
+                                        goal.status === 'En Progreso' && "bg-warning text-warning-foreground border-transparent"
+                                    )}>
                                         {goal.status}
                                     </Badge>
                                 </div>

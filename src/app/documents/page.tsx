@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Folder, File, PenSquare, Upload } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
 
 const folders = [
   { name: "Documentos Laborales", count: 12 },
@@ -134,10 +135,10 @@ export default function DocumentsPage() {
                             <TableCell>{file.uploaded}</TableCell>
                             <TableCell>
                                 {file.signature ? (
-                                    <Badge className={
-                                        file.signature === 'Firmado' ? 'bg-accent/10 text-accent' :
-                                        'bg-yellow-100 text-yellow-800'
-                                    }>
+                                    <Badge className={cn(
+                                        file.signature === 'Firmado' ? 'bg-accent text-accent-foreground' : 'bg-warning text-warning-foreground',
+                                        "border-transparent"
+                                    )}>
                                         {file.signature}
                                     </Badge>
                                 ) : (

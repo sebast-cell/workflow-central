@@ -245,11 +245,12 @@ export default function EmployeeAbsencesPage() {
                             <TableCell>{request.dates}</TableCell>
                             <TableCell className="text-right">
                                 <Badge
-                                className={
-                                    request.status === "Aprobado" ? "bg-accent/10 text-accent" :
-                                    request.status === "Pendiente" ? "bg-yellow-100 text-yellow-800" :
-                                    "bg-destructive/10 text-destructive"
-                                }
+                                className={cn(
+                                    request.status === "Aprobado" && "bg-accent text-accent-foreground",
+                                    request.status === "Pendiente" && "bg-warning text-warning-foreground",
+                                    request.status === "Rechazado" && "bg-destructive text-destructive-foreground",
+                                    "border-transparent"
+                                )}
                                 >{request.status}</Badge>
                             </TableCell>
                             </TableRow>

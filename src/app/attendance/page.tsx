@@ -286,11 +286,11 @@ export default function AttendancePage() {
                   <TableCell>
                     <Badge 
                       variant="outline"
-                      className={
-                        log.status === "Entrada Marcada" ? "border-accent text-accent" :
-                        log.status === "Salida Marcada" ? "border-destructive text-destructive" :
-                        "border-yellow-500 text-yellow-600"
-                      }
+                      className={cn(
+                        log.status === "Entrada Marcada" && "border-accent text-accent",
+                        log.status === "Salida Marcada" && "border-destructive text-destructive",
+                        log.status === "En Descanso" && "border-warning text-warning"
+                      )}
                     >{log.status}</Badge>
                   </TableCell>
                   <TableCell className="text-right">{log.location}</TableCell>

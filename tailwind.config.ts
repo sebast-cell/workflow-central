@@ -9,6 +9,11 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      boxShadow: {
+        small: '0px 2px 4px rgba(0, 0, 0, 0.05)',
+        medium: '0px 4px 8px rgba(0, 0, 0, 0.1)',
+        large: '0px 8px 16px rgba(0, 0, 0, 0.15)',
+      },
       fontFamily: {
         body: ['Inter', 'sans-serif'],
         headline: ['"Space Grotesk"', 'sans-serif'],
@@ -45,6 +50,10 @@ const config: Config = {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))',
         },
+        warning: {
+          DEFAULT: 'hsl(var(--warning))',
+          foreground: 'hsl(var(--warning-foreground))',
+        },
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
@@ -67,9 +76,9 @@ const config: Config = {
         },
       },
       borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
+        lg: '1rem', // 16px
+        md: '0.5rem', // 8px
+        sm: '0.25rem', // 4px
       },
       keyframes: {
         'accordion-down': {

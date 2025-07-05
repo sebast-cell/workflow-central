@@ -48,18 +48,18 @@ const events: ClockInEvent[] = [
 
 const getEventTypeBadge = (type: string) => {
     switch (type) {
-        case "Entrada": return <Badge variant="outline" className="text-green-600 border-green-500"><ArrowRight className="h-3 w-3 mr-1"/>{type}</Badge>;
-        case "Salida": return <Badge variant="outline" className="text-red-600 border-red-500"><ArrowLeft className="h-3 w-3 mr-1"/>{type}</Badge>;
-        case "Descanso": return <Badge variant="outline" className="text-yellow-600 border-yellow-500"><Coffee className="h-3 w-3 mr-1"/>{type}</Badge>;
+        case "Entrada": return <Badge variant="outline" className="text-accent border-accent"><ArrowRight className="h-3 w-3 mr-1"/>{type}</Badge>;
+        case "Salida": return <Badge variant="outline" className="text-destructive border-destructive"><ArrowLeft className="h-3 w-3 mr-1"/>{type}</Badge>;
+        case "Descanso": return <Badge variant="outline" className="text-warning border-warning"><Coffee className="h-3 w-3 mr-1"/>{type}</Badge>;
         default: return <Badge variant="secondary">{type}</Badge>;
     }
 }
 
 const getEventTypeIcon = (type: string) => {
     const iconMap = {
-        "Entrada": { icon: <ArrowRight className="h-4 w-4 text-green-700" />, className: "bg-green-100" },
-        "Salida": { icon: <ArrowLeft className="h-4 w-4 text-red-700" />, className: "bg-red-100" },
-        "Descanso": { icon: <Coffee className="h-4 w-4 text-yellow-700" />, className: "bg-yellow-100" },
+        "Entrada": { icon: <ArrowRight className="h-4 w-4 text-accent" />, className: "bg-accent/10" },
+        "Salida": { icon: <ArrowLeft className="h-4 w-4 text-destructive" />, className: "bg-destructive/10" },
+        "Descanso": { icon: <Coffee className="h-4 w-4 text-warning" />, className: "bg-warning/10" },
     };
 
     const eventStyle = iconMap[type as keyof typeof iconMap];
@@ -84,9 +84,9 @@ const getEventTypeIcon = (type: string) => {
 
 const getTimelineIcon = (type: string) => {
     switch (type) {
-        case "Entrada": return <ArrowRight className="h-5 w-5 text-green-600" />;
-        case "Salida": return <ArrowLeft className="h-5 w-5 text-red-600" />;
-        case "Descanso": return <Coffee className="h-5 w-5 text-yellow-600" />;
+        case "Entrada": return <ArrowRight className="h-5 w-5 text-accent" />;
+        case "Salida": return <ArrowLeft className="h-5 w-5 text-destructive" />;
+        case "Descanso": return <Coffee className="h-5 w-5 text-warning" />;
         default: return <div className="h-2.5 w-2.5 rounded-full bg-muted-foreground" />;
     }
 }

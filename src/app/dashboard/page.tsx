@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from "recharts"
 import { ArrowUpRight, CheckCircle, Clock, Users, Zap } from "lucide-react"
 import Link from "next/link"
+import { cn } from "@/lib/utils";
 
 export default function Dashboard() {
   const chartData = [
@@ -26,6 +27,13 @@ export default function Dashboard() {
     { name: "Isabella Nguyen", activity: "completó la tarea 'Diseño de UI'", time: "hace 30m", avatar: "IN" },
     { name: "William Kim", activity: "está en descanso", time: "hace 45m", avatar: "WK" },
     { name: "Sophia Davis", activity: "marcó salida", time: "hace 1h", avatar: "SD" },
+  ]
+
+  const teamSummary = [
+      { name: "Liam Johnson", email: "liam@workflow.com", department: "Ingeniería", status: "Entrada Marcada", schedule: "9:00 AM - 5:00 PM"},
+      { name: "Emma Wilson", email: "emma@workflow.com", department: "Marketing", status: "Entrada Marcada", schedule: "10:00 AM - 6:00 PM"},
+      { name: "Noah Brown", email: "noah@workflow.com", department: "Diseño", status: "En Descanso", schedule: "9:30 AM - 5:30 PM"},
+      { name: "Ava Smith", email: "ava@workflow.com", department: "Ventas", status: "Salida Marcada", schedule: "9:00 AM - 5:00 PM"},
   ]
   
   return (
@@ -161,42 +169,25 @@ export default function Dashboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                <TableRow>
-                  <TableCell>
-                    <div className="font-medium">Liam Johnson</div>
-                    <div className="text-sm text-muted-foreground hidden md:inline">liam@workflow.com</div>
-                  </TableCell>
-                  <TableCell>Ingeniería</TableCell>
-                  <TableCell className="hidden sm:table-cell"><Badge className="bg-accent/10 text-accent">Entrada Marcada</Badge></TableCell>
-                  <TableCell className="text-right">9:00 AM - 5:00 PM</TableCell>
-                </TableRow>
-                 <TableRow>
-                  <TableCell>
-                    <div className="font-medium">Emma Wilson</div>
-                    <div className="text-sm text-muted-foreground hidden md:inline">emma@workflow.com</div>
-                  </TableCell>
-                  <TableCell>Marketing</TableCell>
-                  <TableCell className="hidden sm:table-cell"><Badge className="bg-accent/10 text-accent">Entrada Marcada</Badge></TableCell>
-                  <TableCell className="text-right">10:00 AM - 6:00 PM</TableCell>
-                </TableRow>
-                 <TableRow>
-                  <TableCell>
-                    <div className="font-medium">Noah Brown</div>
-                    <div className="text-sm text-muted-foreground hidden md:inline">noah@workflow.com</div>
-                  </TableCell>
-                  <TableCell>Diseño</TableCell>
-                  <TableCell className="hidden sm:table-cell"><Badge className="bg-yellow-100 text-yellow-800">En Descanso</Badge></TableCell>
-                  <TableCell className="text-right">9:30 AM - 5:30 PM</TableCell>
-                </TableRow>
-                 <TableRow>
-                  <TableCell>
-                    <div className="font-medium">Ava Smith</div>
-                    <div className="text-sm text-muted-foreground hidden md:inline">ava@workflow.com</div>
-                  </TableCell>
-                  <TableCell>Ventas</TableCell>
-                   <TableCell className="hidden sm:table-cell"><Badge className="bg-destructive/10 text-destructive">Salida Marcada</Badge></TableCell>
-                  <TableCell className="text-right">9:00 AM - 5:00 PM</TableCell>
-                </TableRow>
+                {teamSummary.map((member, index) => (
+                    <TableRow key={index}>
+                    <TableCell>
+                        <div className="font-medium">{member.name}</div>
+                        <div className="text-sm text-muted-foreground hidden md:inline">{member.email}</div>
+                    </TableCell>
+                    <TableCell>{member.department}</TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                        <Badge variant="outline" className={cn(
+                            member.status === "Entrada Marcada" && "border-accent text-accent",
+                            member.status === "Salida Marcada" && "border-destructive text-destructive",
+                            member.status === "En Descanso" && "border-warning text-warning"
+                        )}>
+                            {member.status}
+                        </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">{member.schedule}</TableCell>
+                    </TableRow>
+                ))}
               </TableBody>
             </Table>
           </CardContent>

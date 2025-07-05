@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MoreHorizontal, PlusCircle } from "lucide-react"
+import { cn } from "@/lib/utils";
 
 const reviewCycles = [
   { name: "Revisión Anual 2024", status: "Completado", period: "01 Ene - 31 Dic, 2024", participants: 48 },
@@ -93,10 +94,12 @@ export default function PerformancePage() {
                                         <TableRow key={cycle.name}>
                                             <TableCell className="font-medium">{cycle.name}</TableCell>
                                             <TableCell>
-                                                <Badge className={
-                                                    cycle.status === "Completado" ? "bg-accent/10 text-accent" :
-                                                    cycle.status === "En Progreso" ? "bg-yellow-100 text-yellow-800" : ""
-                                                }>{cycle.status}</Badge>
+                                                <Badge className={cn(
+                                                    cycle.status === "Completado" && "bg-accent text-accent-foreground",
+                                                    cycle.status === "En Progreso" && "bg-warning text-warning-foreground",
+                                                    cycle.status === "Programado" && "bg-secondary text-secondary-foreground",
+                                                    "border-transparent"
+                                                )}>{cycle.status}</Badge>
                                             </TableCell>
                                             <TableCell>{cycle.period}</TableCell>
                                             <TableCell>{cycle.participants}</TableCell>

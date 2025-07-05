@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 type Task = {
     id: number;
@@ -115,9 +116,9 @@ export default function ProjectDetailsPage() {
 
     const getStatusBadge = (status: string) => {
         switch(status) {
-            case "Completado": return "bg-accent/10 text-accent";
-            case "En Progreso": return "bg-yellow-100 text-yellow-800";
-            case "Pendiente": return "bg-muted text-muted-foreground";
+            case "Completado": return "bg-accent text-accent-foreground";
+            case "En Progreso": return "bg-warning text-warning-foreground";
+            case "Pendiente": return "bg-secondary text-secondary-foreground";
             default: return "bg-muted text-muted-foreground";
         }
     }
@@ -238,7 +239,7 @@ export default function ProjectDetailsPage() {
                                         <TableRow key={task.id}>
                                             <TableCell className="font-medium">{task.name}</TableCell>
                                             <TableCell>{task.assignee}</TableCell>
-                                            <TableCell><Badge className={getStatusBadge(task.status)}>{task.status}</Badge></TableCell>
+                                            <TableCell><Badge className={cn(getStatusBadge(task.status), "border-transparent")}>{task.status}</Badge></TableCell>
                                             <TableCell className="text-right">{task.hours}h</TableCell>
                                             <TableCell className="text-right">
                                                 <Button variant="ghost" size="icon" onClick={() => handleDeleteTask(task.id)}>

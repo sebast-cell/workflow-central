@@ -20,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Download, MoreHorizontal, PlusCircle, Search, UploadCloud, Link as LinkIcon } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 
 type CalendarData = {
     id: string;
@@ -196,11 +197,11 @@ export default function EmployeesPage() {
   const getStatusBadgeClass = (status: string) => {
       switch (status) {
           case "Activo":
-              return "bg-accent/10 text-accent";
+              return "bg-accent text-accent-foreground border-transparent";
           case "Deshabilitado":
-              return "bg-muted text-muted-foreground";
+              return "bg-secondary text-secondary-foreground border-transparent";
           case "De Licencia":
-              return "bg-yellow-100 text-yellow-800";
+              return "bg-warning text-warning-foreground border-transparent";
           default:
               return "";
       }
