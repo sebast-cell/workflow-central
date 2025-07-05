@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -316,7 +317,7 @@ const sidebarMenuButtonVariants = cva(
   {
     variants: {
       active: {
-        true: "bg-sidebar-accent text-sidebar-accent-foreground",
+        true: "bg-sidebar-active text-sidebar-active-foreground",
       },
       collapsed: {
         true: "justify-center",

@@ -66,18 +66,18 @@ const config: Config = {
         sidebar: {
           DEFAULT: 'hsl(var(--sidebar-background))',
           foreground: 'hsl(var(--sidebar-foreground))',
-          primary: 'hsl(var(--sidebar-primary))',
-          'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
           accent: 'hsl(var(--sidebar-accent))',
           'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
+          active: 'hsl(var(--sidebar-active))',
+          'active-foreground': 'hsl(var(--sidebar-active-foreground))',
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))',
         },
       },
       borderRadius: {
-        lg: '1.5rem',
-        md: '1rem',
-        sm: '0.5rem',
+        lg: '24px',
+        md: '16px',
+        sm: '8px',
       },
       keyframes: {
         'accordion-down': {
