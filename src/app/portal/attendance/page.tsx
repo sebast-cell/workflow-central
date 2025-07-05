@@ -132,7 +132,10 @@ export default function EmployeeAttendancePage() {
                                                     >
                                                         <TableCell className="font-medium">{event.time}</TableCell>
                                                         <TableCell>{getEventTypeBadge(event.type)}</TableCell>
-                                                        <TableCell>{event.location}</TableCell>
+                                                        <TableCell>
+                                                            <div>{event.location}</div>
+                                                            <div className="text-xs text-muted-foreground">Lat: {event.lat.toFixed(4)}, Lon: {event.lng.toFixed(4)}</div>
+                                                        </TableCell>
                                                     </TableRow>
                                                     {openEventId === event.id && (
                                                         <TableRow>
@@ -251,7 +254,10 @@ export default function EmployeeAttendancePage() {
                                             <div key={event.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
                                                 <div className="flex items-center gap-2">
                                                     {getEventTypeBadge(event.type)}
-                                                    <span className="text-sm">{event.location}</span>
+                                                    <div>
+                                                        <div className="text-sm">{event.location}</div>
+                                                        <div className="text-xs text-muted-foreground">Lat: {event.lat.toFixed(4)}, Lon: {event.lng.toFixed(4)}</div>
+                                                    </div>
                                                 </div>
                                                 <span className="font-mono text-sm">{event.time}</span>
                                             </div>
