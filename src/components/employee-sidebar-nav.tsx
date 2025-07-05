@@ -10,6 +10,7 @@ import {
   Settings,
   ClipboardList,
   TrendingUp,
+  CalendarClock,
 } from 'lucide-react';
 import {
   SidebarMenu,
@@ -20,6 +21,7 @@ import {
 const navItems = [
   { href: '/portal', label: 'Panel', icon: LayoutDashboard },
   { href: '/portal/tasks', label: 'Mis Tareas', icon: ClipboardList },
+  { href: '/portal/attendance', label: 'Mis Fichajes', icon: CalendarClock },
   { href: '/portal/absences', label: 'Mis Ausencias', icon: CalendarCheck2 },
   { href: '/portal/performance', label: 'Mi Desempeño', icon: TrendingUp },
   { href: '/portal/documents', label: 'Mis Documentos', icon: FileText },
