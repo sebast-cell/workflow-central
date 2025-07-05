@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useCallback } from "react";
@@ -122,12 +123,18 @@ type Shift = {
 type AbsenceType = {
   id: string;
   name: string;
+  color: string;
   remunerated: boolean;
   unit: 'days' | 'hours';
   limitRequests?: boolean;
   requestLimit?: number;
   blockPeriods?: boolean;
   blockedPeriods?: { id: string; from: string; to: string }[];
+  requiresApproval: boolean;
+  allowAttachment: boolean;
+  isDisabled: boolean;
+  assignment: 'all' | 'specific';
+  assignedTo: string[];
 };
 
 type Holiday = {
@@ -147,7 +154,7 @@ type VacationPolicy = {
   name: string;
   unit: 'days' | 'hours';
   amount: number;
-  countBy: 'natural' | 'workdays';
+  countBy: 'workdays' | 'natural';
   limitRequests: boolean;
   requestLimit?: number;
   blockPeriods: boolean;
@@ -186,9 +193,7 @@ const initialShifts: Shift[] = [
     { id: "3", name: "Turno de Noche", start: "22:00", end: "06:00" },
 ];
 const initialAbsenceTypes: AbsenceType[] = [
-    { id: 'vacations', name: "Vacaciones", remunerated: true, unit: 'days', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [] },
-    { id: 'sick_leave', name: "Licencia por enfermedad", remunerated: true, unit: 'days', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [] },
-    { id: 'telework', name: "Teletrabajo", remunerated: true, unit: 'days', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [] },
+    { id: 'telework', name: "Teletrabajo", color: "bg-blue-500", remunerated: true, unit: 'days', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [], requiresApproval: true, allowAttachment: false, isDisabled: false, assignment: 'all', assignedTo: [] },
 ];
 const initialCalendars: CalendarData[] = [
     { id: 'default-calendar', name: 'Calendario General', holidays: [] }
@@ -280,7 +285,7 @@ export default function SettingsPage() {
   const [isAbsenceTypeDialogOpen, setIsAbsenceTypeDialogOpen] = useState(false);
   const [dialogAbsenceTypeMode, setDialogAbsenceTypeMode] = useState<'add' | 'edit'>('add');
   const [selectedAbsenceType, setSelectedAbsenceType] = useState<AbsenceType | null>(null);
-  const [absenceTypeFormData, setAbsenceTypeFormData] = useState<Omit<AbsenceType, 'id'>>({ name: '', remunerated: true, unit: 'days', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [] });
+  const [absenceTypeFormData, setAbsenceTypeFormData] = useState<Omit<AbsenceType, 'id' | 'blockedPeriods'> & { blockedPeriods?: { id: string, from: string, to: string }[] }>({ name: '', color: 'bg-blue-500', remunerated: true, unit: 'days', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [], requiresApproval: true, allowAttachment: false, isDisabled: false, assignment: 'all', assignedTo: [] });
   const [newAbsenceBlockedPeriod, setNewAbsenceBlockedPeriod] = useState<DateRange | undefined>(undefined);
   const [isAbsenceBlockedPeriodPopoverOpen, setIsAbsenceBlockedPeriodPopoverOpen] = useState(false);
 
@@ -328,7 +333,7 @@ export default function SettingsPage() {
       const breakMigration = (data: any[]) => data.map((b: any) => ({ ...b, assignedTo: Array.isArray(b.assignedTo) ? b.assignedTo : [] }));
       const clockInMigration = (data: any[]) => data.map((t: any) => ({ ...t, assignment: t.assignment || 'all', assignedTo: Array.isArray(t.assignedTo) ? t.assignedTo : []}));
       const vacationPolicyMigration = (data: any[]) => data.map((p: any) => ({ ...p, blockedPeriods: Array.isArray(p.blockedPeriods) ? p.blockedPeriods : [], requestLimit: p.requestLimit || 0 }));
-      const absenceTypeMigration = (data: any[]) => data.map((p: any) => ({ ...p, limitRequests: p.limitRequests || false, requestLimit: p.requestLimit || 0, blockPeriods: p.blockPeriods || false, blockedPeriods: Array.isArray(p.blockedPeriods) ? p.blockedPeriods : [] }));
+      const absenceTypeMigration = (data: any[]) => data.map((p: any) => ({ ...p, color: p.color || 'bg-blue-500', requiresApproval: p.requiresApproval ?? true, allowAttachment: p.allowAttachment ?? false, isDisabled: p.isDisabled ?? false, assignment: p.assignment || 'all', assignedTo: p.assignedTo || [], limitRequests: p.limitRequests || false, requestLimit: p.requestLimit || 0, blockPeriods: p.blockPeriods || false, blockedPeriods: Array.isArray(p.blockedPeriods) ? p.blockedPeriods : [] }));
 
 
       loadFromStorage(CENTERS_STORAGE_KEY, setCenters, initialCenters);
@@ -607,7 +612,7 @@ export default function SettingsPage() {
   const openAddAbsenceTypeDialog = () => {
     setDialogAbsenceTypeMode('add');
     setSelectedAbsenceType(null);
-    setAbsenceTypeFormData({ name: '', remunerated: true, unit: 'days', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [] });
+    setAbsenceTypeFormData({ name: '', color: 'bg-blue-500', remunerated: true, unit: 'days', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [], requiresApproval: true, allowAttachment: false, isDisabled: false, assignment: 'all', assignedTo: [] });
     setIsAbsenceTypeDialogOpen(true);
   };
 
@@ -615,13 +620,8 @@ export default function SettingsPage() {
     setDialogAbsenceTypeMode('edit');
     setSelectedAbsenceType(type);
     setAbsenceTypeFormData({
-        name: type.name, 
-        remunerated: type.remunerated, 
-        unit: type.unit,
-        limitRequests: type.limitRequests ?? false,
-        requestLimit: type.requestLimit ?? 0,
-        blockPeriods: type.blockPeriods ?? false,
-        blockedPeriods: type.blockedPeriods ?? [],
+        ...type,
+        blockedPeriods: type.blockedPeriods ?? []
     });
     setIsAbsenceTypeDialogOpen(true);
   };
@@ -1533,7 +1533,7 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
             <Dialog open={isVacationPolicyDialogOpen} onOpenChange={setIsVacationPolicyDialogOpen}>
-                <DialogContent className="max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-h-[90vh] overflow-y-auto" onOpenAutoFocus={(e) => e.preventDefault()}>
                     <DialogHeader><DialogTitle className="font-headline">{dialogVacationPolicyMode === 'add' ? 'Añadir Política de Vacaciones' : 'Editar Política de Vacaciones'}</DialogTitle></DialogHeader>
                     <form onSubmit={handleVacationPolicyFormSubmit} className="space-y-4 py-4">
                         <div className="space-y-2">
@@ -1671,11 +1671,14 @@ export default function SettingsPage() {
                 <CardContent className="space-y-4">
                     {absenceTypes.map((absence) => (
                         <div key={absence.id} className="flex items-center justify-between rounded-lg border p-4">
-                            <div>
-                                <h3 className="font-semibold">{absence.name}</h3>
-                                <p className="text-sm text-muted-foreground">
-                                    Remunerado: {absence.remunerated ? 'Sí' : 'No'} | Unidad: {absence.unit === 'days' ? 'Días' : 'Horas'}
-                                </p>
+                            <div className="flex items-center gap-3">
+                                <div className={`h-4 w-4 rounded-full ${absence.color}`}></div>
+                                <div>
+                                    <h3 className="font-semibold">{absence.name}</h3>
+                                    <p className="text-sm text-muted-foreground">
+                                        Remunerado: {absence.remunerated ? 'Sí' : 'No'} | Unidad: {absence.unit === 'days' ? 'Días' : 'Horas'}
+                                    </p>
+                                </div>
                             </div>
                             <div className="flex items-center">
                                 <Button variant="ghost" size="sm" onClick={() => openEditAbsenceTypeDialog(absence)}>Editar</Button>
@@ -1688,7 +1691,7 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
             <Dialog open={isAbsenceTypeDialogOpen} onOpenChange={setIsAbsenceTypeDialogOpen}>
-                <DialogContent className="max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-h-[90vh] overflow-y-auto" onOpenAutoFocus={(e) => e.preventDefault()}>
                     <DialogHeader>
                         <DialogTitle className="font-headline">{dialogAbsenceTypeMode === 'add' ? 'Añadir Tipo de Ausencia' : 'Editar Tipo de Ausencia'}</DialogTitle>
                     </DialogHeader>
@@ -1697,6 +1700,18 @@ export default function SettingsPage() {
                             <div className="space-y-2">
                                 <Label htmlFor="absence-name">Nombre de la Ausencia</Label>
                                 <Input id="absence-name" value={absenceTypeFormData.name} onChange={e => setAbsenceTypeFormData({...absenceTypeFormData, name: e.target.value})} required/>
+                            </div>
+                             <div className="space-y-2">
+                                <Label>Color</Label>
+                                <RadioGroup value={absenceTypeFormData.color} onValueChange={(value) => setAbsenceTypeFormData({...absenceTypeFormData, color: value})} className="flex flex-wrap gap-4 pt-2">
+                                {projectColors.map(color => (
+                                    <div key={color.value} className="flex items-center space-x-2">
+                                        <RadioGroupItem value={color.value} id={`absence-color-${color.value}`} className="h-6 w-6 border-0 p-0 data-[state=checked]:ring-2 ring-offset-background ring-ring">
+                                            <div className={`h-full w-full rounded-full ${color.value}`}></div>
+                                        </RadioGroupItem>
+                                    </div>
+                                ))}
+                                </RadioGroup>
                             </div>
                             <div className="flex items-center space-x-2">
                                 <Switch id="absence-remunerated" checked={absenceTypeFormData.remunerated} onCheckedChange={checked => setAbsenceTypeFormData({...absenceTypeFormData, remunerated: checked})} />
@@ -1713,6 +1728,21 @@ export default function SettingsPage() {
                              <Separator/>
                              
                              <div className="space-y-3 pt-2">
+                                <div className="flex items-center space-x-2">
+                                    <Switch id="absence-requires-approval" checked={absenceTypeFormData.requiresApproval} onCheckedChange={checked => setAbsenceTypeFormData({...absenceTypeFormData, requiresApproval: checked})} />
+                                    <Label htmlFor="absence-requires-approval">Solicitud requiere aprobación</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <Switch id="absence-allow-attachment" checked={absenceTypeFormData.allowAttachment} onCheckedChange={checked => setAbsenceTypeFormData({...absenceTypeFormData, allowAttachment: checked})} />
+                                    <Label htmlFor="absence-allow-attachment">Permitir adjuntar documento de justificación</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <Switch id="absence-is-disabled" checked={absenceTypeFormData.isDisabled} onCheckedChange={checked => setAbsenceTypeFormData({...absenceTypeFormData, isDisabled: checked})} />
+                                    <Label htmlFor="absence-is-disabled">Deshabilitar para que no se pueda solicitar</Label>
+                                </div>
+
+                                <Separator className="my-3"/>
+
                                 <div className="flex items-center space-x-2">
                                     <Switch id="absence-limit" checked={absenceTypeFormData.limitRequests} onCheckedChange={checked => setAbsenceTypeFormData({...absenceTypeFormData, limitRequests: checked})} />
                                     <Label htmlFor="absence-limit">Limitar número de solicitudes</Label>
@@ -1805,6 +1835,49 @@ export default function SettingsPage() {
                                     </div>
                                 </div>
                             )}
+
+                             <Separator />
+
+                            <div className="space-y-2">
+                                <Label>Asignar a</Label>
+                                <RadioGroup 
+                                    value={absenceTypeFormData.assignment} 
+                                    onValueChange={(value: 'all' | 'specific') => setAbsenceTypeFormData({...absenceTypeFormData, assignment: value, assignedTo: []})} 
+                                    className="flex gap-4 pt-2">
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="all" id="abs-assign-all"/>
+                                        <Label htmlFor="abs-assign-all">Toda la empresa</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="specific" id="abs-assign-specific"/>
+                                        <Label htmlFor="abs-assign-specific">Empleados específicos</Label>
+                                    </div>
+                                </RadioGroup>
+                            </div>
+                            {absenceTypeFormData.assignment === 'specific' && (
+                                <div className="space-y-2">
+                                    <Label>Empleados</Label>
+                                    <ScrollArea className="h-40 rounded-md border p-4">
+                                        <div className="space-y-2">
+                                            {employees.map(employee => (
+                                                <div key={`abs-emp-${employee.id}`} className="flex items-center space-x-2">
+                                                    <Checkbox 
+                                                        id={`abs-emp-check-${employee.id}`}
+                                                        checked={absenceTypeFormData.assignedTo.includes(employee.name)}
+                                                        onCheckedChange={(checked) => {
+                                                            const newAssignedTo = checked 
+                                                                ? [...absenceTypeFormData.assignedTo, employee.name]
+                                                                : absenceTypeFormData.assignedTo.filter(name => name !== employee.name);
+                                                            setAbsenceTypeFormData({...absenceTypeFormData, assignedTo: newAssignedTo});
+                                                        }}
+                                                    />
+                                                    <Label htmlFor={`abs-emp-check-${employee.id}`} className="font-normal">{employee.name}</Label>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </ScrollArea>
+                                </div>
+                            )}
                         </div>
                         <DialogFooter><Button type="submit">Guardar</Button></DialogFooter>
                     </form>
@@ -1819,19 +1892,58 @@ export default function SettingsPage() {
                     <CardDescription>Configura acciones automáticas para los fichajes de los empleados.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                    <div className="flex items-center justify-between rounded-lg border p-4">
-                        <div>
-                            <h3 className="font-semibold">Cierre Automático al Cumplir Horario</h3>
-                            <p className="text-sm text-muted-foreground">Cierra el fichaje cuando el empleado completa su jornada.</p>
+                    <div className="rounded-lg border p-4 space-y-4">
+                        <div className="flex items-start justify-between">
+                            <div>
+                                <h3 className="font-semibold">Cierre Automático al Cumplir Horario</h3>
+                                <p className="text-sm text-muted-foreground">Cierra el fichaje cuando el empleado completa su jornada.</p>
+                            </div>
+                            <Switch />
                         </div>
-                        <Switch />
+                        <div className="pl-4 space-y-3 border-l-2 ml-2">
+                            <RadioGroup defaultValue="by_hours">
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="by_hours" id="auto-close-hours" />
+                                    <Label htmlFor="auto-close-hours" className="font-normal">Según horas de jornada</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="by_schedule" id="auto-close-schedule" />
+                                    <Label htmlFor="auto-close-schedule" className="font-normal">Según horario fijo o turno (cierre semanal)</Label>
+                                </div>
+                            </RadioGroup>
+                        </div>
                     </div>
-                    <div className="flex items-center justify-between rounded-lg border p-4">
-                        <div>
-                            <h3 className="font-semibold">Cierre Automático por Olvido</h3>
-                            <p className="text-sm text-muted-foreground">Establece una hora tope para cerrar fichajes abiertos.</p>
+                     <div className="rounded-lg border p-4 space-y-4">
+                        <div className="flex items-start justify-between">
+                            <div>
+                                <h3 className="font-semibold">Cierre Automático por Olvido</h3>
+                                <p className="text-sm text-muted-foreground">Establece una hora tope para cerrar fichajes abiertos.</p>
+                            </div>
+                            <Switch defaultChecked />
                         </div>
-                         <Switch defaultChecked />
+                        <div className="pl-4 space-y-3 border-l-2 ml-2">
+                             <div className="space-y-2">
+                                <Label htmlFor="forgot-time">Hora de Cierre</Label>
+                                <Input id="forgot-time" type="time" defaultValue="23:59" className="w-40"/>
+                            </div>
+                            <div>
+                                <h4 className="font-medium text-sm mb-2">Notificaciones por olvido</h4>
+                                <div className="space-y-3">
+                                    <div className="flex items-center space-x-2">
+                                        <Switch id="notify-forgot-admin" defaultChecked/>
+                                        <Label htmlFor="notify-forgot-admin" className="font-normal">Email al administrador</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <Switch id="notify-forgot-employee" defaultChecked/>
+                                        <Label htmlFor="notify-forgot-employee" className="font-normal">Email al empleado (para que resuelva la incidencia)</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <Switch id="notify-forgot-push"/>
+                                        <Label htmlFor="notify-forgot-push" className="font-normal">Notificación a la app del empleado</Label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
@@ -1937,3 +2049,4 @@ export default function SettingsPage() {
     </div>
   )
 }
+
