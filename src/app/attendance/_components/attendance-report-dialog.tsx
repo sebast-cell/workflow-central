@@ -3,11 +3,10 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal, Download, FileSpreadsheet, Loader2 } from 'lucide-react';
+import { Label } from '@/components/ui/label';
 
 type AttendanceLog = {
   time: string;
@@ -23,16 +22,12 @@ export function AttendanceReportDialog({ attendanceLog }: { attendanceLog: Atten
   const [isGenerating, setIsGenerating] = useState(false);
   
   // Form state
-  const [dateRange, setDateRange] = useState('Hoy');
-  const [locationFilter, setLocationFilter] = useState('');
   const [format, setFormat] = useState('PDF');
 
   const resetState = () => {
     setReport(null);
     setError(null);
     setIsGenerating(false);
-    setDateRange('Hoy');
-    setLocationFilter('');
     setFormat('PDF');
   };
 
@@ -51,18 +46,11 @@ export function AttendanceReportDialog({ attendanceLog }: { attendanceLog: Atten
     // Simulate processing time
     setTimeout(() => {
       try {
-        // NOTE: Date range filtering is simplified for this internal version.
-        // It currently uses all provided data.
-        let filteredData = [...attendanceLog];
-
-        if (locationFilter) {
-          filteredData = filteredData.filter(log =>
-            log.location.toLowerCase().includes(locationFilter.toLowerCase())
-          );
-        }
-
+        // Data is already filtered from the parent component.
+        const filteredData = [...attendanceLog];
+        
         if (filteredData.length === 0) {
-          setError("No se encontraron datos con los filtros aplicados.");
+          setError("No se encontraron datos para exportar con los filtros actuales.");
           setIsGenerating(false);
           return;
         }
@@ -81,8 +69,7 @@ export function AttendanceReportDialog({ attendanceLog }: { attendanceLog: Atten
           generatedReport = csvRows.join('\n');
         } else { // PDF (Plain Text)
           const reportLines = [
-            `Informe de Asistencia - ${dateRange}`,
-            `Filtro de ubicación: ${locationFilter || 'Todos'}`,
+            `Informe de Asistencia`,
             "===========================================================",
             ...filteredData.map(row =>
               `${row.time.padEnd(10)} | ${row.employee.padEnd(20)} | ${row.status.padEnd(15)} | ${row.location}`
@@ -131,7 +118,7 @@ export function AttendanceReportDialog({ attendanceLog }: { attendanceLog: Atten
         <DialogHeader>
           <DialogTitle className="font-headline">Generar Informe de Asistencia</DialogTitle>
           <DialogDescription>
-            Configura las opciones para exportar los datos de asistencia.
+            El informe se generará usando los filtros aplicados en la tabla.
           </DialogDescription>
         </DialogHeader>
         
@@ -153,14 +140,6 @@ export function AttendanceReportDialog({ attendanceLog }: { attendanceLog: Atten
           </div>
         ) : (
           <div className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label htmlFor="dateRange">Rango de Fechas</Label>
-              <Input id="dateRange" name="dateRange" placeholder="Ej., Últimos 7 días, Hoy" value={dateRange} onChange={e => setDateRange(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="locationFilter">Filtrar por Ubicación (opcional)</Label>
-              <Input id="locationFilter" name="locationFilter" placeholder="Ej., Oficina" value={locationFilter} onChange={e => setLocationFilter(e.target.value)} />
-            </div>
             <div className="space-y-2">
               <Label htmlFor="format">Formato de Salida</Label>
               <Select name="format" value={format} onValueChange={setFormat}>
