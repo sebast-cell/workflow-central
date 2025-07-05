@@ -35,7 +35,7 @@ body {
     --radius: 0.5rem;
 
     /* Light Sidebar Theme */
-    --sidebar-background: 0 0% 100%; /* White */
+    --sidebar-background: 220 14% 96%; /* Gray 100 */
     --sidebar-foreground: 222 47% 11%; /* Gray 900 */
     --sidebar-primary: 243 75% 59%; /* Indigo 600 */
     --sidebar-primary-foreground: 0 0% 100%; /* White */
