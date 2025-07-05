@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ShieldCheck, CalendarClock, Briefcase, UserPlus, SlidersHorizontal, Sun, Moon, Coffee, Timer, CalendarDays, Plane, Bell, Bot, Lock, Puzzle, List, PlusCircle, Trash2, ArrowLeft, Calendar as CalendarIcon } from "lucide-react";
+import { ShieldCheck, CalendarClock, Briefcase, UserPlus, SlidersHorizontal, Sun, Moon, Coffee, Timer, CalendarDays, Plane, Bell, Bot, Lock, Puzzle, List, PlusCircle, Trash2, ArrowLeft, Calendar as CalendarIcon, Terminal } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,7 +23,8 @@ import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { DateRange } from "react-day-picker";
-import { APIProvider, Map, AdvancedMarker, useApiIsLoaded } from "@vis.gl/react-google-maps";
+import { APIProvider, Map, AdvancedMarker, useApiIsLoaded, useMap } from "@vis.gl/react-google-maps";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 
 const allPermissions = [
@@ -61,6 +62,8 @@ type Center = {
   name: string;
   address: string;
   radius: number;
+  lat: number;
+  lng: number;
 };
 
 type Department = {
@@ -164,9 +167,11 @@ type VacationPolicy = {
   assignedTo: string[];
 };
 
+const defaultMapCenter = { lat: 40.416775, lng: -3.703790 };
+
 const initialCenters: Center[] = [
-  { name: "Oficina Central", address: "123 Calle Principal, Anytown", radius: 100 },
-  { name: "Almacén Norte", address: "456 Avenida Industrial, Anytown", radius: 150 },
+  { name: "Oficina Central", address: "123 Calle Principal, Anytown", radius: 100, lat: defaultMapCenter.lat, lng: defaultMapCenter.lng },
+  { name: "Almacén Norte", address: "456 Avenida Industrial, Anytown", radius: 150, lat: defaultMapCenter.lat, lng: defaultMapCenter.lng },
 ];
 const initialDepartments: Department[] = [
   { name: "Ingeniería" },
@@ -238,42 +243,157 @@ const containerStyle = {
 
 const AutocompleteInput = ({
     defaultValue,
-    onAddressChange,
     onPlaceSelect
 }: {
     defaultValue: string;
-    onAddressChange: (value: string) => void;
     onPlaceSelect: (place: google.maps.places.PlaceResult | null) => void;
 }) => {
     const isLoaded = useApiIsLoaded();
     const inputRef = useRef<HTMLInputElement>(null);
+    const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
 
     useEffect(() => {
-        if (isLoaded && inputRef.current) {
-            const autocomplete = new google.maps.places.Autocomplete(inputRef.current, {
+        if (isLoaded && inputRef.current && !autocomplete) {
+            const ac = new google.maps.places.Autocomplete(inputRef.current, {
                 fields: ["geometry.location", "formatted_address"],
             });
-            autocomplete.addListener('place_changed', () => {
-                onPlaceSelect(autocomplete.getPlace());
+            ac.addListener('place_changed', () => {
+                onPlaceSelect(ac.getPlace());
             });
+            setAutocomplete(ac);
         }
-    }, [isLoaded, onPlaceSelect]);
+    }, [isLoaded, autocomplete, onPlaceSelect]);
 
     return (
         <Input
             id="center-address"
+            name="center-address"
             ref={inputRef}
             placeholder={isLoaded ? "Ej. 123 Calle Falsa" : "Cargando mapa..."}
             defaultValue={defaultValue}
-            onChange={(e) => onAddressChange(e.target.value)}
             disabled={!isLoaded}
             required
         />
     );
 };
 
+const MapComponent = ({ position, onMapLoad }: { position: {lat: number, lng: number}, onMapLoad?: (map: google.maps.Map) => void }) => {
+    const map = useMap();
+
+    useEffect(() => {
+        if (map) {
+            map.setCenter(position);
+            if (onMapLoad) onMapLoad(map);
+        }
+    }, [map, position, onMapLoad]);
+
+    return (
+        <div style={containerStyle}>
+            <Map
+                center={position}
+                zoom={15}
+                gestureHandling={'greedy'}
+                disableDefaultUI={true}
+            >
+                <AdvancedMarker position={position} />
+            </Map>
+        </div>
+    )
+}
+
+const CenterDialog = ({
+    isOpen,
+    onOpenChange,
+    mode,
+    center,
+    onSubmit,
+    allSchedules,
+}: {
+    isOpen: boolean;
+    onOpenChange: (isOpen: boolean) => void;
+    mode: 'add' | 'edit';
+    center: Center | null;
+    onSubmit: (data: Center) => void;
+    allSchedules: string[];
+}) => {
+    const [centerData, setCenterData] = useState<Omit<Center, 'name'>>({ address: '', radius: 100, lat: defaultMapCenter.lat, lng: defaultMapCenter.lng });
+    const [centerName, setCenterName] = useState('');
+    
+    useEffect(() => {
+        if (isOpen) {
+            if (mode === 'edit' && center) {
+                setCenterName(center.name);
+                setCenterData({
+                    address: center.address,
+                    radius: center.radius,
+                    lat: center.lat,
+                    lng: center.lng,
+                });
+            } else {
+                setCenterName('');
+                setCenterData({ address: '', radius: 100, lat: defaultMapCenter.lat, lng: defaultMapCenter.lng });
+            }
+        }
+    }, [isOpen, mode, center]);
+    
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!centerName) return;
+        onSubmit({ ...centerData, name: centerName });
+    }
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader><DialogTitle className="font-headline">{mode === 'add' ? 'Nuevo Centro de Trabajo' : 'Editar Centro de Trabajo'}</DialogTitle></DialogHeader>
+                <form onSubmit={handleSubmit}>
+                    <div className="grid gap-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="center-name">Nombre del Centro</Label>
+                            <Input id="center-name" placeholder="Ej. Oficina Principal" value={centerName} onChange={(e) => setCenterName(e.target.value)} required />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="center-address">Dirección</Label>
+                            <AutocompleteInput
+                                defaultValue={centerData.address}
+                                onPlaceSelect={(place) => {
+                                    if (place?.geometry?.location) {
+                                        setCenterData(prev => ({
+                                            ...prev,
+                                            address: place.formatted_address || prev.address,
+                                            lat: place.geometry.location!.lat(),
+                                            lng: place.geometry.location!.lng(),
+                                        }));
+                                    }
+                                }}
+                            />
+                        </div>
+                        
+                        <MapComponent position={{ lat: centerData.lat, lng: centerData.lng }} />
+                        
+                        <div className="space-y-2">
+                            <Label htmlFor="center-radius">Radio de Geolocalización (metros)</Label>
+                            <Input id="center-radius" type="number" placeholder="Ej. 100" value={centerData.radius} onChange={(e) => setCenterData({ ...centerData, radius: parseInt(e.target.value) || 0 })} />
+                        </div>
+                    </div>
+                    <DialogFooter><Button type="submit">Guardar Centro</Button></DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
 export default function SettingsPage() {
   const [isClient, setIsClient] = useState(false);
+  const [authError, setAuthError] = useState(false);
+  
+  useEffect(() => {
+    const handleAuthError = () => setAuthError(true);
+    window.addEventListener('gm_authFailure', handleAuthError);
+    return () => window.removeEventListener('gm_authFailure', handleAuthError);
+  }, []);
+
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
   const [centers, setCenters] = useState<Center[]>(initialCenters);
   const [departments, setDepartments] = useState<Department[]>(initialDepartments);
@@ -291,7 +411,6 @@ export default function SettingsPage() {
   const [isCenterDialogOpen, setIsCenterDialogOpen] = useState(false);
   const [dialogCenterMode, setDialogCenterMode] = useState<'add' | 'edit'>('add');
   const [selectedCenter, setSelectedCenter] = useState<Center | null>(null);
-  const [newCenterData, setNewCenterData] = useState({ name: "", address: "", radius: 100 });
   
   const [isDeptDialogOpen, setIsDeptDialogOpen] = useState(false);
   const [dialogDeptMode, setDialogDeptMode] = useState<'add' | 'edit'>('add');
@@ -349,8 +468,6 @@ export default function SettingsPage() {
 
   const allSchedules = ['Horario Fijo', 'Horario Flexible', ...shifts.map(s => s.name)];
   
-  const [mapCenter, setMapCenter] = useState({ lat: 40.416775, lng: -3.703790 });
-
   useEffect(() => {
     setIsClient(true);
   }, []);
@@ -376,13 +493,13 @@ export default function SettingsPage() {
         }
       };
       
+      const centerMigration = (data: any[]) => data.map(c => ({ ...c, lat: c.lat ?? defaultMapCenter.lat, lng: c.lng ?? defaultMapCenter.lng }));
       const breakMigration = (data: any[]) => data.map((b: any) => ({ ...b, assignedTo: Array.isArray(b.assignedTo) ? b.assignedTo : [] }));
       const clockInMigration = (data: any[]) => data.map((t: any) => ({ ...t, assignment: t.assignment || 'all', assignedTo: Array.isArray(t.assignedTo) ? t.assignedTo : []}));
       const vacationPolicyMigration = (data: any[]) => data.map((p: any) => ({ ...p, blockedPeriods: Array.isArray(p.blockedPeriods) ? p.blockedPeriods : [], requestLimit: p.requestLimit || 0, assignment: p.assignment || 'all', assignedTo: p.assignedTo || [] }));
       const absenceTypeMigration = (data: any[]) => data.map((p: any) => ({ ...p, color: p.color || 'bg-blue-500', requiresApproval: p.requiresApproval ?? true, allowAttachment: p.allowAttachment ?? false, isDisabled: p.isDisabled ?? false, assignment: p.assignment || 'all', assignedTo: p.assignedTo || [], limitRequests: p.limitRequests || false, requestLimit: p.requestLimit || 0, blockPeriods: p.blockPeriods || false, blockedPeriods: Array.isArray(p.blockedPeriods) ? p.blockedPeriods : [] }));
 
-
-      loadFromStorage(CENTERS_STORAGE_KEY, setCenters, initialCenters);
+      loadFromStorage(CENTERS_STORAGE_KEY, setCenters, initialCenters, centerMigration);
       loadFromStorage(DEPARTMENTS_STORAGE_KEY, setDepartments, initialDepartments);
       loadFromStorage(ROLES_STORAGE_KEY, setRoles, initialRoles);
       loadFromStorage(BREAKS_STORAGE_KEY, setBreaks, initialBreaks, breakMigration);
@@ -446,26 +563,20 @@ export default function SettingsPage() {
   const openAddCenterDialog = () => {
     setDialogCenterMode('add');
     setSelectedCenter(null);
-    setNewCenterData({ name: "", address: "", radius: 100 });
     setIsCenterDialogOpen(true);
   };
 
   const openEditCenterDialog = (center: Center) => {
     setDialogCenterMode('edit');
     setSelectedCenter(center);
-    setNewCenterData(center);
     setIsCenterDialogOpen(true);
   };
 
-  const handleCenterFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newCenterData.name || !newCenterData.address) return;
-    const centerPayload = { ...newCenterData, radius: Number(newCenterData.radius) };
-
+  const handleCenterFormSubmit = (centerData: Center) => {
     if (dialogCenterMode === 'add') {
-        setCenters(prev => [...prev, centerPayload]);
+        setCenters(prev => [...prev, centerData]);
     } else if (dialogCenterMode === 'edit' && selectedCenter) {
-        setCenters(prev => prev.map(c => (c.name === selectedCenter.name ? centerPayload : c)));
+        setCenters(prev => prev.map(c => (c.name === selectedCenter.name ? centerData : c)));
     }
     setIsCenterDialogOpen(false);
   };
@@ -924,73 +1035,69 @@ export default function SettingsPage() {
         </TabsContent>
         
         <TabsContent value="centers" className="space-y-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="font-headline">Centros de Trabajo</CardTitle>
-                <CardDescription>Configura las ubicaciones de tu empresa para fichajes con geolocalización.</CardDescription>
-              </div>
-               <Dialog open={isCenterDialogOpen} onOpenChange={setIsCenterDialogOpen}>
-                <DialogTrigger asChild>
-                    <Button onClick={openAddCenterDialog}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Centro</Button>
-                </DialogTrigger>
-                <DialogContent>
-                    <DialogHeader><DialogTitle className="font-headline">{dialogCenterMode === 'add' ? 'Nuevo Centro de Trabajo' : 'Editar Centro de Trabajo'}</DialogTitle></DialogHeader>
-                    <form onSubmit={handleCenterFormSubmit}>
-                        <div className="grid gap-4 py-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="center-name">Nombre del Centro</Label>
-                                <Input id="center-name" placeholder="Ej. Oficina Principal" value={newCenterData.name} onChange={(e) => setNewCenterData({...newCenterData, name: e.target.value})} required/>
-                            </div>
-                            <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""} libraries={['places']}>
-                                <div className="space-y-2">
-                                    <Label htmlFor="center-address">Dirección</Label>
-                                    <AutocompleteInput 
-                                        defaultValue={newCenterData.address}
-                                        onAddressChange={(value) => setNewCenterData(prev => ({...prev, address: value}))}
-                                        onPlaceSelect={(place) => {
-                                             if (place?.geometry?.location) {
-                                                const lat = place.geometry.location.lat();
-                                                const lng = place.geometry.location.lng();
-                                                setMapCenter({ lat, lng });
-                                                setNewCenterData(prev => ({...prev, address: place.formatted_address || prev.address }));
-                                            }
-                                        }}
-                                    />
-                                </div>
-                                <div style={containerStyle}>
-                                    <Map center={mapCenter} zoom={15} gestureHandling={'greedy'} disableDefaultUI={true}>
-                                        <AdvancedMarker position={mapCenter} />
-                                    </Map>
-                                </div>
-                            </APIProvider>
-                            <div className="space-y-2">
-                                <Label htmlFor="center-radius">Radio de Geolocalización (metros)</Label>
-                                <Input id="center-radius" type="number" placeholder="Ej. 100" value={newCenterData.radius} onChange={(e) => setNewCenterData({...newCenterData, radius: parseInt(e.target.value) || 0})}/>
-                            </div>
+            {!apiKey ? (
+                <Alert variant="destructive">
+                    <Terminal className="h-4 w-4" />
+                    <AlertTitle>API Key de Google Maps no configurada</AlertTitle>
+                    <AlertDescription>
+                        Para usar los mapas, debes añadir tu clave de API de Google Maps al fichero `.env` en la raíz del proyecto.
+                        <br />
+                        Crea el fichero `.env` y añade la siguiente línea:
+                        <br />
+                        <code className="font-mono bg-muted p-1 rounded">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=TU_API_KEY_AQUI</code>
+                    </AlertDescription>
+                </Alert>
+            ) : authError ? (
+                <Alert variant="destructive">
+                    <Terminal className="h-4 w-4" />
+                    <AlertTitle>Error de Autenticación de Google Maps</AlertTitle>
+                    <AlertDescription>
+                        Google ha rechazado tu clave de API. Por favor, comprueba lo siguiente en tu proyecto <strong className="font-semibold">Work Central</strong> en la Google Cloud Console:
+                        <ol className="list-decimal list-inside mt-2 space-y-1">
+                            <li>La facturación está habilitada.</li>
+                            <li>Las APIs "Maps JavaScript API" y "Places API" están habilitadas.</li>
+                            <li>La clave de API no tiene restricciones (o si las tiene, permiten este dominio).</li>
+                        </ol>
+                    </AlertDescription>
+                </Alert>
+            ) : null}
+
+            <APIProvider apiKey={apiKey || ""}>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle className="font-headline">Centros de Trabajo</CardTitle>
+                        <CardDescription>Configura las ubicaciones de tu empresa para fichajes con geolocalización.</CardDescription>
+                    </div>
+                    <Button onClick={openAddCenterDialog} disabled={!apiKey || authError}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Centro</Button>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                    {centers.map((center, index) => (
+                        <div key={index} className="flex items-center justify-between rounded-lg border p-4">
+                        <div>
+                            <h3 className="font-semibold">{center.name}</h3>
+                            <p className="text-sm text-muted-foreground">{center.address} (Radio: {center.radius}m)</p>
                         </div>
-                        <DialogFooter><Button type="submit">Guardar Centro</Button></DialogFooter>
-                    </form>
-                </DialogContent>
-               </Dialog>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {centers.map((center, index) => (
-                <div key={index} className="flex items-center justify-between rounded-lg border p-4">
-                  <div>
-                    <h3 className="font-semibold">{center.name}</h3>
-                    <p className="text-sm text-muted-foreground">{center.address} (Radio: {center.radius}m)</p>
-                  </div>
-                  <div className="flex items-center">
-                    <Button variant="ghost" size="sm" onClick={() => openEditCenterDialog(center)}>Editar</Button>
-                    <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDeleteCenter(center.name)}>
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+                        <div className="flex items-center">
+                            <Button variant="ghost" size="sm" onClick={() => openEditCenterDialog(center)} disabled={!apiKey || authError}>Editar</Button>
+                            <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDeleteCenter(center.name)}>
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </div>
+                        </div>
+                    ))}
+                    </CardContent>
+                </Card>
+                <CenterDialog 
+                    isOpen={isCenterDialogOpen}
+                    onOpenChange={setIsCenterDialogOpen}
+                    mode={dialogCenterMode}
+                    center={selectedCenter}
+                    onSubmit={handleCenterFormSubmit}
+                    allSchedules={allSchedules}
+                />
+            </APIProvider>
+
            <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
