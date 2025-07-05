@@ -10,12 +10,12 @@ const config: Config = {
   theme: {
     extend: {
       boxShadow: {
-        default: '0 2px 8px rgba(0, 0, 0, 0.05)',
-        card: '0 4px 16px rgba(0, 0, 0, 0.06)',
-        hover: '0 8px 24px rgba(0, 0, 0, 0.12)',
+        default: '0px 2px 4px rgba(0, 0, 0, 0.05)',
+        card: '0px 4px 8px rgba(0, 0, 0, 0.1)',
+        hover: '0px 8px 16px rgba(0, 0, 0, 0.15)',
       },
       fontFamily: {
-        body: ['Inter', "'SF Pro Display'", 'sans-serif'],
+        body: ['Segoe UI', 'Arial', 'sans-serif'],
         code: ['monospace'],
       },
       colors: {
@@ -45,7 +45,6 @@ const config: Config = {
           DEFAULT: 'hsl(var(--accent))',
           foreground: 'hsl(var(--accent-foreground))',
         },
-        'accent-dark': 'hsl(var(--accent-dark))',
         destructive: {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))',
@@ -64,19 +63,8 @@ const config: Config = {
           '4': 'hsl(var(--chart-4))',
           '5': 'hsl(var(--chart-5))',
         },
-        sidebar: {
-          DEFAULT: 'hsl(var(--sidebar-background))',
-          foreground: 'hsl(var(--sidebar-foreground))',
-          accent: 'hsl(var(--sidebar-accent))',
-          'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
-          active: 'hsl(var(--sidebar-active))',
-          'active-foreground': 'hsl(var(--sidebar-active-foreground))',
-          border: 'hsl(var(--sidebar-border))',
-          ring: 'hsl(var(--sidebar-ring))',
-        },
       },
       borderRadius: {
-        xl: '24px',
         lg: '16px',
         md: '8px',
         sm: '4px',

@@ -39,13 +39,12 @@ export function useSidebar() {
 }
 
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
-  const { isMobile, isMounted } = useIsMobile()
+  const { isMobile } = useIsMobile()
   const [isOpen, setIsOpen] = React.useState(true)
   const [isPinned, setIsPinned] = React.useState(true)
   const [openMobile, setOpenMobile] = React.useState(false)
 
   React.useEffect(() => {
-    if (isMounted) {
       const pinnedCookie = document.cookie
         .split("; ")
         .find((row) => row.startsWith(`${SIDEBAR_PINNED_COOKIE_NAME}=`))
@@ -54,8 +53,7 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
       const pinned = pinnedCookie ? pinnedCookie === 'true' : true
       setIsPinned(pinned)
       setIsOpen(pinned)
-    }
-  }, [isMounted])
+  }, [])
 
   const onOpenChange = (open: boolean) => {
     if (!isPinned) {
@@ -97,12 +95,12 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
 }
 
 const sidebarVariants = cva(
-  "fixed inset-y-0 z-40 h-svh bg-sidebar text-sidebar-foreground transition-[width] duration-300 ease-in-out",
+  "fixed inset-y-0 z-40 h-svh bg-card text-card-foreground transition-[width] duration-300 ease-in-out",
   {
     variants: {
       side: {
-        left: "left-0 border-r border-sidebar-border",
-        right: "right-0 border-l border-sidebar-border",
+        left: "left-0 border-r border-border",
+        right: "right-0 border-l border-border",
       },
       state: {
         expanded: "w-[240px]",
@@ -123,7 +121,6 @@ export const Sidebar = React.forwardRef<
   const {
     isOpen,
     isMobile,
-    onOpenChange,
   } = useSidebar() as SidebarContextType & { openMobile: boolean, setOpenMobile: React.Dispatch<React.SetStateAction<boolean>>};
 
   const { openMobile, setOpenMobile } = useSidebar() as any;
@@ -133,7 +130,7 @@ export const Sidebar = React.forwardRef<
   if (isMobile) {
     return (
        <Sheet open={openMobile} onOpenChange={setOpenMobile}>
-        <SheetContent side="left" className="w-[240px] bg-sidebar p-0 text-sidebar-foreground border-sidebar-border [&>button]:hidden">
+        <SheetContent side="left" className="w-[240px] bg-card p-0 text-card-foreground border-border [&>button]:hidden">
           <div ref={ref} className={cn("flex h-full flex-col px-4 py-6", className)} {...props} />
         </SheetContent>
       </Sheet>
@@ -163,11 +160,15 @@ export const SidebarInset = React.forwardRef<
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => {
   const { isOpen, isMobile } = useSidebar();
+  const [style, setStyle] = React.useState({});
 
-  const style = {
-    transition: 'margin-left 300ms ease-in-out',
-    marginLeft: isMobile ? '0' : (isOpen ? '15rem' : '3.5rem')
-  };
+  React.useEffect(() => {
+    // We only want to set the style on the client to avoid hydration mismatch
+    setStyle({
+        transition: 'margin-left 300ms ease-in-out',
+        marginLeft: isMobile ? '0' : (isOpen ? '15rem' : '3.5rem')
+    });
+  }, [isOpen, isMobile]);
 
   return (
     <main
@@ -189,7 +190,11 @@ export const SidebarTrigger = React.forwardRef<
   React.ComponentProps<typeof Button>
 >(({ className, ...props }, ref) => {
   const { toggleSidebar, isMobile } = useSidebar();
-  if (!isMobile) return null;
+  
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
+
+  if (!mounted || !isMobile) return null;
 
   return (
     <Button
@@ -218,7 +223,7 @@ export const SidebarPin = React.forwardRef<
       ref={ref}
       onClick={togglePin}
       className={cn(
-        "flex items-center justify-center p-2 text-muted-foreground/70 outline-none ring-sidebar-ring transition-opacity hover:text-foreground focus-visible:ring-2",
+        "flex items-center justify-center p-2 text-muted-foreground/70 outline-none ring-ring transition-opacity hover:text-foreground focus-visible:ring-2",
         "disabled:pointer-events-none disabled:opacity-50",
         isOpen ? "opacity-100" : "opacity-0",
         className
@@ -240,7 +245,7 @@ export const SidebarHeader = React.forwardRef<
   return (
     <div
       ref={ref}
-      className={cn("flex flex-col space-y-4 pb-4 border-b border-sidebar-border", className)}
+      className={cn("flex flex-col space-y-4 pb-4 border-b border-border", className)}
       {...props}
     />
   )
@@ -268,7 +273,7 @@ export const SidebarFooter = React.forwardRef<
   return (
     <div
       ref={ref}
-      className={cn("flex flex-col pt-4 mt-auto border-t border-sidebar-border", className)}
+      className={cn("flex flex-col pt-4 mt-auto border-t border-border", className)}
       {...props}
     />
   )
@@ -301,11 +306,11 @@ SidebarMenuItem.displayName = "SidebarMenuItem"
 
 
 const sidebarMenuButtonVariants = cva(
-  "flex w-full items-center gap-2 overflow-hidden rounded-sm p-2 text-left text-sm outline-none ring-sidebar-ring transition-colors duration-150 ease-out hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-5 [&_svg]:shrink-0",
+  "flex w-full items-center gap-2 overflow-hidden rounded-sm p-2 text-left text-sm outline-none ring-ring transition-colors duration-150 ease-out hover:bg-muted focus-visible:ring-2 active:bg-muted disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-5 [&_svg]:shrink-0",
   {
     variants: {
       active: {
-        true: "bg-sidebar-active text-sidebar-active-foreground font-semibold",
+        true: "bg-primary text-primary-foreground font-semibold",
       },
       collapsed: {
         true: "justify-center",

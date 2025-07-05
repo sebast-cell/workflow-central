@@ -4,84 +4,69 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%; /* #F9FAFB */
+    --background: 0 0% 100%; /* #FFFFFF */
     --foreground: 0 0% 20%; /* #333333 */
-    --card: 0 0% 100%; /* #FFFFFF */
+
+    --card: 0 0% 97.3%; /* #F8F8F8 - Surface */
     --card-foreground: 0 0% 20%; /* #333333 */
-    --popover: 0 0% 100%; /* #FFFFFF */
+
+    --popover: 0 0% 97.3%; /* #F8F8F8 - Surface */
     --popover-foreground: 0 0% 20%; /* #333333 */
-    --primary: 238 45% 55%;
+
+    --primary: 251 80% 61%; /* #6B4EEA */
     --primary-foreground: 0 0% 100%; /* #FFFFFF */
-    --secondary: 207 90% 54%; /* #2196F3 */
-    --secondary-foreground: 0 0% 100%; /* #FFFFFF */
-    --muted: 210 20% 98%; /* #F9FAFB */
+
+    --secondary: 0 0% 87.8%; /* #E0E0E0 */
+    --secondary-foreground: 0 0% 20%; /* #333333 */
+    
+    --muted: 0 0% 94.1%; /* #F0F0F0 - Accent */
     --muted-foreground: 0 0% 40%; /* #666666 */
-    --accent: 145 70% 48%;
-    --accent-dark: 145 70% 38%;
+
+    --accent: 122 39% 49%; /* #4CAF50 - Success */
     --accent-foreground: 0 0% 100%; /* #FFFFFF */
+
     --destructive: 4 90% 58%; /* #F44336 */
     --destructive-foreground: 0 0% 100%;
+
     --warning: 45 100% 51%; /* #FFC107 */
     --warning-foreground: 0 0% 20%;
-    --border: 0 0% 88%; /* #E0E0E0 */
-    --input: 0 0% 88%; /* #E0E0E0 */
-    --ring: 238 45% 55%;
-    --radius: 16px; /* lg */
-    --chart-1: 238 45% 55%;
-    --chart-2: 207 90% 54%;
-    --chart-3: 187 100% 42%;
-    --chart-4: 136 65% 51%;
-    --chart-5: 35 100% 51%;
 
-    /* Sidebar Theme based on Design System */
-    --sidebar-background: 220 13% 91%;
-    --sidebar-foreground: 222 84% 5%;
-    --sidebar-accent: 220 13% 85%;
-    --sidebar-accent-foreground: 222 84% 5%;
-    --sidebar-active: 238 45% 55%;
-    --sidebar-active-foreground: 0 0% 100%;
-    --sidebar-border: 220 13% 88%;
-    --sidebar-ring: 238 45% 55%;
+    --border: 0 0% 90.2%; /* #E5E7EB */
+    --input: 0 0% 87.8%; /* #E0E0E0 */
+
+    --ring: 251 80% 61%; /* #6B4EEA */
+    
+    --radius: 16px; /* lg */
+
+    --chart-1: 251 80% 61%; /* primary */
+    --chart-2: 204 90% 59%; /* info */
+    --chart-3: 122 39% 49%; /* success */
+    --chart-4: 45 100% 51%; /* warning */
+    --chart-5: 4 90% 58%; /* danger */
   }
 
   .dark {
-    --background: 222 84% 5%;
-    --foreground: 210 40% 98%;
-    --card: 222 83% 8%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222 83% 8%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 238 45% 65%;
+    --background: 0 0% 10%;
+    --foreground: 0 0% 95%;
+    --card: 0 0% 15%;
+    --card-foreground: 0 0% 95%;
+    --popover: 0 0% 15%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 251 80% 61%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 207 90% 64%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 145 70% 58%;
-    --accent-dark: 145 70% 48%;
+    --secondary: 0 0% 30%;
+    --secondary-foreground: 0 0% 95%;
+    --muted: 0 0% 20%;
+    --muted-foreground: 0 0% 60%;
+    --accent: 122 39% 49%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 4 90% 68%;
+    --destructive: 4 90% 58%;
     --destructive-foreground: 0 0% 100%;
-    --warning: 45 100% 61%;
+    --warning: 45 100% 51%;
     --warning-foreground: 0 0% 20%;
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 238 45% 65%;
-    --chart-1: 238 45% 65%;
-    --chart-2: 207 90% 64%;
-    --chart-3: 187 100% 52%;
-    --chart-4: 136 65% 61%;
-    --chart-5: 35 100% 61%;
-    
-    /* Sidebar Theme - Stays consistent */
-    --sidebar-background: 220 13% 91%;
-    --sidebar-foreground: 222 84% 5%;
-    --sidebar-accent: 220 13% 85%;
-    --sidebar-accent-foreground: 222 84% 5%;
-    --sidebar-active: 238 45% 55%;
-    --sidebar-active-foreground: 0 0% 100%;
-    --sidebar-border: 220 13% 88%;
-    --sidebar-ring: 238 45% 65%;
+    --border: 0 0% 30%;
+    --input: 0 0% 30%;
+    --ring: 251 80% 61%;
   }
 }
 
@@ -91,6 +76,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: 'Segoe UI', Arial, sans-serif;
   }
 }
 
