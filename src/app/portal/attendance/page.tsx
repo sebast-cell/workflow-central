@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -9,11 +9,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, startOfWeek, addDays, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Coffee, ArrowRight, ArrowLeft, MapPin } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Coffee, ArrowRight, ArrowLeft, MapPin, Calendar as CalendarIcon } from 'lucide-react';
 import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps';
 import React from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { useDayRender, type DayProps } from 'react-day-picker';
 
 
 // Add geolocation to event type
@@ -81,6 +82,15 @@ const getEventTypeIcon = (type: string) => {
     )
 }
 
+const getTimelineIcon = (type: string) => {
+    switch (type) {
+        case "Entrada": return <ArrowRight className="h-5 w-5 text-green-600" />;
+        case "Salida": return <ArrowLeft className="h-5 w-5 text-red-600" />;
+        case "Descanso": return <Coffee className="h-5 w-5 text-yellow-600" />;
+        default: return <div className="h-2.5 w-2.5 rounded-full bg-muted-foreground" />;
+    }
+}
+
 
 export default function EmployeeAttendancePage() {
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -112,6 +122,34 @@ export default function EmployeeAttendancePage() {
         events.filter(e => isSameDay(e.date, currentDate)).sort((a,b) => a.time.localeCompare(b.time)),
         [currentDate]
     );
+
+    const DayWithDot = (props: DayProps) => {
+        const buttonRef = useRef<HTMLButtonElement>(null);
+        const dayRender = useDayRender(props.date, props.displayMonth, buttonRef);
+        
+        const hasEvent = useMemo(() => 
+            events.some(e => isSameDay(e.date, props.date)),
+        [props.date]);
+
+        if (dayRender.isHidden) {
+            return <></>;
+        }
+        if (!dayRender.isButton) {
+            return <div {...dayRender.divProps} />;
+        }
+        
+        return (
+             <div className="relative">
+                <button
+                    ref={buttonRef}
+                    {...dayRender.buttonProps}
+                />
+                {hasEvent && !dayRender.selected && !dayRender.today &&(
+                    <span className="absolute bottom-1.5 left-1/2 -translate-x-1/2 h-1.5 w-1.5 rounded-full bg-primary" />
+                )}
+             </div>
+        )
+    }
 
     return (
         <div className="space-y-8">
@@ -162,7 +200,6 @@ export default function EmployeeAttendancePage() {
                                                 <React.Fragment key={event.id}>
                                                     <TableRow
                                                         className="cursor-pointer hover:bg-muted/50"
-                                                        data-state={openEventId === event.id ? "open" : "closed"}
                                                         onClick={() => setOpenEventId(prevId => prevId === event.id ? null : event.id)}
                                                     >
                                                         <TableCell className="font-medium">{event.time}</TableCell>
@@ -249,7 +286,7 @@ export default function EmployeeAttendancePage() {
                                             {events.filter(e => isSameDay(e.date, day)).sort((a,b) => a.time.localeCompare(b.time)).map(event => (
                                                 <div key={event.id} className="flex items-center gap-2">
                                                    {getEventTypeIcon(event.type)}
-                                                   <span className="font-medium text-foreground tabular-nums">{event.time}</span>
+                                                   <span className="font-semibold text-foreground tabular-nums">{event.time}</span>
                                                 </div>
                                             ))}
                                         </div>
@@ -263,51 +300,49 @@ export default function EmployeeAttendancePage() {
                 <TabsContent value="month" className="mt-4">
                      <Card>
                         <CardHeader>
-                           <CardTitle className="font-headline">Vista Mensual</CardTitle>
-                            <CardDescription>Selecciona un día para ver los detalles.</CardDescription>
+                           <CardTitle className="font-headline">Resumen Mensual</CardTitle>
+                            <CardDescription>Tu actividad de fichajes durante el mes. Selecciona un día para ver los detalles.</CardDescription>
                         </CardHeader>
-                        <CardContent className="flex flex-col md:flex-row gap-8">
-                             <Calendar
-                                mode="single"
-                                selected={currentDate}
-                                onSelect={handleDateChange}
-                                month={currentDate}
-                                onMonthChange={setCurrentDate}
-                                className="rounded-md border"
-                                modifiers={{
-                                    hasEvent: events.map(e => e.date)
-                                }}
-                                modifiersClassNames={{
-                                    hasEvent: 'bg-accent/50'
-                                }}
-                             />
+                        <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                             <div className="flex justify-center items-start">
+                                <Calendar
+                                    mode="single"
+                                    selected={currentDate}
+                                    onSelect={handleDateChange}
+                                    month={currentDate}
+                                    onMonthChange={setCurrentDate}
+                                    className="rounded-md border p-3"
+                                    components={{ Day: DayWithDot }}
+                                />
+                             </div>
                              <div className="flex-1">
                                 <h3 className="font-semibold mb-4 text-lg">
-                                    Eventos del {format(currentDate, "d 'de' MMMM", { locale: es })}
+                                    Registros del {format(currentDate, "d 'de' MMMM", { locale: es })}
                                 </h3>
-                                <div className="space-y-3">
-                                     {dailyEvents.length > 0 ? (
-                                        dailyEvents.map(event => (
-                                            <div key={event.id} className="flex items-start gap-4 rounded-lg border p-3">
-                                                <div className="flex-1 space-y-1">
-                                                    <div className="flex items-center justify-between">
-                                                        <div className="flex items-center gap-2">
-                                                            {getEventTypeBadge(event.type)}
-                                                            <span className="font-medium font-sans tabular-nums">{event.time}</span>
-                                                        </div>
-                                                        <p className="text-sm font-semibold">{event.project || ''}</p>
+                                {dailyEvents.length > 0 ? (
+                                    <ul className="space-y-4">
+                                        {dailyEvents.map(event => (
+                                            <li key={event.id} className="flex gap-4 items-start">
+                                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted">
+                                                    {getTimelineIcon(event.type)}
+                                                </div>
+                                                <div className="flex-1 pt-1.5">
+                                                    <div className="flex items-baseline justify-between">
+                                                        <p className="font-semibold text-foreground">{event.time}</p>
+                                                        <p className="text-sm text-muted-foreground">{event.project || ''}</p>
                                                     </div>
                                                     <p className="text-sm text-muted-foreground">{event.location}</p>
-                                                    <p className="text-xs text-muted-foreground">{`Lat: ${event.lat.toFixed(4)}, Lon: ${event.lng.toFixed(4)}`}</p>
                                                 </div>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <p className="text-sm text-muted-foreground text-center py-4">
-                                            No hay registros para este día.
-                                        </p>
-                                    )}
-                                </div>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8 rounded-lg border-2 border-dashed bg-muted/50">
+                                        <CalendarIcon className="h-10 w-10 mb-4 text-muted-foreground/50" />
+                                        <p className="font-semibold">Sin registros</p>
+                                        <p className="text-sm">No hay fichajes para el día seleccionado.</p>
+                                    </div>
+                                )}
                              </div>
                         </CardContent>
                     </Card>
