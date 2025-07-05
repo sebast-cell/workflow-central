@@ -135,13 +135,6 @@ export const Sidebar = React.forwardRef<
   } = useSidebar()
   const state = isOpen ? "expanded" : "collapsed"
   
-  if (!isMounted) {
-    // Render a static collapsed sidebar skeleton on the server and initial client render
-    return (
-       <aside ref={ref} className={cn(sidebarVariants({state: 'collapsed'}), "flex flex-col px-4 py-6", className)} {...props} />
-    )
-  }
-
   if (isMobile) {
     return (
        <Sheet open={openMobile} onOpenChange={setOpenMobile}>
