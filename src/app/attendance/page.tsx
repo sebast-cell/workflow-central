@@ -88,6 +88,15 @@ export default function AttendancePage() {
         });
     }, [dateRange, selectedLocation, selectedDepartment, selectedEmployee]);
 
+    const getStatusVariant = (status: string) => {
+      switch (status) {
+        case "Entrada Marcada": return "active";
+        case "Salida Marcada": return "destructive";
+        case "En Descanso": return "warning";
+        default: return "secondary";
+      }
+    };
+
   return (
     <div className="space-y-8">
       <div>
@@ -284,14 +293,9 @@ export default function AttendancePage() {
                   <TableCell className="font-medium">{log.time}</TableCell>
                   <TableCell>{log.employee}</TableCell>
                   <TableCell>
-                    <Badge 
-                      variant="outline"
-                      className={cn(
-                        log.status === "Entrada Marcada" && "border-accent text-accent-dark dark:text-accent",
-                        log.status === "Salida Marcada" && "border-destructive text-destructive",
-                        log.status === "En Descanso" && "border-warning text-warning"
-                      )}
-                    >{log.status}</Badge>
+                    <Badge variant={getStatusVariant(log.status)}>
+                      {log.status}
+                    </Badge>
                   </TableCell>
                   <TableCell className="text-right">{log.location}</TableCell>
                 </TableRow>

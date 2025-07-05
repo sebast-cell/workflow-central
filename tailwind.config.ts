@@ -10,12 +10,13 @@ const config: Config = {
   theme: {
     extend: {
       boxShadow: {
-        default: '0px 2px 4px rgba(0, 0, 0, 0.05)',
-        card: '0px 4px 8px rgba(0, 0, 0, 0.1)',
-        hover: '0px 8px 16px rgba(0, 0, 0, 0.15)',
+        sm: '0 1px 2px hsl(var(--shadow-color) / var(--shadow-opacity))',
+        md: '0 4px 6px hsl(var(--shadow-color) / var(--shadow-opacity)), 0 1px 3px hsl(var(--shadow-color) / var(--shadow-opacity))',
+        lg: '0 10px 15px hsl(var(--shadow-color) / var(--shadow-opacity)), 0 4px 6px hsl(var(--shadow-color) / var(--shadow-opacity))',
+        xl: '0 20px 25px hsl(var(--shadow-color) / var(--shadow-opacity)), 0 8px 10px hsl(var(--shadow-color) / var(--shadow-opacity))',
       },
       fontFamily: {
-        body: ['Segoe UI', 'Arial', 'sans-serif'],
+        body: ['Inter', 'Roboto', 'sans-serif'],
         code: ['monospace'],
       },
       colors: {
@@ -56,18 +57,13 @@ const config: Config = {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
-        chart: {
-          '1': 'hsl(var(--chart-1))',
-          '2': 'hsl(var(--chart-2))',
-          '3': 'hsl(var(--chart-3))',
-          '4': 'hsl(var(--chart-4))',
-          '5': 'hsl(var(--chart-5))',
-        },
       },
       borderRadius: {
-        lg: '16px',
-        md: '8px',
         sm: '4px',
+        md: '8px',
+        lg: '16px',
+        xl: '24px',
+        '2xl': '32px',
         full: '9999px',
       },
       keyframes: {

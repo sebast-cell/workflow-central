@@ -114,12 +114,12 @@ export default function ProjectDetailsPage() {
         );
     };
 
-    const getStatusBadge = (status: string) => {
+    const getStatusVariant = (status: string) => {
         switch(status) {
-            case "Completado": return "bg-accent text-accent-foreground";
-            case "En Progreso": return "bg-warning text-warning-foreground";
-            case "Pendiente": return "bg-secondary text-secondary-foreground";
-            default: return "bg-muted text-muted-foreground";
+            case "Completado": return "active";
+            case "En Progreso": return "warning";
+            case "Pendiente": return "secondary";
+            default: return "default";
         }
     }
     
@@ -239,7 +239,7 @@ export default function ProjectDetailsPage() {
                                         <TableRow key={task.id}>
                                             <TableCell className="font-medium">{task.name}</TableCell>
                                             <TableCell>{task.assignee}</TableCell>
-                                            <TableCell><Badge className={cn(getStatusBadge(task.status), "border-transparent")}>{task.status}</Badge></TableCell>
+                                            <TableCell><Badge variant={getStatusVariant(task.status)}>{task.status}</Badge></TableCell>
                                             <TableCell className="text-right">{task.hours}h</TableCell>
                                             <TableCell className="text-right">
                                                 <Button variant="ghost" size="icon" onClick={() => handleDeleteTask(task.id)}>

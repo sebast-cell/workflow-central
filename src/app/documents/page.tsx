@@ -27,6 +27,16 @@ const recentFiles = [
 ]
 
 export default function DocumentsPage() {
+
+  const getStatusVariant = (status: string | null) => {
+    if (!status) return undefined;
+    switch (status) {
+      case "Firmado": return "active";
+      case "Pendiente": return "warning";
+      default: return "secondary";
+    }
+  };
+
   return (
     <div className="space-y-8">
        <div className="flex items-center justify-between">
@@ -135,10 +145,7 @@ export default function DocumentsPage() {
                             <TableCell>{file.uploaded}</TableCell>
                             <TableCell>
                                 {file.signature ? (
-                                    <Badge className={cn(
-                                        file.signature === 'Firmado' ? 'bg-accent text-accent-foreground' : 'bg-warning text-warning-foreground',
-                                        "border-transparent"
-                                    )}>
+                                    <Badge variant={getStatusVariant(file.signature)}>
                                         {file.signature}
                                     </Badge>
                                 ) : (

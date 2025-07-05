@@ -35,6 +35,15 @@ export default function Dashboard() {
       { name: "Noah Brown", email: "noah@workflow.com", department: "Diseño", status: "En Descanso", schedule: "9:30 AM - 5:30 PM"},
       { name: "Ava Smith", email: "ava@workflow.com", department: "Ventas", status: "Salida Marcada", schedule: "9:00 AM - 5:00 PM"},
   ]
+
+  const getStatusVariant = (status: string) => {
+    switch (status) {
+      case "Entrada Marcada": return "active";
+      case "Salida Marcada": return "destructive";
+      case "En Descanso": return "warning";
+      default: return "secondary";
+    }
+  };
   
   return (
     <div className="flex flex-col gap-8">
@@ -150,7 +159,7 @@ export default function Dashboard() {
                   Un vistazo rápido al estado actual de tu equipo.
                 </CardDescription>
               </div>
-              <Button asChild size="sm">
+              <Button asChild size="sm" variant="outline">
                 <Link href="/employees">
                   Ver Todos
                   <ArrowUpRight className="h-4 w-4 ml-2" />
@@ -177,11 +186,7 @@ export default function Dashboard() {
                     </TableCell>
                     <TableCell>{member.department}</TableCell>
                     <TableCell className="hidden sm:table-cell">
-                        <Badge variant="outline" className={cn(
-                            member.status === "Entrada Marcada" && "border-accent text-accent-dark dark:text-accent",
-                            member.status === "Salida Marcada" && "border-destructive text-destructive",
-                            member.status === "En Descanso" && "border-warning text-warning"
-                        )}>
+                        <Badge variant={getStatusVariant(member.status)}>
                             {member.status}
                         </Badge>
                     </TableCell>

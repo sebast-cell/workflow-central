@@ -27,6 +27,15 @@ const requests = [
 export default function AbsencesPage() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
+  const getStatusVariant = (status: string) => {
+    switch (status) {
+      case "Aprobado": return "active";
+      case "Pendiente": return "warning";
+      case "Rechazado": return "destructive";
+      default: return "secondary";
+    }
+  };
+
   return (
     <div className="space-y-8">
       <div>
@@ -191,14 +200,9 @@ export default function AbsencesPage() {
                   <TableCell>{request.type}</TableCell>
                   <TableCell>{request.dates}</TableCell>
                   <TableCell className="text-right">
-                    <Badge
-                      className={cn(
-                        request.status === "Aprobado" && "bg-accent text-accent-foreground",
-                        request.status === "Pendiente" && "bg-warning text-warning-foreground",
-                        request.status === "Rechazado" && "bg-destructive text-destructive-foreground",
-                        "border-transparent"
-                      )}
-                    >{request.status}</Badge>
+                    <Badge variant={getStatusVariant(request.status)}>
+                      {request.status}
+                    </Badge>
                   </TableCell>
                 </TableRow>
               ))}

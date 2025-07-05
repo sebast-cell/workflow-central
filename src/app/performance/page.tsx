@@ -20,6 +20,16 @@ const reviewCycles = [
 ];
 
 export default function PerformancePage() {
+
+    const getStatusVariant = (status: string) => {
+      switch (status) {
+        case "Completado": return "active";
+        case "En Progreso": return "warning";
+        case "Programado": return "secondary";
+        default: return "default";
+      }
+    };
+
     return (
         <div className="space-y-8">
             <div>
@@ -94,12 +104,7 @@ export default function PerformancePage() {
                                         <TableRow key={cycle.name}>
                                             <TableCell className="font-medium">{cycle.name}</TableCell>
                                             <TableCell>
-                                                <Badge className={cn(
-                                                    cycle.status === "Completado" && "bg-accent text-accent-foreground",
-                                                    cycle.status === "En Progreso" && "bg-warning text-warning-foreground",
-                                                    cycle.status === "Programado" && "bg-secondary text-secondary-foreground",
-                                                    "border-transparent"
-                                                )}>{cycle.status}</Badge>
+                                                <Badge variant={getStatusVariant(cycle.status)}>{cycle.status}</Badge>
                                             </TableCell>
                                             <TableCell>{cycle.period}</TableCell>
                                             <TableCell>{cycle.participants}</TableCell>

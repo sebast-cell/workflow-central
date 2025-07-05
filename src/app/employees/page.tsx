@@ -21,6 +21,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Download, MoreHorizontal, PlusCircle, Search, UploadCloud, Link as LinkIcon } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import type { VariantProps } from "class-variance-authority";
+import { badgeVariants } from "@/components/ui/badge";
 
 type CalendarData = {
     id: string;
@@ -194,16 +196,16 @@ export default function EmployeesPage() {
     setEmployees(prev => prev.filter(emp => emp.id !== employeeId));
   };
   
-  const getStatusBadgeClass = (status: string) => {
+  const getStatusBadgeVariant = (status: string): VariantProps<typeof badgeVariants>["variant"] => {
       switch (status) {
           case "Activo":
-              return "bg-accent text-accent-foreground border-transparent";
+              return "active";
           case "Deshabilitado":
-              return "bg-secondary text-secondary-foreground border-transparent";
+              return "secondary";
           case "De Licencia":
-              return "bg-warning text-warning-foreground border-transparent";
+              return "warning";
           default:
-              return "";
+              return "default";
       }
   }
 
@@ -282,7 +284,7 @@ export default function EmployeesPage() {
                   </TableCell>
                   <TableCell className="hidden lg:table-cell">{employee.department}</TableCell>
                   <TableCell>
-                    <Badge className={getStatusBadgeClass(employee.status)}>
+                    <Badge variant={getStatusBadgeVariant(employee.status)}>
                       {employee.status}
                     </Badge>
                   </TableCell>
