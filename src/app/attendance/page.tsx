@@ -10,10 +10,12 @@ import { Briefcase, Coffee, Globe, Home, UserX, Calendar as CalendarIcon, Filter
 import { AttendanceReportDialog } from "./_components/attendance-report-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { format } from 'date-fns';
+import { format, parse } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { DateRange } from 'react-day-picker';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const employees = [
   { id: 1, name: "Olivia Martin", department: "Ingeniería" },
@@ -154,9 +156,10 @@ export default function AttendancePage() {
                   <Popover>
                       <PopoverTrigger asChild>
                           <Button
+                              id="date"
                               variant={"outline"}
                               className={cn(
-                                "w-full sm:w-auto md:w-[290px] justify-start text-left font-normal",
+                                "w-full sm:w-auto md:w-[260px] justify-start text-left font-normal",
                                 !dateRange && "text-muted-foreground"
                               )}
                           >
@@ -164,10 +167,10 @@ export default function AttendancePage() {
                           {dateRange?.from ? (
                             dateRange.to ? (
                                 <>
-                                {format(dateRange.from, "PPP", { locale: es })} - {format(dateRange.to, "PPP", { locale: es })}
+                                {format(dateRange.from, "PP", { locale: es })} - {format(dateRange.to, "PP", { locale: es })}
                                 </>
                             ) : (
-                                format(dateRange.from, "PPP", { locale: es })
+                                format(dateRange.from, "PP", { locale: es })
                             )
                             ) : (
                             <span>Elige un rango de fechas</span>
@@ -175,6 +178,44 @@ export default function AttendancePage() {
                           </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
+                        <div className="p-4 border-b">
+                            <div className="grid grid-cols-2 gap-4">
+                               <div className="space-y-1">
+                                    <Label htmlFor="date-from">Desde</Label>
+                                    <Input
+                                        id="date-from"
+                                        type="date"
+                                        value={dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : ''}
+                                        onChange={(e) => {
+                                            const dateStr = e.target.value;
+                                            const fromDate = dateStr ? parse(dateStr, 'yyyy-MM-dd', new Date()) : undefined;
+                                            if (fromDate && !isNaN(fromDate.getTime())) {
+                                                setDateRange(prev => ({ ...prev, from: fromDate }));
+                                            } else {
+                                                setDateRange(prev => ({ ...prev, from: undefined }));
+                                            }
+                                        }}
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <Label htmlFor="date-to">Hasta</Label>
+                                    <Input
+                                        id="date-to"
+                                        type="date"
+                                        value={dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : ''}
+                                        onChange={(e) => {
+                                            const dateStr = e.target.value;
+                                            const toDate = dateStr ? parse(dateStr, 'yyyy-MM-dd', new Date()) : undefined;
+                                            if (toDate && !isNaN(toDate.getTime())) {
+                                                setDateRange(prev => ({ ...prev, to: toDate }));
+                                            } else {
+                                                setDateRange(prev => ({ ...prev, to: undefined }));
+                                            }
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
                           <Calendar
                               initialFocus
                               mode="range"
