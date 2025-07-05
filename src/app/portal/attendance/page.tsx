@@ -11,6 +11,8 @@ import { format, startOfWeek, addDays, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Coffee, ArrowRight, ArrowLeft, MapPin } from 'lucide-react';
 import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+
 
 // Add geolocation to event type
 type ClockInEvent = {
@@ -48,29 +50,27 @@ const getEventTypeBadge = (type: string) => {
     }
 }
 
-const defaultMapCenter = { lat: 40.416775, lng: -3.703790 };
-
 export default function EmployeeAttendancePage() {
     const [currentDate, setCurrentDate] = useState(new Date());
-    const [selectedEvent, setSelectedEvent] = useState<ClockInEvent | null>(null);
+    const [openEventId, setOpenEventId] = useState<number | null>(null);
 
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 
     const handleDateChange = (date: Date | undefined) => {
         if (date) {
             setCurrentDate(date);
-            setSelectedEvent(null); // Reset selection on date change
+            setOpenEventId(null);
         }
     };
     
     const changeDay = (amount: number) => {
         setCurrentDate(prev => addDays(prev, amount));
-        setSelectedEvent(null);
+        setOpenEventId(null);
     }
     
     const changeWeek = (amount: number) => {
         setCurrentDate(prev => addDays(prev, amount * 7));
-        setSelectedEvent(null);
+        setOpenEventId(null);
     }
 
     const weekStartsOn = 1; // Monday
@@ -80,16 +80,6 @@ export default function EmployeeAttendancePage() {
         events.filter(e => isSameDay(e.date, currentDate)).sort((a,b) => a.time.localeCompare(b.time)),
         [currentDate]
     );
-
-    const mapCenter = useMemo(() => {
-        if (selectedEvent) {
-            return { lat: selectedEvent.lat, lng: selectedEvent.lng };
-        }
-        if (dailyEvents.length > 0) {
-            return { lat: dailyEvents[0].lat, lng: dailyEvents[0].lng };
-        }
-        return defaultMapCenter;
-    }, [selectedEvent, dailyEvents]);
 
     return (
         <div className="space-y-8">
@@ -106,8 +96,8 @@ export default function EmployeeAttendancePage() {
                 </TabsList>
                 
                 <TabsContent value="day" className="mt-4">
-                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-                        <Card className="lg:col-span-3">
+                    <div className="grid grid-cols-1 gap-8">
+                        <Card>
                             <CardHeader>
                                 <div className="flex items-center justify-between">
                                     <CardTitle className="font-headline">
@@ -135,15 +125,47 @@ export default function EmployeeAttendancePage() {
                                     <TableBody>
                                         {dailyEvents.length > 0 ? (
                                             dailyEvents.map(event => (
-                                                <TableRow 
-                                                    key={event.id} 
-                                                    onClick={() => setSelectedEvent(event)}
-                                                    className={`cursor-pointer ${selectedEvent?.id === event.id ? 'bg-muted' : ''}`}
-                                                >
-                                                    <TableCell className="font-medium">{event.time}</TableCell>
-                                                    <TableCell>{getEventTypeBadge(event.type)}</TableCell>
-                                                    <TableCell>{event.location}</TableCell>
-                                                </TableRow>
+                                                <Collapsible asChild key={event.id} open={openEventId === event.id} onOpenChange={() => setOpenEventId(prevId => prevId === event.id ? null : event.id)}>
+                                                    <>
+                                                        <CollapsibleTrigger asChild>
+                                                            <TableRow className="cursor-pointer hover:bg-muted/50 data-[state=open]:bg-muted/50">
+                                                                <TableCell className="font-medium">{event.time}</TableCell>
+                                                                <TableCell>{getEventTypeBadge(event.type)}</TableCell>
+                                                                <TableCell>{event.location}</TableCell>
+                                                            </TableRow>
+                                                        </CollapsibleTrigger>
+                                                        <CollapsibleContent asChild>
+                                                            <TableRow>
+                                                                <TableCell colSpan={3} className="p-0">
+                                                                    <div className="p-4 bg-background">
+                                                                        <h4 className="font-semibold mb-2">Ubicación del Fichaje</h4>
+                                                                        <div className="h-[300px] w-full rounded-md overflow-hidden border">
+                                                                            {apiKey ? (
+                                                                                <APIProvider apiKey={apiKey}>
+                                                                                    <Map
+                                                                                        center={{ lat: event.lat, lng: event.lng }}
+                                                                                        zoom={15}
+                                                                                        gestureHandling={'greedy'}
+                                                                                        disableDefaultUI={true}
+                                                                                        mapId={`map-${event.id}`}
+                                                                                    >
+                                                                                        <AdvancedMarker position={{ lat: event.lat, lng: event.lng }} title={event.location}>
+                                                                                          <MapPin className={`h-6 w-6 text-primary`}/>
+                                                                                        </AdvancedMarker>
+                                                                                    </Map>
+                                                                                </APIProvider>
+                                                                            ) : (
+                                                                                <div className="flex items-center justify-center h-full bg-muted">
+                                                                                    <p className="text-sm text-muted-foreground">Clave de API de Google Maps no configurada.</p>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        </CollapsibleContent>
+                                                    </>
+                                                </Collapsible>
                                             ))
                                         ) : (
                                             <TableRow>
@@ -155,41 +177,6 @@ export default function EmployeeAttendancePage() {
                                     </TableBody>
                                 </Table>
                             </CardContent>
-                        </Card>
-                        <Card className="lg:col-span-2">
-                             <CardHeader>
-                                <CardTitle className="font-headline">Ubicación de Fichajes</CardTitle>
-                                <CardDescription>Mapa con los puntos de fichaje del día.</CardDescription>
-                             </CardHeader>
-                             <CardContent>
-                                <div className="h-[400px] w-full rounded-md overflow-hidden border">
-                                    {apiKey ? (
-                                        <APIProvider apiKey={apiKey}>
-                                            <Map
-                                                center={mapCenter}
-                                                zoom={dailyEvents.length > 1 ? 12 : 15}
-                                                gestureHandling={'greedy'}
-                                                disableDefaultUI={true}
-                                                mapId="employee-attendance-map"
-                                            >
-                                                {dailyEvents.map((event) => (
-                                                    <AdvancedMarker 
-                                                        key={event.id} 
-                                                        position={{ lat: event.lat, lng: event.lng }}
-                                                        title={event.location}
-                                                    >
-                                                      <MapPin className={`h-6 w-6 transition-colors ${selectedEvent?.id === event.id ? 'text-primary' : 'text-muted-foreground'}`}/>
-                                                    </AdvancedMarker>
-                                                ))}
-                                            </Map>
-                                        </APIProvider>
-                                    ) : (
-                                        <div className="flex items-center justify-center h-full bg-muted">
-                                            <p className="text-sm text-muted-foreground">Clave de API de Google Maps no configurada.</p>
-                                        </div>
-                                    )}
-                                </div>
-                             </CardContent>
                         </Card>
                     </div>
                 </TabsContent>
