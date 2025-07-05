@@ -254,8 +254,7 @@ const CenterDialog = ({
     center: Center | null;
     onSubmit: (data: Center) => void;
 }) => {
-    const [centerData, setCenterData] = useState<Omit<Center, 'name'>>({ address: '', radius: 100, lat: defaultMapCenter.lat, lng: defaultMapCenter.lng, timezone: 'Europe/Madrid' });
-    const [centerName, setCenterName] = useState('');
+    const [centerData, setCenterData] = useState<Center>({ name: '', address: '', radius: 100, lat: defaultMapCenter.lat, lng: defaultMapCenter.lng, timezone: 'Europe/Madrid' });
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
     const inputRef = useRef<HTMLInputElement>(null);
     const places = useMapsLibrary('places');
@@ -263,17 +262,9 @@ const CenterDialog = ({
     useEffect(() => {
         if (isOpen) {
             if (mode === 'edit' && center) {
-                setCenterName(center.name);
-                setCenterData({
-                    address: center.address,
-                    radius: center.radius,
-                    lat: center.lat,
-                    lng: center.lng,
-                    timezone: center.timezone || 'Europe/Madrid',
-                });
+                setCenterData(center);
             } else {
-                setCenterName('');
-                setCenterData({ address: '', radius: 100, lat: defaultMapCenter.lat, lng: defaultMapCenter.lng, timezone: 'Europe/Madrid' });
+                setCenterData({ name: '', address: '', radius: 100, lat: defaultMapCenter.lat, lng: defaultMapCenter.lng, timezone: 'Europe/Madrid' });
             }
         }
     }, [isOpen, mode, center]);
@@ -325,20 +316,25 @@ const CenterDialog = ({
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!centerName) return;
-        onSubmit({ ...centerData, name: centerName });
+        if (!centerData.name) return;
+        onSubmit(centerData);
     }
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent>
+            <DialogContent onPointerDownOutside={(e) => {
+                const target = e.target as HTMLElement;
+                if (target.closest('.pac-container')) {
+                    e.preventDefault();
+                }
+            }}>
                 <APIProvider apiKey={apiKey} libraries={['places']}>
                     <DialogHeader><DialogTitle className="font-headline">{mode === 'add' ? 'Nuevo Centro de Trabajo' : 'Editar Centro de Trabajo'}</DialogTitle></DialogHeader>
                     <form onSubmit={handleSubmit}>
                         <div className="grid gap-4 py-4">
                             <div className="space-y-2">
                                 <Label htmlFor="center-name">Nombre del Centro</Label>
-                                <Input id="center-name" placeholder="Ej. Oficina Principal" value={centerName} onChange={(e) => setCenterName(e.target.value)} required />
+                                <Input id="center-name" placeholder="Ej. Oficina Principal" value={centerData.name} onChange={(e) => setCenterData(prev => ({...prev, name: e.target.value}))} required />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="center-address">Dirección</Label>
