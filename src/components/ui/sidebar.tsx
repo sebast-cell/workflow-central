@@ -89,7 +89,7 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
     togglePin,
     toggleSidebar,
     // Mobile specific
-    openMobile,
+    openMobile, 
     setOpenMobile
   }
 
@@ -334,9 +334,10 @@ export const SidebarMenuButton = React.forwardRef<
     tooltip?: React.ComponentProps<typeof TooltipContent>
   }
 >(({ asChild, isActive, tooltip, className, children, ...props }, ref) => {
-  const { isOpen, isMobile } = useSidebar()
+  const { isOpen, isMobile, isMounted } = useSidebar()
   const Comp = asChild ? Slot : "button"
-  const isEffectivelyCollapsed = !isOpen && !isMobile;
+  
+  const isEffectivelyCollapsed = !isMounted ? true : !isOpen && !isMobile
 
   const button = (
       <Comp
@@ -355,7 +356,7 @@ export const SidebarMenuButton = React.forwardRef<
   return (
     <Tooltip>
         <TooltipTrigger asChild>{button}</TooltipTrigger>
-        <TooltipContent {...tooltip} hidden={isOpen}>
+        <TooltipContent {...tooltip} hidden={!isMounted || isOpen}>
             {tooltip.children}
         </TooltipContent>
     </Tooltip>
