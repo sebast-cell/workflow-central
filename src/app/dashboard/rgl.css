@@ -5,10 +5,6 @@
 .react-grid-item {
   transition: all 200ms ease;
   transition-property: left, top;
-  display: flex; /* To make content fill height */
-}
-.react-grid-item > div {
-  width: 100%; /* Ensure the card inside fills the grid item */
 }
 .react-grid-item.css-transforms {
   transition-property: transform;
@@ -47,7 +43,6 @@
   padding: 0 3px 3px 0;
   background-origin: content-box;
   box-sizing: border-box;
-  border-radius: 1rem;
   z-index: 20;
 }
 

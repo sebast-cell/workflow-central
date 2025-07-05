@@ -90,13 +90,13 @@ const TasksCompletedWidget = () => (
 const TeamHoursSummaryWidget = () => {
     const chartData = [ { name: "Lun", hours: 180 }, { name: "Mar", hours: 195 }, { name: "Mié", hours: 210 }, { name: "Jue", hours: 200 }, { name: "Vie", hours: 220 }, { name: "Sáb", hours: 40 }, { name: "Dom", hours: 10 } ];
     return (
-        <Card className="h-full">
+        <Card className="h-full flex flex-col">
           <CardHeader>
             <CardTitle>Resumen de Horas del Equipo</CardTitle>
             <CardDescription>Total de horas registradas esta semana.</CardDescription>
           </CardHeader>
-          <CardContent className="pl-2">
-            <ResponsiveContainer width="100%" height={300}>
+          <CardContent className="pl-2 flex-1">
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
@@ -112,12 +112,12 @@ const TeamHoursSummaryWidget = () => {
 const RecentActivityWidget = () => {
     const recentActivities = [ { name: "Olivia Martin", activity: "marcó entrada", time: "hace 5m", avatar: "OM", link: "/attendance" }, { name: "Jackson Lee", activity: "solicitó tiempo libre", time: "hace 15m", avatar: "JL", link: "/absences" }, { name: "Isabella Nguyen", activity: "completó la tarea 'Diseño de UI'", time: "hace 30m", avatar: "IN", link: "/projects" }, { name: "William Kim", activity: "está en descanso", time: "hace 45m", avatar: "WK", link: "/attendance" }, { name: "Sophia Davis", activity: "marcó salida", time: "hace 1h", avatar: "SD", link: "/attendance" }, ];
     return (
-        <Card className="h-full">
+        <Card className="h-full flex flex-col">
           <CardHeader>
             <CardTitle>Actividad Reciente</CardTitle>
             <CardDescription>Lo que tu equipo ha estado haciendo.</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex-1 overflow-y-auto">
             <div className="space-y-1">
               {recentActivities.map((activity, index) => (
                 <Link href={activity.link} key={index} className="block rounded-lg -mx-2 px-2 py-2 transition-colors hover:bg-muted">
@@ -144,9 +144,20 @@ const RecentActivityWidget = () => {
 
 const TeamSummaryWidget = () => {
     const teamSummary = [ { name: "Liam Johnson", email: "liam@workflow.com", department: "Ingeniería", status: "Entrada Marcada", schedule: "9:00 AM - 5:00 PM"}, { name: "Emma Wilson", email: "emma@workflow.com", department: "Marketing", status: "Entrada Marcada", schedule: "10:00 AM - 6:00 PM"}, { name: "Noah Brown", email: "noah@workflow.com", department: "Diseño", status: "En Descanso", schedule: "9:30 AM - 5:30 PM"}, { name: "Ava Smith", email: "ava@workflow.com", department: "Ventas", status: "Salida Marcada", schedule: "9:00 AM - 5:00 PM"}, ];
-    const getStatusVariant = (status: string) => { switch (status) { case "Entrada Marcada": return "active"; case "Salida Marcada": return "destructive"; case "En Descanso": return "warning"; default: return "secondary"; } };
+    const getStatusVariant = (status: string): "active" | "destructive" | "warning" | "secondary" => {
+      switch (status) {
+        case "Entrada Marcada":
+          return "active";
+        case "Salida Marcada":
+          return "destructive";
+        case "En Descanso":
+          return "warning";
+        default:
+          return "secondary";
+      }
+    };
     return (
-       <Card className="h-full">
+       <Card className="h-full flex flex-col">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="space-y-1">
@@ -163,7 +174,7 @@ const TeamSummaryWidget = () => {
               </Button>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex-1 overflow-y-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -306,15 +317,15 @@ export default function Dashboard() {
         layouts={layouts}
         onLayoutChange={handleLayoutChange}
         breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-        cols={{ lg: 4, md: 2, sm: 1, xs: 1 }}
+        cols={{ lg: 4, md: 2, sm: 1, xs: 1, xxs: 1 }}
         rowHeight={150}
         draggableHandle=".drag-handle"
         margin={[24, 24]}
       >
         {displayedWidgets.map((id) => {
-          const config = ALL_WIDGETS_CONFIG[id];
+          const config = ALL_WIDGETS_CONFIG[id as keyof typeof ALL_WIDGETS_CONFIG];
           return (
-            <div key={id} className="group relative">
+            <div key={id} className="group relative h-full">
                <div className="drag-handle absolute top-2 right-2 p-1 cursor-grab bg-background/50 backdrop-blur-sm rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-10">
                     <GripVertical className="h-5 w-5 text-muted-foreground" />
                 </div>
