@@ -3,7 +3,7 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { VariantProps, cva } from "class-variance-authority"
-import { PanelLeft } from "lucide-react"
+import { PanelLeft, Pin, PinOff } from "lucide-react"
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/tooltip"
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
+const SIDEBAR_PINNED_COOKIE_NAME = "sidebar_pinned_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
 const SIDEBAR_WIDTH = "16rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
@@ -34,6 +35,8 @@ type SidebarContext = {
   setOpenMobile: (open: boolean) => void
   isMobile: boolean
   toggleSidebar: () => void
+  isPinned: boolean
+  togglePin: () => void
 }
 
 const SidebarContext = React.createContext<SidebarContext | null>(null)
@@ -69,11 +72,25 @@ const SidebarProvider = React.forwardRef<
   ) => {
     const isMobile = useIsMobile()
     const [openMobile, setOpenMobile] = React.useState(false)
+    const [isPinned, setIsPinned] = React.useState(true)
 
     // This is the internal state of the sidebar.
     // We use openProp and setOpenProp for control from outside the component.
     const [_open, _setOpen] = React.useState(defaultOpen)
     const open = openProp ?? _open
+    
+    React.useEffect(() => {
+      const openCookie = document.cookie.split('; ').find(row => row.startsWith(`${SIDEBAR_COOKIE_NAME}=`))?.split('=')[1];
+      const pinnedCookie = document.cookie.split('; ').find(row => row.startsWith(`${SIDEBAR_PINNED_COOKIE_NAME}=`))?.split('=')[1];
+
+      if (openCookie) {
+        _setOpen(openCookie === 'true');
+      }
+      if (pinnedCookie) {
+        setIsPinned(pinnedCookie === 'true');
+      }
+    }, []);
+
     const setOpen = React.useCallback(
       (value: boolean | ((value: boolean) => boolean)) => {
         const openState = typeof value === "function" ? value(open) : value
@@ -88,13 +105,19 @@ const SidebarProvider = React.forwardRef<
       },
       [setOpenProp, open]
     )
+    
+    const togglePin = React.useCallback(() => {
+      const newPinnedState = !isPinned;
+      setIsPinned(newPinnedState);
+      setOpen(newPinnedState); // Pinning opens it, unpinning closes it (until hover)
+      document.cookie = `${SIDEBAR_PINNED_COOKIE_NAME}=${newPinnedState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+    }, [isPinned, setOpen]);
+
 
     // Helper to toggle the sidebar.
     const toggleSidebar = React.useCallback(() => {
-      return isMobile
-        ? setOpenMobile((open) => !open)
-        : setOpen((open) => !open)
-    }, [isMobile, setOpen, setOpenMobile])
+      isMobile ? setOpenMobile((v) => !v) : togglePin();
+    }, [isMobile, setOpenMobile, togglePin])
 
     // Adds a keyboard shortcut to toggle the sidebar.
     React.useEffect(() => {
@@ -125,8 +148,10 @@ const SidebarProvider = React.forwardRef<
         openMobile,
         setOpenMobile,
         toggleSidebar,
+        isPinned,
+        togglePin,
       }),
-      [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
+      [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar, isPinned, togglePin]
     )
 
     return (
@@ -175,7 +200,7 @@ const Sidebar = React.forwardRef<
     },
     ref
   ) => {
-    const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+    const { isMobile, state, openMobile, setOpenMobile, isPinned, setOpen } = useSidebar()
 
     if (collapsible === "none") {
       return (
@@ -244,6 +269,8 @@ const Sidebar = React.forwardRef<
               : "group-data-[collapsible=icon]:w-[--sidebar-width-icon] group-data-[side=left]:border-r group-data-[side=right]:border-l",
             className
           )}
+          onMouseEnter={() => !isPinned && setOpen(true)}
+          onMouseLeave={() => !isPinned && setOpen(false)}
           {...props}
         >
           <div
@@ -284,6 +311,37 @@ const SidebarTrigger = React.forwardRef<
   )
 })
 SidebarTrigger.displayName = "SidebarTrigger"
+
+const SidebarPin = React.forwardRef<
+  HTMLButtonElement,
+  React.ComponentProps<"button">
+>(({ className, ...props }, ref) => {
+  const { isPinned, togglePin, isMobile } = useSidebar()
+
+  if (isMobile) {
+    return null
+  }
+
+  return (
+    <button
+      ref={ref}
+      data-sidebar="pin"
+      aria-label={isPinned ? "Unpin sidebar" : "Pin sidebar"}
+      onClick={togglePin}
+      title={isPinned ? "Unpin sidebar" : "Pin sidebar"}
+      className={cn(
+        "flex items-center justify-center p-0 text-sidebar-foreground/70 outline-none ring-sidebar-ring transition-all hover:text-sidebar-foreground focus-visible:ring-2",
+        "[&_svg]:size-4",
+        className
+      )}
+      {...props}
+    >
+      {isPinned ? <PinOff /> : <Pin />}
+    </button>
+  )
+})
+SidebarPin.displayName = "SidebarPin"
+
 
 const SidebarRail = React.forwardRef<
   HTMLButtonElement,
@@ -759,5 +817,6 @@ export {
   SidebarRail,
   SidebarSeparator,
   SidebarTrigger,
+  SidebarPin,
   useSidebar,
 }
