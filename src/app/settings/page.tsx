@@ -943,28 +943,42 @@ export default function SettingsPage() {
                                 <Label htmlFor="center-name">Nombre del Centro</Label>
                                 <Input id="center-name" placeholder="Ej. Oficina Principal" value={newCenterData.name} onChange={(e) => setNewCenterData({...newCenterData, name: e.target.value})} required/>
                             </div>
-                            <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""}>
-                                <div className="space-y-2">
-                                    <Label htmlFor="center-address">Dirección</Label>
-                                    <AutocompleteInput 
-                                        defaultValue={newCenterData.address}
-                                        onAddressChange={(value) => setNewCenterData(prev => ({...prev, address: value}))}
-                                        onPlaceSelect={(place) => {
-                                             if (place?.geometry?.location) {
-                                                const lat = place.geometry.location.lat();
-                                                const lng = place.geometry.location.lng();
-                                                setMapCenter({ lat, lng });
-                                                setNewCenterData(prev => ({...prev, address: place.formatted_address || prev.address }));
-                                            }
-                                        }}
-                                    />
-                                </div>
-                                <div style={containerStyle}>
-                                    <Map center={mapCenter} zoom={15} gestureHandling={'greedy'} disableDefaultUI={true}>
-                                        <AdvancedMarker position={mapCenter} />
-                                    </Map>
-                                </div>
-                            </APIProvider>
+                            {isCenterDialogOpen && (
+                                <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""} libraries={['places']}>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="center-address">Dirección</Label>
+                                        <AutocompleteInput 
+                                            defaultValue={newCenterData.address}
+                                            onAddressChange={(value) => setNewCenterData(prev => ({...prev, address: value}))}
+                                            onPlaceSelect={(place) => {
+                                                 if (place?.geometry?.location) {
+                                                    const lat = place.geometry.location.lat();
+                                                    const lng = place.geometry.location.lng();
+                                                    setMapCenter({ lat, lng });
+                                                    setNewCenterData(prev => ({...prev, address: place.formatted_address || prev.address }));
+                                                }
+                                            }}
+                                        />
+                                    </div>
+                                    <div style={containerStyle}>
+                                        <Map center={mapCenter} zoom={15} gestureHandling={'greedy'} disableDefaultUI={true}>
+                                            <AdvancedMarker position={mapCenter} />
+                                        </Map>
+                                    </div>
+                                     <Alert variant="destructive">
+                                        <AlertTriangle className="h-4 w-4" />
+                                        <AlertTitle>Error al Cargar Mapa</AlertTitle>
+                                        <AlertDescription>
+                                            No se pudo cargar Google Maps. Por favor, verifica en tu Google Cloud Console (Proyecto: My First Project) que:
+                                            <ul className="list-disc pl-5 mt-2">
+                                                <li>La facturación esté habilitada.</li>
+                                                <li>Las APIs 'Maps JavaScript API' y 'Places API' estén activadas.</li>
+                                                <li>Las restricciones de la API Key permitan el uso desde este dominio.</li>
+                                            </ul>
+                                        </AlertDescription>
+                                    </Alert>
+                                </APIProvider>
+                            )}
                             <div className="space-y-2">
                                 <Label htmlFor="center-radius">Radio de Geolocalización (metros)</Label>
                                 <Input id="center-radius" type="number" placeholder="Ej. 100" value={newCenterData.radius} onChange={(e) => setNewCenterData({...newCenterData, radius: parseInt(e.target.value) || 0})}/>
