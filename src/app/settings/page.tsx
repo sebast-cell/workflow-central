@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -535,7 +534,7 @@ const SettingsTabs = () => {
   const [isShiftDialogOpen, setIsShiftDialogOpen] = useState(false);
   const [dialogShiftMode, setDialogShiftMode] = useState<'add' | 'edit'>('add');
   const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
-  const [shiftFormData, setShiftFormData] = useState<Omit<Shift, 'id'>>({ name: "", start: "", end: "" });
+  const [shiftFormData, setShiftFormData] = useState<Omit<Shift, 'id'>>({ name: "09:00", start: "09:00", end: "17:00" });
 
   const [isFlexibleScheduleDialogOpen, setIsFlexibleScheduleDialogOpen] = useState(false);
   const [dialogFlexibleScheduleMode, setDialogFlexibleScheduleMode] = useState<'add' | 'edit'>('add');
@@ -2269,7 +2268,6 @@ const SettingsTabs = () => {
 
 export default function SettingsPage() {
   const [isClient, setIsClient] = useState(false);
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
   
   useEffect(() => {
     setIsClient(true);
@@ -2278,23 +2276,7 @@ export default function SettingsPage() {
   if (!isClient) {
     return null; // or a loading skeleton
   }
-
-  if (!apiKey) {
-      return (
-          <div className="p-4">
-              <Alert variant="destructive">
-                  <Terminal className="h-4 w-4" />
-                  <AlertTitle>Clave de API de Google Maps no encontrada</AlertTitle>
-                  <AlertDescription>
-                      Para usar los mapas, debes añadir tu clave de API de Google Maps al fichero `.env` en la raíz del proyecto.
-                      <br />
-                      <code className="font-mono bg-muted p-1 rounded">NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=TU_API_KEY_AQUI</code>
-                  </AlertDescription>
-              </Alert>
-          </div>
-      );
-  }
-
+  
   return (
     <div className="space-y-8">
        <div>
