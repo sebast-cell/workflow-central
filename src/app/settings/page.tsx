@@ -253,12 +253,12 @@ const AutocompleteInput = ({ value, onChange, onPlaceSelect }: { value: string, 
         });
 
         const listener = autocomplete.addListener('place_changed', () => {
-            const place = autocomplete.getPlace();
-            onPlaceSelect(place);
+            onPlaceSelect(autocomplete.getPlace());
         });
 
         return () => {
             listener.remove();
+             // The pac-container is the UI element for the dropdown, and it's not always cleaned up.
             const pacContainers = document.querySelectorAll('.pac-container');
             pacContainers.forEach(container => container.remove());
         };
@@ -308,6 +308,7 @@ const CenterDialog = ({
 }) => {
     const [centerData, setCenterData] = useState<Omit<Center, 'name'>>({ address: '', radius: 100, lat: defaultMapCenter.lat, lng: defaultMapCenter.lng, timezone: 'Europe/Madrid' });
     const [centerName, setCenterName] = useState('');
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
     
     useEffect(() => {
         if (isOpen) {
@@ -338,7 +339,6 @@ const CenterDialog = ({
             const lat = place.geometry.location.lat();
             const lng = place.geometry.location.lng();
             const address = place.formatted_address || place.name || '';
-            const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
             
             setCenterData(prev => ({
                 ...prev,
@@ -362,41 +362,43 @@ const CenterDialog = ({
                     setCenterData(prev => ({ ...prev, timezone: 'Error al cargar' }));
                 });
         }
-    }, []);
+    }, [apiKey]);
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent>
-                <DialogHeader><DialogTitle className="font-headline">{mode === 'add' ? 'Nuevo Centro de Trabajo' : 'Editar Centro de Trabajo'}</DialogTitle></DialogHeader>
-                <form onSubmit={handleSubmit}>
-                    <div className="grid gap-4 py-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="center-name">Nombre del Centro</Label>
-                            <Input id="center-name" placeholder="Ej. Oficina Principal" value={centerName} onChange={(e) => setCenterName(e.target.value)} required />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="center-address">Dirección</Label>
-                             <AutocompleteInput 
-                                value={centerData.address}
-                                onChange={(newAddress) => setCenterData(prev => ({...prev, address: newAddress}))}
-                                onPlaceSelect={handlePlaceSelect}
-                            />
-                        </div>
-                        
-                        <MapComponent position={{ lat: centerData.lat, lng: centerData.lng }} />
-                        
-                        <div className="space-y-2">
-                            <Label htmlFor="center-radius">Radio de Geolocalización (metros)</Label>
-                            <Input id="center-radius" type="number" placeholder="Ej. 100" value={centerData.radius} onChange={(e) => setCenterData({ ...centerData, radius: parseInt(e.target.value) || 0, address: centerData.address || '' })} />
-                        </div>
+                <APIProvider apiKey={apiKey} libraries={['places']}>
+                    <DialogHeader><DialogTitle className="font-headline">{mode === 'add' ? 'Nuevo Centro de Trabajo' : 'Editar Centro de Trabajo'}</DialogTitle></DialogHeader>
+                    <form onSubmit={handleSubmit}>
+                        <div className="grid gap-4 py-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="center-name">Nombre del Centro</Label>
+                                <Input id="center-name" placeholder="Ej. Oficina Principal" value={centerName} onChange={(e) => setCenterName(e.target.value)} required />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="center-address">Dirección</Label>
+                                <AutocompleteInput 
+                                    value={centerData.address}
+                                    onChange={(newAddress) => setCenterData(prev => ({...prev, address: newAddress}))}
+                                    onPlaceSelect={handlePlaceSelect}
+                                />
+                            </div>
+                            
+                            <MapComponent position={{ lat: centerData.lat, lng: centerData.lng }} />
+                            
+                            <div className="space-y-2">
+                                <Label htmlFor="center-radius">Radio de Geolocalización (metros)</Label>
+                                <Input id="center-radius" type="number" placeholder="Ej. 100" value={centerData.radius} onChange={(e) => setCenterData({ ...centerData, radius: parseInt(e.target.value) || 0 })} />
+                            </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="center-timezone">Zona Horaria</Label>
-                            <Input id="center-timezone" value={centerData.timezone} readOnly />
+                            <div className="space-y-2">
+                                <Label htmlFor="center-timezone">Zona Horaria</Label>
+                                <Input id="center-timezone" value={centerData.timezone} readOnly />
+                            </div>
                         </div>
-                    </div>
-                    <DialogFooter><Button type="submit">Guardar Centro</Button></DialogFooter>
-                </form>
+                        <DialogFooter><Button type="submit">Guardar Centro</Button></DialogFooter>
+                    </form>
+                </APIProvider>
             </DialogContent>
         </Dialog>
     )
@@ -408,6 +410,7 @@ const CentersTabContent = () => {
     const [dialogCenterMode, setDialogCenterMode] = useState<'add' | 'edit'>('add');
     const [selectedCenter, setSelectedCenter] = useState<Center | null>(null);
     const [authError, setAuthError] = useState(false);
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 
     useEffect(() => {
         const handleAuthError = () => setAuthError(true);
@@ -466,16 +469,16 @@ const CentersTabContent = () => {
 
     return (
         <>
-            {authError && (
+            {authError && apiKey && (
                 <Alert variant="destructive">
                     <Terminal className="h-4 w-4" />
                     <AlertTitle>Error de Autenticación de Google Maps</AlertTitle>
                     <AlertDescription>
-                        Tu clave de API ha sido rechazada. Por favor, asegúrate de que esté configurada correctamente para el proyecto **Work Central** en tu Google Cloud Console. Verifica estos puntos:
+                        Tu clave de API ha sido rechazada. Por favor, asegúrate de que esté configurada correctamente para tu proyecto en Google Cloud Console. Verifica estos puntos:
                         <ol className="list-decimal list-inside mt-2 space-y-1">
                             <li>La <strong>facturación está habilitada</strong> para el proyecto.</li>
-                            <li>Las APIs <strong>"Maps JavaScript API"</strong> y <strong>"Places API"</strong> están habilitadas.</li>
-                            <li>La clave de API <strong>no tiene restricciones</strong> o, si las tiene, permiten este dominio.</li>
+                            <li>Las APIs <strong>"Maps JavaScript API"</strong>, <strong>"Places API"</strong> y <strong>"Time Zone API"</strong> están habilitadas.</li>
+                            <li>La clave de API <strong>no tiene restricciones</strong> o, si las tiene, permiten el dominio desde el que se realiza la solicitud. Para depurar, prueba a eliminar las restricciones temporalmente.</li>
                         </ol>
                     </AlertDescription>
                 </Alert>
@@ -2290,21 +2293,9 @@ const SettingsTabs = () => {
 
 
 export default function SettingsPage() {
-  const [isClient, setIsClient] = useState(false);
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
   
-  useEffect(() => {
-    if (apiKey) {
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
-      setIsClient(true);
-    }
-  }, [apiKey]);
-  
-  if (!isClient && !apiKey) {
+  if (!apiKey) {
       return (
           <div className="p-4">
               <Alert variant="destructive">
@@ -2326,13 +2317,7 @@ export default function SettingsPage() {
         <h1 className="text-3xl font-headline font-bold tracking-tight">Configuración</h1>
         <p className="text-muted-foreground">Gestiona la configuración de la cuenta y de la organización.</p>
       </div>
-      {isClient ? (
-         <APIProvider apiKey={apiKey} libraries={['places']}>
-            <SettingsTabs />
-        </APIProvider>
-      ) : (
-        <p>Cargando configuración...</p>
-      )}
+      <SettingsTabs />
     </div>
   )
 }
