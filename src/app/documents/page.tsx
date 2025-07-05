@@ -134,9 +134,9 @@ export default function DocumentsPage() {
                             <TableCell>{file.uploaded}</TableCell>
                             <TableCell>
                                 {file.signature ? (
-                                    <Badge variant={file.signature === 'Firmado' ? 'secondary' : 'default'} className={
-                                        file.signature === 'Firmado' ? 'bg-green-100 text-green-800' :
-                                        file.signature === 'Pendiente' ? 'bg-yellow-100 text-yellow-800' : ''
+                                    <Badge className={
+                                        file.signature === 'Firmado' ? 'bg-accent/10 text-accent' :
+                                        'bg-yellow-100 text-yellow-800'
                                     }>
                                         {file.signature}
                                     </Badge>

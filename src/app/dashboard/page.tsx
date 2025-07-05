@@ -167,7 +167,7 @@ export default function Dashboard() {
                     <div className="text-sm text-muted-foreground hidden md:inline">liam@workflow.com</div>
                   </TableCell>
                   <TableCell>Ingeniería</TableCell>
-                  <TableCell className="hidden sm:table-cell"><Badge variant="secondary" className="bg-green-100 text-green-800">Entrada Marcada</Badge></TableCell>
+                  <TableCell className="hidden sm:table-cell"><Badge className="bg-accent/10 text-accent">Entrada Marcada</Badge></TableCell>
                   <TableCell className="text-right">9:00 AM - 5:00 PM</TableCell>
                 </TableRow>
                  <TableRow>
@@ -176,7 +176,7 @@ export default function Dashboard() {
                     <div className="text-sm text-muted-foreground hidden md:inline">emma@workflow.com</div>
                   </TableCell>
                   <TableCell>Marketing</TableCell>
-                  <TableCell className="hidden sm:table-cell"><Badge variant="secondary" className="bg-green-100 text-green-800">Entrada Marcada</Badge></TableCell>
+                  <TableCell className="hidden sm:table-cell"><Badge className="bg-accent/10 text-accent">Entrada Marcada</Badge></TableCell>
                   <TableCell className="text-right">10:00 AM - 6:00 PM</TableCell>
                 </TableRow>
                  <TableRow>
@@ -185,7 +185,7 @@ export default function Dashboard() {
                     <div className="text-sm text-muted-foreground hidden md:inline">noah@workflow.com</div>
                   </TableCell>
                   <TableCell>Diseño</TableCell>
-                  <TableCell className="hidden sm:table-cell"><Badge variant="secondary" className="bg-yellow-100 text-yellow-800">En Descanso</Badge></TableCell>
+                  <TableCell className="hidden sm:table-cell"><Badge className="bg-yellow-100 text-yellow-800">En Descanso</Badge></TableCell>
                   <TableCell className="text-right">9:30 AM - 5:30 PM</TableCell>
                 </TableRow>
                  <TableRow>
@@ -194,7 +194,7 @@ export default function Dashboard() {
                     <div className="text-sm text-muted-foreground hidden md:inline">ava@workflow.com</div>
                   </TableCell>
                   <TableCell>Ventas</TableCell>
-                   <TableCell className="hidden sm:table-cell"><Badge variant="outline">Salida Marcada</Badge></TableCell>
+                   <TableCell className="hidden sm:table-cell"><Badge className="bg-destructive/10 text-destructive">Salida Marcada</Badge></TableCell>
                   <TableCell className="text-right">9:00 AM - 5:00 PM</TableCell>
                 </TableRow>
               </TableBody>

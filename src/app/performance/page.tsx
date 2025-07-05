@@ -93,8 +93,8 @@ export default function PerformancePage() {
                                         <TableRow key={cycle.name}>
                                             <TableCell className="font-medium">{cycle.name}</TableCell>
                                             <TableCell>
-                                                <Badge variant={cycle.status === "Completado" ? "secondary" : "default"} className={
-                                                    cycle.status === "Completado" ? "bg-green-100 text-green-800" :
+                                                <Badge className={
+                                                    cycle.status === "Completado" ? "bg-accent/10 text-accent" :
                                                     cycle.status === "En Progreso" ? "bg-yellow-100 text-yellow-800" : ""
                                                 }>{cycle.status}</Badge>
                                             </TableCell>

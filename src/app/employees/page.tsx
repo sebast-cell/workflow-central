@@ -196,9 +196,9 @@ export default function EmployeesPage() {
   const getStatusBadgeClass = (status: string) => {
       switch (status) {
           case "Activo":
-              return "bg-green-100 text-green-800";
+              return "bg-accent/10 text-accent";
           case "Deshabilitado":
-              return "bg-gray-100 text-gray-800";
+              return "bg-muted text-muted-foreground";
           case "De Licencia":
               return "bg-yellow-100 text-yellow-800";
           default:
@@ -281,7 +281,7 @@ export default function EmployeesPage() {
                   </TableCell>
                   <TableCell className="hidden lg:table-cell">{employee.department}</TableCell>
                   <TableCell>
-                    <Badge variant="secondary" className={getStatusBadgeClass(employee.status)}>
+                    <Badge className={getStatusBadgeClass(employee.status)}>
                       {employee.status}
                     </Badge>
                   </TableCell>

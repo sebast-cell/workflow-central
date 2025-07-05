@@ -115,10 +115,10 @@ export default function ProjectDetailsPage() {
 
     const getStatusBadge = (status: string) => {
         switch(status) {
-            case "Completado": return "bg-green-100 text-green-800";
+            case "Completado": return "bg-accent/10 text-accent";
             case "En Progreso": return "bg-yellow-100 text-yellow-800";
-            case "Pendiente": return "bg-gray-100 text-gray-800";
-            default: return "bg-gray-100 text-gray-800";
+            case "Pendiente": return "bg-muted text-muted-foreground";
+            default: return "bg-muted text-muted-foreground";
         }
     }
     
@@ -238,7 +238,7 @@ export default function ProjectDetailsPage() {
                                         <TableRow key={task.id}>
                                             <TableCell className="font-medium">{task.name}</TableCell>
                                             <TableCell>{task.assignee}</TableCell>
-                                            <TableCell><Badge variant="secondary" className={getStatusBadge(task.status)}>{task.status}</Badge></TableCell>
+                                            <TableCell><Badge className={getStatusBadge(task.status)}>{task.status}</Badge></TableCell>
                                             <TableCell className="text-right">{task.hours}h</TableCell>
                                             <TableCell className="text-right">
                                                 <Button variant="ghost" size="icon" onClick={() => handleDeleteTask(task.id)}>

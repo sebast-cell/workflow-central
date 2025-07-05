@@ -61,10 +61,10 @@ export default function EmployeeDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Estado Actual</CardTitle>
-            {isClockedIn ? <Check className="h-4 w-4 text-green-500" /> : <XCircle className="h-4 w-4 text-red-500" />}
+            {isClockedIn ? <Check className="h-4 w-4 text-accent" /> : <XCircle className="h-4 w-4 text-destructive" />}
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${isClockedIn ? 'text-green-600' : 'text-red-600'}`}>{statusText}</div>
+            <div className={`text-2xl font-bold ${isClockedIn ? 'text-accent' : 'text-destructive'}`}>{statusText}</div>
             <p className="text-xs text-muted-foreground">{statusTime}</p>
           </CardContent>
         </Card>

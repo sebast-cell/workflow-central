@@ -193,11 +193,10 @@ export default function AbsencesPage() {
                   <TableCell className="text-right">
                     <Badge
                       className={
-                        request.status === "Aprobado" ? "bg-green-100 text-green-800" :
+                        request.status === "Aprobado" ? "bg-accent/10 text-accent" :
                         request.status === "Pendiente" ? "bg-yellow-100 text-yellow-800" :
-                        "bg-red-100 text-red-800"
+                        "bg-destructive/10 text-destructive"
                       }
-                      variant="secondary"
                     >{request.status}</Badge>
                   </TableCell>
                 </TableRow>

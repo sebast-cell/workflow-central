@@ -167,10 +167,10 @@ export default function AttendancePage() {
                           {dateRange?.from ? (
                             dateRange.to ? (
                                 <>
-                                {format(dateRange.from, "PP", { locale: es })} - {format(dateRange.to, "PP", { locale: es })}
+                                {format(dateRange.from, "d MMM, y", { locale: es })} - {format(dateRange.to, "d MMM, y", { locale: es })}
                                 </>
                             ) : (
-                                format(dateRange.from, "PP", { locale: es })
+                                format(dateRange.from, "d MMM, y", { locale: es })
                             )
                             ) : (
                             <span>Elige un rango de fechas</span>
@@ -287,9 +287,9 @@ export default function AttendancePage() {
                     <Badge 
                       variant="outline"
                       className={
-                        log.status === "Entrada Marcada" ? "border-green-500 text-green-700" :
-                        log.status === "Salida Marcada" ? "border-red-500 text-red-700" :
-                        "border-yellow-500 text-yellow-700"
+                        log.status === "Entrada Marcada" ? "border-accent text-accent" :
+                        log.status === "Salida Marcada" ? "border-destructive text-destructive" :
+                        "border-yellow-500 text-yellow-600"
                       }
                     >{log.status}</Badge>
                   </TableCell>

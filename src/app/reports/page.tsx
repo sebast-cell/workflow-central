@@ -73,7 +73,7 @@ export default function ReportsPage() {
                                     <TableCell>{report.type}</TableCell>
                                     <TableCell>{report.dateRange}</TableCell>
                                     <TableCell>{report.format}</TableCell>
-                                    <TableCell><Badge variant="secondary" className="bg-green-100 text-green-800">{report.status}</Badge></TableCell>
+                                    <TableCell><Badge className="bg-accent/10 text-accent">{report.status}</Badge></TableCell>
                                     <TableCell className="text-right">
                                         <Button variant="outline" size="sm">
                                             <Download className="mr-2 h-4 w-4" />
