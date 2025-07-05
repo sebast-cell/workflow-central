@@ -12,10 +12,10 @@ function AdminSidebarContent() {
   return (
     <>
        <SidebarHeader>
-           <div className="flex items-center justify-between mb-4">
-            <Link href="/dashboard" className="flex items-center gap-2.5">
-              <div className="bg-primary/10 text-primary p-2 rounded-md">
-                <Briefcase className="h-6 w-6" />
+           <div className="flex items-center justify-between">
+            <Link href="/dashboard" className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-primary/10 p-1.5 text-primary">
+                <Briefcase className="h-5 w-5" />
               </div>
                {isOpen && <h1 className="text-lg font-semibold text-foreground">WorkFlow Central</h1>}
             </Link>

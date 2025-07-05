@@ -138,7 +138,7 @@ export const Sidebar = React.forwardRef<
   if (!isMounted) {
     // Render a static collapsed sidebar skeleton on the server and initial client render
     return (
-       <aside ref={ref} className={cn(sidebarVariants({state: 'collapsed'}), "flex flex-col", className)} {...props} />
+       <aside ref={ref} className={cn(sidebarVariants({state: 'collapsed'}), "flex flex-col px-4 py-6", className)} {...props} />
     )
   }
 
@@ -146,7 +146,7 @@ export const Sidebar = React.forwardRef<
     return (
        <Sheet open={openMobile} onOpenChange={setOpenMobile}>
         <SheetContent side="left" className="w-60 bg-sidebar p-0 text-sidebar-foreground border-sidebar-border [&>button]:hidden">
-          <div ref={ref} className={cn("flex h-full flex-col", className)} {...props} />
+          <div ref={ref} className={cn("flex h-full flex-col px-4 py-6", className)} {...props} />
         </SheetContent>
       </Sheet>
     )
@@ -156,7 +156,7 @@ export const Sidebar = React.forwardRef<
     <aside
       ref={ref}
       className={cn(
-        "group/sidebar",
+        "group/sidebar flex flex-col px-4 py-6",
         sidebarVariants({ state }),
         className
       )}
@@ -252,7 +252,7 @@ export const SidebarHeader = React.forwardRef<
   return (
     <div
       ref={ref}
-      className={cn("flex flex-col space-y-2 p-4 border-b border-sidebar-border", className)}
+      className={cn("flex flex-col space-y-4 pb-4 border-b border-sidebar-border", className)}
       {...props}
     />
   )
@@ -266,7 +266,7 @@ export const SidebarContent = React.forwardRef<
   return (
     <div
       ref={ref}
-      className={cn("flex flex-1 flex-col gap-1 overflow-auto p-4", className)}
+      className={cn("flex flex-1 flex-col gap-1 overflow-auto mt-4", className)}
       {...props}
     />
   )
@@ -280,7 +280,7 @@ export const SidebarFooter = React.forwardRef<
   return (
     <div
       ref={ref}
-      className={cn("flex flex-col p-4 mt-auto border-t border-sidebar-border", className)}
+      className={cn("flex flex-col pt-4 mt-auto border-t border-sidebar-border", className)}
       {...props}
     />
   )
@@ -313,11 +313,11 @@ SidebarMenuItem.displayName = "SidebarMenuItem"
 
 
 const sidebarMenuButtonVariants = cva(
-  "flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm font-normal outline-none ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-5 [&_svg]:shrink-0",
+  "flex w-full items-center gap-2 overflow-hidden rounded-sm p-2 text-left text-sm font-normal outline-none ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-5 [&_svg]:shrink-0",
   {
     variants: {
       active: {
-        true: "bg-sidebar-active text-sidebar-active-foreground font-medium",
+        true: "bg-sidebar-active text-sidebar-active-foreground font-bold",
       },
       collapsed: {
         true: "justify-center",
