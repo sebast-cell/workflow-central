@@ -1,0 +1,66 @@
+.react-grid-layout {
+  position: relative;
+  transition: height 200ms ease;
+}
+.react-grid-item {
+  transition: all 200ms ease;
+  transition-property: left, top;
+  display: flex; /* To make content fill height */
+}
+.react-grid-item > div {
+  width: 100%; /* Ensure the card inside fills the grid item */
+}
+.react-grid-item.css-transforms {
+  transition-property: transform;
+}
+.react-grid-item.resizing {
+  z-index: 1;
+  will-change: width, height;
+}
+
+.react-grid-item.react-draggable-dragging {
+  transition: none;
+  z-index: 3;
+  will-change: transform;
+}
+
+.react-grid-item.react-grid-placeholder {
+  background: hsl(var(--primary) / 0.2);
+  border-radius: 1rem;
+  opacity: 0.6;
+  transition-duration: 100ms;
+  z-index: 2;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+}
+
+.react-grid-item > .react-resizable-handle {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  bottom: 0;
+  right: 0;
+  cursor: se-resize;
+  padding: 0 3px 3px 0;
+  background-origin: content-box;
+  box-sizing: border-box;
+  border-radius: 1rem;
+}
+
+.react-grid-item > .react-resizable-handle::after {
+  content: "";
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid hsl(var(--muted-foreground) / 0.4);
+  border-bottom: 2px solid hsl(var(--muted-foreground) / 0.4);
+}
+.dark .react-grid-item > .react-resizable-handle::after {
+  border-right: 2px solid hsl(var(--muted-foreground) / 0.6);
+  border-bottom: 2px solid hsl(var(--muted-foreground) / 0.6);
+}

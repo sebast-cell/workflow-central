@@ -11,22 +11,11 @@ import { ArrowUpRight, CheckCircle, Clock, Users, Zap, LayoutDashboard, GripVert
 import Link from "next/link"
 import { cn } from "@/lib/utils";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Responsive, WidthProvider } from 'react-grid-layout';
+import './rgl.css';
 
-import {
-  DndContext,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-  closestCenter,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  useSortable,
-  rectSwappingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+
+const ResponsiveGridLayout = WidthProvider(Responsive);
 
 // --- Widget Components ---
 
@@ -101,7 +90,7 @@ const TasksCompletedWidget = () => (
 const TeamHoursSummaryWidget = () => {
     const chartData = [ { name: "Lun", hours: 180 }, { name: "Mar", hours: 195 }, { name: "Mié", hours: 210 }, { name: "Jue", hours: 200 }, { name: "Vie", hours: 220 }, { name: "Sáb", hours: 40 }, { name: "Dom", hours: 10 } ];
     return (
-        <Card>
+        <Card className="h-full">
           <CardHeader>
             <CardTitle>Resumen de Horas del Equipo</CardTitle>
             <CardDescription>Total de horas registradas esta semana.</CardDescription>
@@ -123,7 +112,7 @@ const TeamHoursSummaryWidget = () => {
 const RecentActivityWidget = () => {
     const recentActivities = [ { name: "Olivia Martin", activity: "marcó entrada", time: "hace 5m", avatar: "OM", link: "/attendance" }, { name: "Jackson Lee", activity: "solicitó tiempo libre", time: "hace 15m", avatar: "JL", link: "/absences" }, { name: "Isabella Nguyen", activity: "completó la tarea 'Diseño de UI'", time: "hace 30m", avatar: "IN", link: "/projects" }, { name: "William Kim", activity: "está en descanso", time: "hace 45m", avatar: "WK", link: "/attendance" }, { name: "Sophia Davis", activity: "marcó salida", time: "hace 1h", avatar: "SD", link: "/attendance" }, ];
     return (
-        <Card>
+        <Card className="h-full">
           <CardHeader>
             <CardTitle>Actividad Reciente</CardTitle>
             <CardDescription>Lo que tu equipo ha estado haciendo.</CardDescription>
@@ -157,7 +146,7 @@ const TeamSummaryWidget = () => {
     const teamSummary = [ { name: "Liam Johnson", email: "liam@workflow.com", department: "Ingeniería", status: "Entrada Marcada", schedule: "9:00 AM - 5:00 PM"}, { name: "Emma Wilson", email: "emma@workflow.com", department: "Marketing", status: "Entrada Marcada", schedule: "10:00 AM - 6:00 PM"}, { name: "Noah Brown", email: "noah@workflow.com", department: "Diseño", status: "En Descanso", schedule: "9:30 AM - 5:30 PM"}, { name: "Ava Smith", email: "ava@workflow.com", department: "Ventas", status: "Salida Marcada", schedule: "9:00 AM - 5:00 PM"}, ];
     const getStatusVariant = (status: string) => { switch (status) { case "Entrada Marcada": return "active"; case "Salida Marcada": return "destructive"; case "En Descanso": return "warning"; default: return "secondary"; } };
     return (
-       <Card>
+       <Card className="h-full">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="space-y-1">
@@ -214,58 +203,27 @@ const ALL_WIDGETS_CONFIG = {
     'tasks-completed': { name: 'Tareas Completadas Hoy', Component: TasksCompletedWidget, colSpan: 1, rowSpan: 1 },
     'team-hours-summary': { name: 'Resumen de Horas', Component: TeamHoursSummaryWidget, colSpan: 2, rowSpan: 2 },
     'recent-activity': { name: 'Actividad Reciente', Component: RecentActivityWidget, colSpan: 2, rowSpan: 2 },
-    'team-summary': { name: 'Resumen del Equipo', Component: TeamSummaryWidget, colSpan: 4, rowSpan: 1 },
+    'team-summary': { name: 'Resumen del Equipo', Component: TeamSummaryWidget, colSpan: 4, rowSpan: 2 },
 };
 
-const defaultOrder = Object.keys(ALL_WIDGETS_CONFIG);
-const defaultVisibility = defaultOrder.reduce((acc, id) => ({ ...acc, [id]: true }), {});
-
-// --- Sortable Widget Wrapper ---
-
-function SortableWidget({ id, widgetConfig, children }: { id: string, widgetConfig: typeof ALL_WIDGETS_CONFIG[string], children: React.ReactNode }) {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  const colSpanClasses = {
-    1: 'lg:col-span-1',
-    2: 'lg:col-span-2',
-    4: 'lg:col-span-4',
-  };
-
-  const rowSpanClasses = {
-    1: 'lg:row-span-1',
-    2: 'lg:row-span-2',
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={cn(
-        "relative group",
-        colSpanClasses[widgetConfig.colSpan as keyof typeof colSpanClasses],
-        rowSpanClasses[widgetConfig.rowSpan as keyof typeof rowSpanClasses]
-      )}
-    >
-      <div {...attributes} {...listeners} className="absolute top-2 right-2 p-1 cursor-grab bg-background/50 backdrop-blur-sm rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-10">
-        <GripVertical className="h-5 w-5 text-muted-foreground" />
-      </div>
-      {children}
-    </div>
-  );
-}
+const defaultLayouts = {
+    lg: [
+        { i: 'active-employees', x: 0, y: 0, w: 1, h: 1 },
+        { i: 'projects-in-progress', x: 1, y: 0, w: 1, h: 1 },
+        { i: 'pending-requests', x: 2, y: 0, w: 1, h: 1 },
+        { i: 'tasks-completed', x: 3, y: 0, w: 1, h: 1 },
+        { i: 'team-hours-summary', x: 0, y: 1, w: 2, h: 2 },
+        { i: 'recent-activity', x: 2, y: 1, w: 2, h: 2 },
+        { i: 'team-summary', x: 0, y: 3, w: 4, h: 2 },
+    ]
+};
+const defaultVisibleWidgets = Object.keys(ALL_WIDGETS_CONFIG).reduce((acc, id) => ({ ...acc, [id]: true }), {});
 
 
 export default function Dashboard() {
   const [isClient, setIsClient] = useState(false);
-  const [widgetState, setWidgetState] = useState({
-    order: defaultOrder,
-    visibility: defaultVisibility,
-  });
+  const [layouts, setLayouts] = useState(defaultLayouts);
+  const [visibleWidgets, setVisibleWidgets] = useState(defaultVisibleWidgets);
 
   useEffect(() => {
     setIsClient(true);
@@ -273,64 +231,45 @@ export default function Dashboard() {
       const savedStateRaw = localStorage.getItem('dashboard-layout');
       if (savedStateRaw) {
         const savedState = JSON.parse(savedStateRaw);
-        // Ensure saved state has all widgets, adding new ones if the app was updated
-        const newVisibility = { ...defaultVisibility, ...savedState.visibility };
-        const newOrder = defaultOrder.filter(id => !savedState.order.includes(id));
-        setWidgetState({
-            order: [...savedState.order, ...newOrder],
-            visibility: newVisibility,
-        });
+        
+        const newVisibility = { ...defaultVisibleWidgets, ...savedState.visibility };
+        setVisibleWidgets(newVisibility);
+
+        if (savedState.layouts) {
+             setLayouts(savedState.layouts);
+        }
       }
     } catch (e) {
       console.error("Could not load dashboard layout from localStorage", e);
     }
   }, []);
 
-  useEffect(() => {
-    if (isClient) {
-      localStorage.setItem('dashboard-layout', JSON.stringify(widgetState));
-    }
-  }, [widgetState, isClient]);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    })
-  );
-
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-    if (over && active.id !== over.id) {
-      setWidgetState((current) => {
-        const oldIndex = current.order.indexOf(active.id as string);
-        const newIndex = current.order.indexOf(over.id as string);
-        return {
-          ...current,
-          order: arrayMove(current.order, oldIndex, newIndex),
-        };
-      });
-    }
+  const saveStateToLocalStorage = (newState: { layouts: any, visibility: any }) => {
+     if (isClient) {
+        localStorage.setItem('dashboard-layout', JSON.stringify(newState));
+     }
   }
+
+  const handleLayoutChange = (layout: any, newLayouts: any) => {
+    setLayouts(newLayouts);
+    saveStateToLocalStorage({ layouts: newLayouts, visibility: visibleWidgets });
+  };
 
   function handleVisibilityChange(id: string, checked: boolean) {
-    setWidgetState(current => ({
-        ...current,
-        visibility: {
-            ...current.visibility,
-            [id]: checked
-        }
-    }));
+    const newVisibility = {
+        ...visibleWidgets,
+        [id]: checked
+    };
+    setVisibleWidgets(newVisibility);
+    saveStateToLocalStorage({ layouts, visibility: newVisibility });
   }
 
-  const visibleWidgets = useMemo(() => {
-    return widgetState.order.filter(id => widgetState.visibility[id]);
-  }, [widgetState]);
+  const displayedWidgets = useMemo(() => {
+    return Object.keys(ALL_WIDGETS_CONFIG).filter(id => visibleWidgets[id]);
+  }, [visibleWidgets]);
 
   if (!isClient) {
-    // You can return a loading skeleton here if you want
-    return null; 
+    return null;
   }
 
   return (
@@ -350,10 +289,10 @@ export default function Dashboard() {
             <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>Mostrar/Ocultar Widgets</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {defaultOrder.map(id => (
+                {Object.keys(ALL_WIDGETS_CONFIG).map(id => (
                     <DropdownMenuCheckboxItem
                         key={id}
-                        checked={widgetState.visibility[id]}
+                        checked={visibleWidgets[id]}
                         onCheckedChange={(checked) => handleVisibilityChange(id, !!checked)}
                     >
                         {ALL_WIDGETS_CONFIG[id].name}
@@ -363,20 +302,27 @@ export default function Dashboard() {
         </DropdownMenu>
       </div>
       
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={visibleWidgets} strategy={rectSwappingStrategy}>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 auto-rows-fr gap-6">
-            {visibleWidgets.map((id) => {
-                const config = ALL_WIDGETS_CONFIG[id];
-                return (
-                    <SortableWidget key={id} id={id} widgetConfig={config}>
-                        <config.Component />
-                    </SortableWidget>
-                )
-            })}
-          </div>
-        </SortableContext>
-      </DndContext>
+      <ResponsiveGridLayout
+        layouts={layouts}
+        onLayoutChange={handleLayoutChange}
+        breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
+        cols={{ lg: 4, md: 2, sm: 1, xs: 1 }}
+        rowHeight={150}
+        draggableHandle=".drag-handle"
+        margin={[24, 24]}
+      >
+        {displayedWidgets.map((id) => {
+          const config = ALL_WIDGETS_CONFIG[id];
+          return (
+            <div key={id} className="group relative">
+               <div className="drag-handle absolute top-2 right-2 p-1 cursor-grab bg-background/50 backdrop-blur-sm rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                    <GripVertical className="h-5 w-5 text-muted-foreground" />
+                </div>
+              <config.Component />
+            </div>
+          );
+        })}
+      </ResponsiveGridLayout>
     </div>
   );
 }
