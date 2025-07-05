@@ -380,7 +380,7 @@ export default function SettingsPage() {
       loadFromStorage(FIXED_SCHEDULES_STORAGE_KEY, setFixedSchedules, []);
       loadFromStorage(ABSENCE_TYPES_STORAGE_KEY, setAbsenceTypes, initialAbsenceTypes, absenceTypeMigration);
       loadFromStorage(CALENDARS_STORAGE_KEY, setCalendars, initialCalendars);
-      loadFromStorage(VACATION_POLICIES_STORAGE_KEY, setVacationPolicies, initialVacationPolicies, vacationPolicyMigration);
+      loadFromStorage(VACATION_POLICIES_STORAGE_KEY, setVacationPolicies, initialVacationPolicies);
 
       const storedEmployees = localStorage.getItem(EMPLOYEES_STORAGE_KEY);
       if (storedEmployees) setEmployees(JSON.parse(storedEmployees));
@@ -559,7 +559,7 @@ export default function SettingsPage() {
   const openAddShiftDialog = () => {
     setDialogShiftMode('add');
     setSelectedShift(null);
-    setShiftFormData({ name: "", start: "09:00", end: "17:00" });
+    setShiftFormData({ name: "09:00", start: "09:00", end: "17:00" });
     setIsShiftDialogOpen(true);
   };
 
@@ -1588,7 +1588,7 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
             <Dialog open={isVacationPolicyDialogOpen} onOpenChange={setIsVacationPolicyDialogOpen}>
-                <DialogContent className="max-h-[90vh] overflow-y-auto" onInteractOutside={(e) => { e.preventDefault(); }}>
+                <DialogContent className="max-h-[90vh] overflow-y-auto" onOpenChange={(open) => { if (!open) setNewBlockedPeriod(undefined); setIsVacationPolicyDialogOpen(open); }} onInteractOutside={(e) => { e.preventDefault(); }}>
                     <DialogHeader><DialogTitle className="font-headline">{dialogVacationPolicyMode === 'add' ? 'Añadir Política de Vacaciones' : 'Editar Política de Vacaciones'}</DialogTitle></DialogHeader>
                     <form onSubmit={handleVacationPolicyFormSubmit} className="space-y-4 py-4">
                         <div className="space-y-2">
@@ -1736,11 +1736,11 @@ export default function SettingsPage() {
                                   <div key={`vac-emp-${employee.id}`} className="flex items-center space-x-2">
                                     <Checkbox
                                       id={`vac-emp-check-${employee.id}`}
-                                      checked={vacationPolicyFormData.assignedTo.includes(employee.name)}
+                                      checked={(vacationPolicyFormData.assignedTo || []).includes(employee.name)}
                                       onCheckedChange={(checked) => {
                                         const newAssignedTo = checked
-                                          ? [...vacationPolicyFormData.assignedTo, employee.name]
-                                          : vacationPolicyFormData.assignedTo.filter((name) => name !== employee.name);
+                                          ? [...(vacationPolicyFormData.assignedTo || []), employee.name]
+                                          : (vacationPolicyFormData.assignedTo || []).filter((name) => name !== employee.name);
                                         setVacationPolicyFormData({ ...vacationPolicyFormData, assignedTo: newAssignedTo });
                                       }}
                                     />
@@ -1791,7 +1791,7 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
             <Dialog open={isAbsenceTypeDialogOpen} onOpenChange={setIsAbsenceTypeDialogOpen}>
-                <DialogContent className="max-h-[90vh] overflow-y-auto" onInteractOutside={(e) => { e.preventDefault(); }}>
+                <DialogContent className="max-h-[90vh] overflow-y-auto" onOpenChange={(open) => { if (!open) setNewAbsenceBlockedPeriod(undefined); setIsAbsenceTypeDialogOpen(open); }} onInteractOutside={(e) => { e.preventDefault(); }}>
                     <DialogHeader>
                         <DialogTitle className="font-headline">{dialogAbsenceTypeMode === 'add' ? 'Añadir Tipo de Ausencia' : 'Editar Tipo de Ausencia'}</DialogTitle>
                     </DialogHeader>
@@ -1962,11 +1962,11 @@ export default function SettingsPage() {
                                                 <div key={`abs-emp-${employee.id}`} className="flex items-center space-x-2">
                                                     <Checkbox 
                                                         id={`abs-emp-check-${employee.id}`}
-                                                        checked={absenceTypeFormData.assignedTo.includes(employee.name)}
+                                                        checked={(absenceTypeFormData.assignedTo || []).includes(employee.name)}
                                                         onCheckedChange={(checked) => {
                                                             const newAssignedTo = checked 
-                                                                ? [...absenceTypeFormData.assignedTo, employee.name]
-                                                                : absenceTypeFormData.assignedTo.filter(name => name !== employee.name);
+                                                                ? [...(absenceTypeFormData.assignedTo || []), employee.name]
+                                                                : (absenceTypeFormData.assignedTo || []).filter(name => name !== employee.name);
                                                             setAbsenceTypeFormData({...absenceTypeFormData, assignedTo: newAssignedTo});
                                                         }}
                                                     />
@@ -2148,3 +2148,6 @@ export default function SettingsPage() {
     </div>
   )
 }
+
+
+    
