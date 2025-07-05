@@ -293,6 +293,7 @@ export default function SettingsPage() {
   const [dialogCenterMode, setDialogCenterMode] = useState<'add' | 'edit'>('add');
   const [selectedCenter, setSelectedCenter] = useState<Center | null>(null);
   const [newCenterData, setNewCenterData] = useState({ name: "", address: "", radius: 100 });
+  const [mapsAuthFailed, setMapsAuthFailed] = useState(false);
   
   const [isDeptDialogOpen, setIsDeptDialogOpen] = useState(false);
   const [dialogDeptMode, setDialogDeptMode] = useState<'add' | 'edit'>('add');
@@ -355,6 +356,22 @@ export default function SettingsPage() {
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  useEffect(() => {
+    if (isClient) {
+      // This global function is called by the Google Maps script if authentication fails.
+      const originalAuthFailure = (window as any).gm_authFailure;
+      (window as any).gm_authFailure = () => {
+        console.error("Google Maps Authentication Failed. Check API Key and project settings.");
+        setMapsAuthFailed(true);
+      };
+
+      return () => {
+        // Restore original function on cleanup
+        (window as any).gm_authFailure = originalAuthFailure;
+      };
+    }
+  }, [isClient]);
 
   useEffect(() => {
     if (isClient) {
@@ -931,7 +948,10 @@ export default function SettingsPage() {
                 <CardTitle className="font-headline">Centros de Trabajo</CardTitle>
                 <CardDescription>Configura las ubicaciones de tu empresa para fichajes con geolocalización.</CardDescription>
               </div>
-               <Dialog open={isCenterDialogOpen} onOpenChange={setIsCenterDialogOpen}>
+               <Dialog open={isCenterDialogOpen} onOpenChange={(open) => {
+                    if (!open) setMapsAuthFailed(false); // Reset error state on close
+                    setIsCenterDialogOpen(open);
+                }}>
                 <DialogTrigger asChild>
                     <Button onClick={openAddCenterDialog}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Centro</Button>
                 </DialogTrigger>
@@ -943,7 +963,21 @@ export default function SettingsPage() {
                                 <Label htmlFor="center-name">Nombre del Centro</Label>
                                 <Input id="center-name" placeholder="Ej. Oficina Principal" value={newCenterData.name} onChange={(e) => setNewCenterData({...newCenterData, name: e.target.value})} required/>
                             </div>
-                            {isCenterDialogOpen && (
+
+                            {mapsAuthFailed ? (
+                                <Alert variant="destructive">
+                                    <AlertTriangle className="h-4 w-4" />
+                                    <AlertTitle>Error de Autenticación de Google Maps</AlertTitle>
+                                    <AlertDescription>
+                                        La clave de API no es válida o tu proyecto de Google Cloud no está configurado correctamente. Por favor, verifica en tu Google Cloud Console:
+                                        <ul className="list-disc pl-5 mt-2">
+                                            <li>Que la **Facturación** esté habilitada para el proyecto **'My First Project'**.</li>
+                                            <li>Que las APIs **'Maps JavaScript API'** y **'Places API'** estén activadas.</li>
+                                            <li>Que la clave de API no tenga **restricciones** que bloqueen esta web. Para probar, puedes eliminar las restricciones temporalmente.</li>
+                                        </ul>
+                                    </AlertDescription>
+                                </Alert>
+                            ) : (
                                 <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""} libraries={['places']}>
                                     <div className="space-y-2">
                                         <Label htmlFor="center-address">Dirección</Label>
@@ -965,20 +999,9 @@ export default function SettingsPage() {
                                             <AdvancedMarker position={mapCenter} />
                                         </Map>
                                     </div>
-                                     <Alert variant="destructive">
-                                        <AlertTriangle className="h-4 w-4" />
-                                        <AlertTitle>Error al Cargar Mapa</AlertTitle>
-                                        <AlertDescription>
-                                            No se pudo cargar Google Maps. Por favor, verifica en tu Google Cloud Console (Proyecto: My First Project) que:
-                                            <ul className="list-disc pl-5 mt-2">
-                                                <li>La facturación esté habilitada.</li>
-                                                <li>Las APIs 'Maps JavaScript API' y 'Places API' estén activadas.</li>
-                                                <li>Las restricciones de la API Key permitan el uso desde este dominio.</li>
-                                            </ul>
-                                        </AlertDescription>
-                                    </Alert>
                                 </APIProvider>
                             )}
+                            
                             <div className="space-y-2">
                                 <Label htmlFor="center-radius">Radio de Geolocalización (metros)</Label>
                                 <Input id="center-radius" type="number" placeholder="Ej. 100" value={newCenterData.radius} onChange={(e) => setNewCenterData({...newCenterData, radius: parseInt(e.target.value) || 0})}/>
