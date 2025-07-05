@@ -33,14 +33,16 @@ import { CSS } from '@dnd-kit/utilities';
 const ActiveEmployeesWidget = () => (
   <Card className="h-full">
     <Link href="/employees" className="block h-full">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Empleados Activos</CardTitle>
-        <Users className="h-4 w-4 text-muted-foreground" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">42 / 50</div>
-        <p className="text-xs text-muted-foreground">+2 desde la última hora</p>
-      </CardContent>
+      <>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Empleados Activos</CardTitle>
+          <Users className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">42 / 50</div>
+          <p className="text-xs text-muted-foreground">+2 desde la última hora</p>
+        </CardContent>
+      </>
     </Link>
   </Card>
 );
@@ -48,14 +50,16 @@ const ActiveEmployeesWidget = () => (
 const ProjectsInProgressWidget = () => (
   <Card className="h-full">
     <Link href="/projects" className="block h-full">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Proyectos en Progreso</CardTitle>
-        <Zap className="h-4 w-4 text-muted-foreground" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">5</div>
-        <p className="text-xs text-muted-foreground">+1 desde ayer</p>
-      </CardContent>
+      <>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Proyectos en Progreso</CardTitle>
+          <Zap className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">5</div>
+          <p className="text-xs text-muted-foreground">+1 desde ayer</p>
+        </CardContent>
+      </>
     </Link>
   </Card>
 );
@@ -63,14 +67,16 @@ const ProjectsInProgressWidget = () => (
 const PendingRequestsWidget = () => (
   <Card className="h-full">
     <Link href="/absences" className="block h-full">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Solicitudes Pendientes</CardTitle>
-        <Clock className="h-4 w-4 text-muted-foreground" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">12</div>
-        <p className="text-xs text-muted-foreground">3 vacaciones, 9 cambios de horario</p>
-      </CardContent>
+      <>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Solicitudes Pendientes</CardTitle>
+          <Clock className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">12</div>
+          <p className="text-xs text-muted-foreground">3 vacaciones, 9 cambios de horario</p>
+        </CardContent>
+      </>
     </Link>
   </Card>
 );
@@ -78,14 +84,16 @@ const PendingRequestsWidget = () => (
 const TasksCompletedWidget = () => (
   <Card className="h-full">
     <Link href="/projects" className="block h-full">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Tareas Completadas Hoy</CardTitle>
-        <CheckCircle className="h-4 w-4 text-muted-foreground" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">87</div>
-        <p className="text-xs text-muted-foreground">+15% desde la semana pasada</p>
-      </CardContent>
+      <>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Tareas Completadas Hoy</CardTitle>
+          <CheckCircle className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">87</div>
+          <p className="text-xs text-muted-foreground">+15% desde la semana pasada</p>
+        </CardContent>
+      </>
     </Link>
   </Card>
 );
@@ -145,7 +153,14 @@ const TeamSummaryWidget = () => {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="space-y-1"> <CardTitle>Resumen del Equipo</CardTitle> <CardDescription>Un vistazo rápido al estado actual de tu equipo.</CardDescription> </div>
-              <Button asChild size="sm" variant="outline"> <Link href="/employees">Ver Todos<ArrowUpRight className="h-4 w-4 ml-2" /></Link> </Button>
+              <Button asChild size="sm" variant="outline">
+                <Link href="/employees">
+                  <>
+                    Ver Todos
+                    <ArrowUpRight className="h-4 w-4 ml-2" />
+                  </>
+                </Link>
+              </Button>
             </div>
           </CardHeader>
           <CardContent>
