@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -9,22 +9,34 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, startOfWeek, addDays, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Coffee, ArrowRight, ArrowLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Coffee, ArrowRight, ArrowLeft, MapPin } from 'lucide-react';
+import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps';
 
-// Mock data for clock-in events
-const events = [
-  { id: 1, date: new Date(2024, 7, 19), time: "09:01", type: "Entrada" },
-  { id: 2, date: new Date(2024, 7, 19), time: "13:00", type: "Descanso" },
-  { id: 3, date: new Date(2024, 7, 19), time: "14:02", type: "Entrada" },
-  { id: 4, date: new Date(2024, 7, 19), time: "17:30", type: "Salida" },
-  { id: 5, date: new Date(2024, 7, 20), time: "09:05", type: "Entrada" },
-  { id: 6, date: new Date(2024, 7, 20), time: "17:35", type: "Salida" },
-  { id: 7, date: new Date(2024, 7, 21), time: "08:58", type: "Entrada" },
-  { id: 8, date: new Date(2024, 7, 21), time: "12:30", type: "Descanso" },
-  { id: 9, date: new Date(2024, 7, 21), time: "13:30", type: "Entrada" },
-  { id: 10, date: new Date(2024, 7, 21), time: "18:00", type: "Salida" },
-  { id: 11, date: new Date(new Date().setDate(new Date().getDate() - 1)), time: "09:00", type: "Entrada" },
-  { id: 12, date: new Date(new Date().setDate(new Date().getDate() - 1)), time: "17:00", type: "Salida" },
+// Add geolocation to event type
+type ClockInEvent = {
+  id: number;
+  date: Date;
+  time: string;
+  type: string;
+  location: string;
+  lat: number;
+  lng: number;
+};
+
+// Mock data for clock-in events with geolocation
+const events: ClockInEvent[] = [
+  { id: 1, date: new Date(2024, 7, 19), time: "09:01", type: "Entrada", location: "Oficina Central", lat: 40.416775, lng: -3.703790 },
+  { id: 2, date: new Date(2024, 7, 19), time: "13:00", type: "Descanso", location: "Oficina Central", lat: 40.416775, lng: -3.703790 },
+  { id: 3, date: new Date(2024, 7, 19), time: "14:02", type: "Entrada", location: "Cliente - Soltech", lat: 40.421, lng: -3.705 },
+  { id: 4, date: new Date(2024, 7, 19), time: "17:30", type: "Salida", location: "Cliente - Soltech", lat: 40.421, lng: -3.705 },
+  { id: 5, date: new Date(2024, 7, 20), time: "09:05", type: "Entrada", location: "Remoto - Casa", lat: 40.43, lng: -3.69 },
+  { id: 6, date: new Date(2024, 7, 20), time: "17:35", type: "Salida", location: "Remoto - Casa", lat: 40.43, lng: -3.69 },
+  { id: 7, date: new Date(2024, 7, 21), time: "08:58", type: "Entrada", location: "Oficina Central", lat: 40.416775, lng: -3.703790 },
+  { id: 8, date: new Date(2024, 7, 21), time: "12:30", type: "Descanso", location: "Oficina Central", lat: 40.416775, lng: -3.703790 },
+  { id: 9, date: new Date(2024, 7, 21), time: "13:30", type: "Entrada", location: "Oficina Central", lat: 40.416775, lng: -3.703790 },
+  { id: 10, date: new Date(2024, 7, 21), time: "18:00", type: "Salida", location: "Oficina Central", lat: 40.416775, lng: -3.703790 },
+  { id: 11, date: new Date(new Date().setDate(new Date().getDate() - 1)), time: "09:00", type: "Entrada", location: "Oficina Central", lat: 40.416775, lng: -3.703790 },
+  { id: 12, date: new Date(new Date().setDate(new Date().getDate() - 1)), time: "17:00", type: "Salida", location: "Oficina Central", lat: 40.416775, lng: -3.703790 },
 ];
 
 const getEventTypeBadge = (type: string) => {
@@ -36,26 +48,48 @@ const getEventTypeBadge = (type: string) => {
     }
 }
 
+const defaultMapCenter = { lat: 40.416775, lng: -3.703790 };
+
 export default function EmployeeAttendancePage() {
     const [currentDate, setCurrentDate] = useState(new Date());
+    const [selectedEvent, setSelectedEvent] = useState<ClockInEvent | null>(null);
+
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 
     const handleDateChange = (date: Date | undefined) => {
         if (date) {
             setCurrentDate(date);
+            setSelectedEvent(null); // Reset selection on date change
         }
     };
     
     const changeDay = (amount: number) => {
         setCurrentDate(prev => addDays(prev, amount));
+        setSelectedEvent(null);
     }
     
     const changeWeek = (amount: number) => {
         setCurrentDate(prev => addDays(prev, amount * 7));
+        setSelectedEvent(null);
     }
 
     const weekStartsOn = 1; // Monday
     const week = Array.from({ length: 7 }).map((_, i) => addDays(startOfWeek(currentDate, { weekStartsOn }), i));
-    const dailyEvents = events.filter(e => isSameDay(e.date, currentDate)).sort((a,b) => a.time.localeCompare(b.time));
+    
+    const dailyEvents = useMemo(() => 
+        events.filter(e => isSameDay(e.date, currentDate)).sort((a,b) => a.time.localeCompare(b.time)),
+        [currentDate]
+    );
+
+    const mapCenter = useMemo(() => {
+        if (selectedEvent) {
+            return { lat: selectedEvent.lat, lng: selectedEvent.lng };
+        }
+        if (dailyEvents.length > 0) {
+            return { lat: dailyEvents[0].lat, lng: dailyEvents[0].lng };
+        }
+        return defaultMapCenter;
+    }, [selectedEvent, dailyEvents]);
 
     return (
         <div className="space-y-8">
@@ -72,49 +106,92 @@ export default function EmployeeAttendancePage() {
                 </TabsList>
                 
                 <TabsContent value="day" className="mt-4">
-                    <Card>
-                        <CardHeader>
-                            <div className="flex items-center justify-between">
-                                <CardTitle className="font-headline">
-                                    {format(currentDate, "eeee, d 'de' MMMM 'de' yyyy", { locale: es })}
-                                </CardTitle>
-                                <div className="flex items-center gap-2">
-                                    <Button variant="outline" size="icon" onClick={() => changeDay(-1)}>
-                                        <ChevronLeft className="h-4 w-4" />
-                                    </Button>
-                                    <Button variant="outline" size="icon" onClick={() => changeDay(1)}>
-                                        <ChevronRight className="h-4 w-4" />
-                                    </Button>
+                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                        <Card className="lg:col-span-3">
+                            <CardHeader>
+                                <div className="flex items-center justify-between">
+                                    <CardTitle className="font-headline">
+                                        {format(currentDate, "eeee, d 'de' MMMM 'de' yyyy", { locale: es })}
+                                    </CardTitle>
+                                    <div className="flex items-center gap-2">
+                                        <Button variant="outline" size="icon" onClick={() => changeDay(-1)}>
+                                            <ChevronLeft className="h-4 w-4" />
+                                        </Button>
+                                        <Button variant="outline" size="icon" onClick={() => changeDay(1)}>
+                                            <ChevronRight className="h-4 w-4" />
+                                        </Button>
+                                    </div>
                                 </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="w-[100px]">Hora</TableHead>
-                                        <TableHead>Tipo de Evento</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {dailyEvents.length > 0 ? (
-                                        dailyEvents.map(event => (
-                                            <TableRow key={event.id}>
-                                                <TableCell className="font-medium">{event.time}</TableCell>
-                                                <TableCell>{getEventTypeBadge(event.type)}</TableCell>
-                                            </TableRow>
-                                        ))
-                                    ) : (
+                            </CardHeader>
+                            <CardContent>
+                                <Table>
+                                    <TableHeader>
                                         <TableRow>
-                                            <TableCell colSpan={2} className="text-center text-muted-foreground h-24">
-                                                No hay registros para este día.
-                                            </TableCell>
+                                            <TableHead className="w-[100px]">Hora</TableHead>
+                                            <TableHead>Tipo</TableHead>
+                                            <TableHead>Ubicación</TableHead>
                                         </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {dailyEvents.length > 0 ? (
+                                            dailyEvents.map(event => (
+                                                <TableRow 
+                                                    key={event.id} 
+                                                    onClick={() => setSelectedEvent(event)}
+                                                    className={`cursor-pointer ${selectedEvent?.id === event.id ? 'bg-muted' : ''}`}
+                                                >
+                                                    <TableCell className="font-medium">{event.time}</TableCell>
+                                                    <TableCell>{getEventTypeBadge(event.type)}</TableCell>
+                                                    <TableCell>{event.location}</TableCell>
+                                                </TableRow>
+                                            ))
+                                        ) : (
+                                            <TableRow>
+                                                <TableCell colSpan={3} className="text-center text-muted-foreground h-24">
+                                                    No hay registros para este día.
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </CardContent>
+                        </Card>
+                        <Card className="lg:col-span-2">
+                             <CardHeader>
+                                <CardTitle className="font-headline">Ubicación de Fichajes</CardTitle>
+                                <CardDescription>Mapa con los puntos de fichaje del día.</CardDescription>
+                             </CardHeader>
+                             <CardContent>
+                                <div className="h-[400px] w-full rounded-md overflow-hidden border">
+                                    {apiKey ? (
+                                        <APIProvider apiKey={apiKey}>
+                                            <Map
+                                                center={mapCenter}
+                                                zoom={dailyEvents.length > 1 ? 12 : 15}
+                                                gestureHandling={'greedy'}
+                                                disableDefaultUI={true}
+                                                mapId="employee-attendance-map"
+                                            >
+                                                {dailyEvents.map((event) => (
+                                                    <AdvancedMarker 
+                                                        key={event.id} 
+                                                        position={{ lat: event.lat, lng: event.lng }}
+                                                        title={event.location}
+                                                    >
+                                                      <MapPin className={`h-6 w-6 transition-colors ${selectedEvent?.id === event.id ? 'text-primary' : 'text-muted-foreground'}`}/>
+                                                    </AdvancedMarker>
+                                                ))}
+                                            </Map>
+                                        </APIProvider>
+                                    ) : (
+                                        <div className="flex items-center justify-center h-full bg-muted">
+                                            <p className="text-sm text-muted-foreground">Clave de API de Google Maps no configurada.</p>
+                                        </div>
                                     )}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
+                                </div>
+                             </CardContent>
+                        </Card>
+                    </div>
                 </TabsContent>
                 
                 <TabsContent value="week" className="mt-4">
@@ -186,7 +263,10 @@ export default function EmployeeAttendancePage() {
                                      {dailyEvents.length > 0 ? (
                                         dailyEvents.map(event => (
                                             <div key={event.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
-                                                <span>{getEventTypeBadge(event.type)}</span>
+                                                <div className="flex items-center gap-2">
+                                                    {getEventTypeBadge(event.type)}
+                                                    <span className="text-sm">{event.location}</span>
+                                                </div>
                                                 <span className="font-mono text-sm">{event.time}</span>
                                             </div>
                                         ))
