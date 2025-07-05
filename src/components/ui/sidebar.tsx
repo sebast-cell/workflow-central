@@ -15,7 +15,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { Separator } from "./separator"
 
 const SIDEBAR_PINNED_COOKIE_NAME = "sidebar_pinned_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 365 // 1 year
@@ -106,7 +105,7 @@ const sidebarVariants = cva(
         right: "right-0 border-l border-sidebar-border",
       },
       state: {
-        expanded: "w-[260px]",
+        expanded: "w-[240px]",
         collapsed: "w-14",
       },
     },
@@ -134,7 +133,7 @@ export const Sidebar = React.forwardRef<
   if (isMobile) {
     return (
        <Sheet open={openMobile} onOpenChange={setOpenMobile}>
-        <SheetContent side="left" className="w-[260px] bg-sidebar p-0 text-sidebar-foreground border-sidebar-border [&>button]:hidden">
+        <SheetContent side="left" className="w-[240px] bg-sidebar p-0 text-sidebar-foreground border-sidebar-border [&>button]:hidden">
           <div ref={ref} className={cn("flex h-full flex-col px-4 py-6", className)} {...props} />
         </SheetContent>
       </Sheet>
@@ -167,7 +166,7 @@ export const SidebarInset = React.forwardRef<
 
   const style = {
     transition: 'margin-left 300ms ease-in-out',
-    marginLeft: isMobile ? '0' : (isOpen ? '16.25rem' : '3.5rem')
+    marginLeft: isMobile ? '0' : (isOpen ? '15rem' : '3.5rem')
   };
 
   return (
@@ -219,7 +218,7 @@ export const SidebarPin = React.forwardRef<
       ref={ref}
       onClick={togglePin}
       className={cn(
-        "flex items-center justify-center p-2 text-sidebar-foreground/70 outline-none ring-sidebar-ring transition-opacity hover:text-sidebar-foreground focus-visible:ring-2",
+        "flex items-center justify-center p-2 text-muted-foreground/70 outline-none ring-sidebar-ring transition-opacity hover:text-foreground focus-visible:ring-2",
         "disabled:pointer-events-none disabled:opacity-50",
         isOpen ? "opacity-100" : "opacity-0",
         className
@@ -302,11 +301,11 @@ SidebarMenuItem.displayName = "SidebarMenuItem"
 
 
 const sidebarMenuButtonVariants = cva(
-  "flex w-full items-center gap-2 overflow-hidden rounded-sm p-2 text-left text-sm font-normal outline-none ring-sidebar-ring transition-colors duration-150 ease-out hover:bg-black/10 focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-5 [&_svg]:shrink-0",
+  "flex w-full items-center gap-2 overflow-hidden rounded-sm p-2 text-left text-sm outline-none ring-sidebar-ring transition-colors duration-150 ease-out hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-5 [&_svg]:shrink-0",
   {
     variants: {
       active: {
-        true: "bg-sidebar-active text-sidebar-active-foreground font-medium",
+        true: "bg-sidebar-active text-sidebar-active-foreground font-semibold",
       },
       collapsed: {
         true: "justify-center",
