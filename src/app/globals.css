@@ -72,13 +72,13 @@
     --chart-5: 215 20% 65%;
 
     /* Sidebar Theme */
-    --sidebar-background: 222 47% 15%;
-    --sidebar-foreground: 215 20% 65%;
-    --sidebar-accent: 215 28% 22%;
-    --sidebar-accent-foreground: 0 0% 96%;
-    --sidebar-active: 215 28% 22%;
-    --sidebar-active-foreground: 0 0% 96%;
-    --sidebar-border: 215 28% 17%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 0 0% 40%;
+    --sidebar-accent: 0 0% 96%;
+    --sidebar-accent-foreground: 0 0% 20%;
+    --sidebar-active: 0 0% 96%;
+    --sidebar-active-foreground: 0 0% 20%;
+    --sidebar-border: 0 0% 96%;
     --sidebar-ring: 16 100% 63%;
   }
 }

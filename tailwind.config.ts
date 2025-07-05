@@ -10,7 +10,7 @@ const config: Config = {
   theme: {
     extend: {
       boxShadow: {
-        default: '0 2px 4px rgba(0, 0, 0, 0.05)',
+        default: '0px 2px 4px rgba(0, 0, 0, 0.05)',
         card: '0px 4px 8px rgba(0, 0, 0, 0.1)',
       },
       fontFamily: {
