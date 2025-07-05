@@ -12,6 +12,7 @@ import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Coffee, ArrowRight, ArrowLeft, MapPin } from 'lucide-react';
 import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps';
 import React from 'react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 // Add geolocation to event type
@@ -49,6 +50,32 @@ const getEventTypeBadge = (type: string) => {
         default: return <Badge variant="secondary">{type}</Badge>;
     }
 }
+
+const getEventTypeIcon = (type: string) => {
+    const iconMap = {
+        "Entrada": <ArrowRight className="h-4 w-4 text-green-600" />,
+        "Salida": <ArrowLeft className="h-4 w-4 text-red-600" />,
+        "Descanso": <Coffee className="h-4 w-4 text-yellow-600" />,
+    };
+
+    const icon = iconMap[type as keyof typeof iconMap] || null;
+
+    if (!icon) return <Badge variant="secondary">{type}</Badge>;
+
+    return (
+        <TooltipProvider delayDuration={100}>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <span className="flex items-center cursor-default">{icon}</span>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>{type}</p>
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
+    )
+}
+
 
 export default function EmployeeAttendancePage() {
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -208,11 +235,11 @@ export default function EmployeeAttendancePage() {
                                             <p className="font-semibold text-sm capitalize">{format(day, "eee", { locale: es })}</p>
                                             <p className="text-muted-foreground text-xs">{format(day, "d")}</p>
                                         </div>
-                                        <div className="p-2 space-y-2 min-h-[100px]">
+                                        <div className="p-2 space-y-1 min-h-[120px]">
                                             {events.filter(e => isSameDay(e.date, day)).map(event => (
-                                                <div key={event.id} className="flex items-center gap-2 text-xs">
-                                                   <span className="font-mono">{event.time}</span>
-                                                   {getEventTypeBadge(event.type)}
+                                                <div key={event.id} className="flex items-center justify-between text-sm p-1 rounded-md hover:bg-muted">
+                                                   <span className="font-mono text-xs">{event.time}</span>
+                                                   {getEventTypeIcon(event.type)}
                                                 </div>
                                             ))}
                                         </div>
