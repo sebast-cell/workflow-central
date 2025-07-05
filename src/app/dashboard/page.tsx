@@ -178,7 +178,7 @@ export default function Dashboard() {
                     <TableCell>{member.department}</TableCell>
                     <TableCell className="hidden sm:table-cell">
                         <Badge variant="outline" className={cn(
-                            member.status === "Entrada Marcada" && "border-accent text-accent",
+                            member.status === "Entrada Marcada" && "border-accent text-accent-dark dark:text-accent",
                             member.status === "Salida Marcada" && "border-destructive text-destructive",
                             member.status === "En Descanso" && "border-warning text-warning"
                         )}>

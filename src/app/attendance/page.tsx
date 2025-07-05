@@ -287,7 +287,7 @@ export default function AttendancePage() {
                     <Badge 
                       variant="outline"
                       className={cn(
-                        log.status === "Entrada Marcada" && "border-accent text-accent",
+                        log.status === "Entrada Marcada" && "border-accent text-accent-dark dark:text-accent",
                         log.status === "Salida Marcada" && "border-destructive text-destructive",
                         log.status === "En Descanso" && "border-warning text-warning"
                       )}
