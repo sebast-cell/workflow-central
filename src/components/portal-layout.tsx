@@ -13,31 +13,31 @@ function PortalSidebarContent() {
     <>
        <SidebarHeader>
            <div className="flex items-center justify-between">
-            <Link href="/portal" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-primary/10 p-1.5 text-primary">
-                <Briefcase className="h-5 w-5" />
+            <Link href="/portal" className="flex items-center gap-2.5">
+              <div className="bg-primary text-primary-foreground p-2 rounded-md">
+                <Briefcase className="h-6 w-6" />
               </div>
-              {isOpen && <h1 className="text-lg font-semibold text-foreground">Portal Empleado</h1>}
+              {isOpen && <h1 className="text-xl font-semibold text-sidebar-foreground">Portal Empleado</h1>}
             </Link>
             {isOpen && <SidebarPin />}
-          </div>
-          <div className="flex items-center gap-3">
-             <Avatar className="h-12 w-12">
-               <AvatarImage src="https://placehold.co/48x48.png" data-ai-hint="employee avatar" alt="Olivia Martin" />
-               <AvatarFallback>OM</AvatarFallback>
-             </Avatar>
-             {isOpen && (
-                <div className="flex flex-col">
-                  <span className="text-base font-medium text-foreground">Olivia Martin</span>
-                  <span className="text-sm font-normal text-muted-foreground">Desarrollador Frontend</span>
-                </div>
-              )}
           </div>
         </SidebarHeader>
         <SidebarContent>
           <EmployeeSidebarNav />
         </SidebarContent>
         <SidebarFooter>
+           <div className="flex items-center gap-3 mb-4">
+             <Avatar className="h-9 w-9">
+               <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="employee avatar" alt="Olivia Martin" />
+               <AvatarFallback className="bg-sidebar-accent">OM</AvatarFallback>
+             </Avatar>
+             {isOpen && (
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold text-sidebar-foreground">Olivia Martin</span>
+                  <span className="text-xs text-sidebar-muted-foreground">olivia.martin@example.com</span>
+                </div>
+              )}
+          </div>
           <SidebarMenu>
             <SidebarMenuItem>
                 <SidebarMenuButton asChild>

@@ -64,7 +64,24 @@ const config: Config = {
           'warning-text': 'hsl(var(--status-warning-text))',
           'destructive-bg': 'hsl(var(--status-destructive-bg))',
           'destructive-text': 'hsl(var(--status-destructive-text))',
-        }
+        },
+        sidebar: {
+          DEFAULT: 'hsl(var(--sidebar-background))',
+          foreground: 'hsl(var(--sidebar-foreground))',
+          border: 'hsl(var(--sidebar-border))',
+          muted: {
+            foreground: 'hsl(var(--sidebar-muted-foreground))',
+          },
+          accent: {
+            DEFAULT: 'hsl(var(--sidebar-accent))',
+            foreground: 'hsl(var(--sidebar-accent-foreground))',
+          },
+          active: {
+            DEFAULT: 'hsl(var(--sidebar-active))',
+            foreground: 'hsl(var(--sidebar-active-foreground))',
+          },
+          ring: 'hsl(var(--sidebar-ring))',
+        },
       },
       borderRadius: {
         sm: '4px',

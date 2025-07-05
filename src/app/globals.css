@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -35,6 +37,16 @@
     --status-warning-text: hsl(35 80% 30%);
     --status-destructive-bg: hsl(0 84% 60% / 0.1);
     --status-destructive-text: hsl(0 70% 35%);
+
+    --sidebar-background: 224 71% 4%;
+    --sidebar-foreground: 210 40% 96%;
+    --sidebar-border: 217 33% 17%;
+    --sidebar-muted-foreground: 215 20% 65%;
+    --sidebar-accent: 217 33% 17%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-active: 242 78% 61%;
+    --sidebar-active-foreground: 210 40% 98%;
+    --sidebar-ring: 242 78% 61%;
   }
 
   .dark {
@@ -68,6 +80,16 @@
     --status-warning-text: hsl(45 100% 85%);
     --status-destructive-bg: hsl(0 84% 60% / 0.15);
     --status-destructive-text: hsl(0 84% 85%);
+
+    --sidebar-background: 224 71% 4%;
+    --sidebar-foreground: 210 40% 96%;
+    --sidebar-border: 217 33% 17%;
+    --sidebar-muted-foreground: 215 20% 65%;
+    --sidebar-accent: 217 33% 17%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-active: 242 78% 61%;
+    --sidebar-active-foreground: 210 40% 98%;
+    --sidebar-ring: 242 78% 61%;
   }
 }
 
