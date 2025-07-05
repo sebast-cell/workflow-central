@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -23,6 +23,7 @@ import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { DateRange } from "react-day-picker";
+import { GoogleMap, useJsApiLoader, Autocomplete } from "@react-google-maps/api";
 
 
 const allPermissions = [
@@ -228,6 +229,14 @@ const projectColors = [
 
 const weekDays = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 
+const containerStyle = {
+  width: '100%',
+  height: '256px',
+  borderRadius: '0.375rem',
+};
+
+const libraries: "places"[] = ['places'];
+
 export default function SettingsPage() {
   const [isClient, setIsClient] = useState(false);
 
@@ -304,6 +313,31 @@ export default function SettingsPage() {
   const [newBlockedPeriod, setNewBlockedPeriod] = useState<DateRange | undefined>(undefined);
 
   const allSchedules = ['Horario Fijo', 'Horario Flexible', ...shifts.map(s => s.name)];
+
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
+    libraries: libraries,
+  });
+
+  const [mapCenter, setMapCenter] = useState({ lat: 40.416775, lng: -3.703790 });
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+
+  const handleAutocompleteLoad = (autocomplete: google.maps.places.Autocomplete) => {
+    autocompleteRef.current = autocomplete;
+  };
+
+  const handlePlaceChanged = () => {
+    if (autocompleteRef.current) {
+      const place = autocompleteRef.current.getPlace();
+      if (place.geometry?.location) {
+        const lat = place.geometry.location.lat();
+        const lng = place.geometry.location.lng();
+        setMapCenter({ lat, lng });
+        setNewCenterData(prev => ({...prev, address: place.formatted_address || prev.address }));
+      }
+    }
+  };
 
   useEffect(() => {
     setIsClient(true);
@@ -892,23 +926,37 @@ export default function SettingsPage() {
                 </DialogTrigger>
                 <DialogContent>
                     <DialogHeader><DialogTitle className="font-headline">{dialogCenterMode === 'add' ? 'Nuevo Centro de Trabajo' : 'Editar Centro de Trabajo'}</DialogTitle></DialogHeader>
-                    <form onSubmit={handleCenterFormSubmit}>
-                        <div className="grid gap-4 py-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="center-name">Nombre del Centro</Label>
-                                <Input id="center-name" placeholder="Ej. Oficina Principal" value={newCenterData.name} onChange={(e) => setNewCenterData({...newCenterData, name: e.target.value})} required/>
+                    {isLoaded ? (
+                        <form onSubmit={handleCenterFormSubmit}>
+                            <div className="grid gap-4 py-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="center-name">Nombre del Centro</Label>
+                                    <Input id="center-name" placeholder="Ej. Oficina Principal" value={newCenterData.name} onChange={(e) => setNewCenterData({...newCenterData, name: e.target.value})} required/>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="center-address">Dirección</Label>
+                                    <Autocomplete
+                                        onLoad={handleAutocompleteLoad}
+                                        onPlaceChanged={handlePlaceChanged}
+                                    >
+                                        <Input id="center-address" placeholder="Ej. 123 Calle Falsa" defaultValue={newCenterData.address} onChange={(e) => setNewCenterData({...newCenterData, address: e.target.value})} required/>
+                                    </Autocomplete>
+                                </div>
+                                <div style={containerStyle}>
+                                    <GoogleMap
+                                        mapContainerStyle={containerStyle}
+                                        center={mapCenter}
+                                        zoom={15}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="center-radius">Radio de Geolocalización (metros)</Label>
+                                    <Input id="center-radius" type="number" placeholder="Ej. 100" value={newCenterData.radius} onChange={(e) => setNewCenterData({...newCenterData, radius: parseInt(e.target.value) || 0})}/>
+                                </div>
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="center-address">Dirección</Label>
-                                <Input id="center-address" placeholder="Ej. 123 Calle Falsa" value={newCenterData.address} onChange={(e) => setNewCenterData({...newCenterData, address: e.target.value})} required/>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="center-radius">Radio de Geolocalización (metros)</Label>
-                                <Input id="center-radius" type="number" placeholder="Ej. 100" value={newCenterData.radius} onChange={(e) => setNewCenterData({...newCenterData, radius: parseInt(e.target.value) || 0})}/>
-                            </div>
-                        </div>
-                        <DialogFooter><Button type="submit">Guardar Centro</Button></DialogFooter>
-                    </form>
+                            <DialogFooter><Button type="submit">Guardar Centro</Button></DialogFooter>
+                        </form>
+                    ) : <div>Cargando mapa...</div>}
                 </DialogContent>
                </Dialog>
             </CardHeader>
