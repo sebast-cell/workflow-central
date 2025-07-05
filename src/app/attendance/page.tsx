@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Briefcase, Coffee, Globe, Home, UserCheck, UserX } from "lucide-react";
+import { AttendanceReportDialog } from "./_components/attendance-report-dialog";
 
 const attendanceLog = [
   { time: "09:01 AM", employee: "Olivia Martin", status: "Entrada Marcada", location: "Oficina" },
@@ -77,26 +78,29 @@ export default function AttendancePage() {
         <CardHeader>
           <CardTitle className="font-headline">Timeline de Fichajes</CardTitle>
           <CardDescription>Un registro en tiempo real de los eventos de entrada de hoy.</CardDescription>
-          <div className="flex flex-col sm:flex-row gap-2 pt-2">
-              <Select>
-                <SelectTrigger className="w-full sm:w-[200px]">
-                  <SelectValue placeholder="Filtrar por Ubicación" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="office">Oficina</SelectItem>
-                  <SelectItem value="remote">Remoto</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select>
-                <SelectTrigger className="w-full sm:w-[200px]">
-                  <SelectValue placeholder="Filtrar por Departamento" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="engineering">Ingeniería</SelectItem>
-                  <SelectItem value="design">Diseño</SelectItem>
-                  <SelectItem value="marketing">Marketing</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="flex flex-col sm:flex-row gap-2 pt-2 sm:justify-between sm:items-center">
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Select>
+                  <SelectTrigger className="w-full sm:w-[200px]">
+                    <SelectValue placeholder="Filtrar por Ubicación" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="office">Oficina</SelectItem>
+                    <SelectItem value="remote">Remoto</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select>
+                  <SelectTrigger className="w-full sm:w-[200px]">
+                    <SelectValue placeholder="Filtrar por Departamento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="engineering">Ingeniería</SelectItem>
+                    <SelectItem value="design">Diseño</SelectItem>
+                    <SelectItem value="marketing">Marketing</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <AttendanceReportDialog />
           </div>
         </CardHeader>
         <CardContent>
