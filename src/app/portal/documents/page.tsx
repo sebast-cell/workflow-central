@@ -22,7 +22,7 @@ export default function EmployeeDocumentsPage() {
     <div className="space-y-8">
        <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-headline font-bold tracking-tight">Mis Documentos</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Mis Documentos</h1>
           <p className="text-muted-foreground">Accede a tus documentos personales y de empresa.</p>
         </div>
          <Button>
@@ -47,7 +47,7 @@ export default function EmployeeDocumentsPage() {
 
       <Card>
         <CardHeader>
-            <CardTitle className="font-headline">Archivos Recientes</CardTitle>
+            <CardTitle className="font-bold">Archivos Recientes</CardTitle>
             <CardDescription>Tus documentos subidos o compartidos más recientemente.</CardDescription>
         </CardHeader>
         <CardContent>
