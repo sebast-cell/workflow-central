@@ -317,7 +317,7 @@ const sidebarMenuButtonVariants = cva(
   {
     variants: {
       active: {
-        true: "bg-sidebar-active text-sidebar-active-foreground font-bold",
+        true: "bg-sidebar-active text-sidebar-active-foreground font-medium",
       },
       collapsed: {
         true: "justify-center",
