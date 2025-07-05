@@ -24,6 +24,7 @@ interface SidebarContextType {
   isOpen: boolean
   isPinned: boolean
   isMobile: boolean
+  isMounted: boolean
   onOpenChange: (open: boolean) => void
   togglePin: () => void
   toggleSidebar: () => void
@@ -80,13 +81,13 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
   }
 
   const contextValue = {
-    isOpen: isMobile ? true : isOpen, // On mobile, content is always "open"
+    isOpen: isMobile ? true : isOpen,
     isPinned,
     isMobile,
+    isMounted,
     onOpenChange,
     togglePin,
     toggleSidebar,
-    // Mobile specific
     openMobile, 
     setOpenMobile
   }
@@ -125,13 +126,14 @@ export const Sidebar = React.forwardRef<
   const {
     isOpen,
     isMobile,
+    isMounted,
     onOpenChange,
     openMobile, 
     setOpenMobile
   } = useSidebar()
   const state = isOpen ? "expanded" : "collapsed"
   
-  if (isMobile) {
+  if (isMounted && isMobile) {
     return (
        <Sheet open={openMobile} onOpenChange={setOpenMobile}>
         <SheetContent side="left" className="w-60 bg-sidebar p-0 text-sidebar-foreground border-sidebar-border [&>button]:hidden">
@@ -163,11 +165,11 @@ export const SidebarInset = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => {
-  const { isOpen, isMobile } = useSidebar()
+  const { isOpen, isMobile, isMounted } = useSidebar()
 
   const style = {
     transition: 'margin-left 300ms ease-in-out',
-    marginLeft: isMobile ? '0' : (isOpen ? '15rem' : '3.5rem')
+    marginLeft: isMounted && isMobile ? '0' : (isOpen ? '15rem' : '3.5rem')
   };
 
   return (
@@ -189,8 +191,8 @@ export const SidebarTrigger = React.forwardRef<
   React.ElementRef<typeof Button>,
   React.ComponentProps<typeof Button>
 >(({ className, ...props }, ref) => {
-  const { toggleSidebar, isMobile } = useSidebar()
-  if (!isMobile) return null;
+  const { toggleSidebar, isMobile, isMounted } = useSidebar()
+  if (!isMounted || !isMobile) return null;
 
   return (
     <Button
