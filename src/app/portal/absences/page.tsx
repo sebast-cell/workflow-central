@@ -125,7 +125,7 @@ export default function EmployeeAbsencesPage() {
     <div className="space-y-8">
        <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-                <h1 className="text-3xl font-headline font-bold tracking-tight">Mis Ausencias</h1>
+                <h1 className="text-3xl font-bold tracking-tight">Mis Ausencias</h1>
                 <p className="text-muted-foreground">Consulta tu historial, balance y solicita nuevo tiempo libre.</p>
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -137,7 +137,7 @@ export default function EmployeeAbsencesPage() {
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[480px]">
                     <DialogHeader>
-                        <DialogTitle className="font-headline">Nueva Solicitud de Ausencia</DialogTitle>
+                        <DialogTitle>Nueva Solicitud de Ausencia</DialogTitle>
                         <DialogDescription>
                             Selecciona el tipo de ausencia y las fechas.
                         </DialogDescription>
@@ -213,7 +213,7 @@ export default function EmployeeAbsencesPage() {
         {balances.map(balance => (
             <Card key={balance.type}>
                 <CardHeader className="pb-2">
-                    <CardTitle className="text-lg font-headline">{balance.type}</CardTitle>
+                    <CardTitle className="text-lg">{balance.type}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <p className="text-2xl font-bold">{balance.total - balance.used} <span className="text-sm font-normal text-muted-foreground">/ {balance.total} días restantes</span></p>
@@ -226,7 +226,7 @@ export default function EmployeeAbsencesPage() {
         <div className="lg:col-span-3">
             <Card>
                 <CardHeader>
-                    <CardTitle className="font-headline">Mis Solicitudes</CardTitle>
+                    <CardTitle>Mis Solicitudes</CardTitle>
                     <CardDescription>Historial de tus solicitudes de ausencia.</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -263,7 +263,7 @@ export default function EmployeeAbsencesPage() {
         <div className="lg:col-span-2">
             <Card>
                  <CardHeader>
-                    <CardTitle className="font-headline">Mi Calendario</CardTitle>
+                    <CardTitle>Mi Calendario</CardTitle>
                     <CardDescription>Tus ausencias y festivos de un vistazo.</CardDescription>
                 </CardHeader>
                 <CardContent>

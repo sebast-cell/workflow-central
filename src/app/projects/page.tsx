@@ -138,7 +138,7 @@ export default function ProjectsPage() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-headline font-bold tracking-tight">Proyectos</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Proyectos</h1>
           <p className="text-muted-foreground">Crea, gestiona y haz seguimiento de los proyectos de tu equipo.</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -150,7 +150,7 @@ export default function ProjectsPage() {
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle className="font-headline">Crear Nuevo Proyecto</DialogTitle>
+              <DialogTitle>Crear Nuevo Proyecto</DialogTitle>
               <DialogDescription>
                 Completa los detalles a continuación. Más información conduce a mejores informes.
               </DialogDescription>
@@ -201,7 +201,7 @@ export default function ProjectsPage() {
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div>
-                  <CardTitle className="font-headline">{project.name}</CardTitle>
+                  <CardTitle>{project.name}</CardTitle>
                   <CardDescription>{project.client}</CardDescription>
                 </div>
                 <div className={`w-4 h-4 rounded-full ${project.color}`}></div>

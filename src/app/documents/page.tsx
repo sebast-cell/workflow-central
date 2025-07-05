@@ -31,7 +31,7 @@ export default function DocumentsPage() {
     <div className="space-y-8">
        <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-headline font-bold tracking-tight">Gestión de Documentos</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Gestión de Documentos</h1>
           <p className="text-muted-foreground">Sube, organiza y gestiona documentos de la empresa y los empleados.</p>
         </div>
         <Dialog>
@@ -43,7 +43,7 @@ export default function DocumentsPage() {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle className="font-headline">Subir Nuevo Documento</DialogTitle>
+                    <DialogTitle>Subir Nuevo Documento</DialogTitle>
                     <DialogDescription>
                         Selecciona un archivo y asígnalo a un empleado o a una carpeta de la empresa.
                     </DialogDescription>
@@ -110,7 +110,7 @@ export default function DocumentsPage() {
 
       <Card>
         <CardHeader>
-            <CardTitle className="font-headline">Archivos Subidos Recientemente</CardTitle>
+            <CardTitle>Archivos Subidos Recientemente</CardTitle>
             <CardDescription>Una lista de los documentos añadidos más recientemente.</CardDescription>
         </CardHeader>
         <CardContent>

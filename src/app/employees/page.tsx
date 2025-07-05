@@ -214,7 +214,7 @@ export default function EmployeesPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-headline font-bold tracking-tight">Gestión de Empleados</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Gestión de Empleados</h1>
         <p className="text-muted-foreground">Ver, gestionar y exportar datos de empleados.</p>
       </div>
       <Card>
@@ -319,7 +319,7 @@ export default function EmployeesPage() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="font-headline">
+              <DialogTitle>
                 {dialogMode === 'add' ? 'Añadir Nuevo Empleado' : 'Editar Empleado'}
               </DialogTitle>
               <DialogDescription>

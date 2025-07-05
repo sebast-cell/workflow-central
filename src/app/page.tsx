@@ -8,13 +8,13 @@ export default function PortalSelectionPage() {
     <div className="flex items-center justify-center min-h-screen bg-muted/40">
       <div className="w-full max-w-4xl p-8">
         <div className="text-center mb-12">
-           <h1 className="text-5xl font-headline font-bold tracking-tight text-primary">WorkFlow Central</h1>
+           <h1 className="text-5xl font-bold tracking-tight text-primary">WorkFlow Central</h1>
            <p className="mt-4 text-lg text-muted-foreground">Tu centro de mando para la gestión de equipos y el autoservicio de empleados.</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
            <Card className="hover:shadow-lg transition-shadow duration-300">
                 <CardHeader className="text-center">
-                    <CardTitle className="text-2xl font-headline">Portal de Administrador</CardTitle>
+                    <CardTitle className="text-2xl">Portal de Administrador</CardTitle>
                     <CardDescription>Gestiona tu equipo, proyectos y operaciones.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex justify-center">
@@ -28,7 +28,7 @@ export default function PortalSelectionPage() {
            </Card>
            <Card className="hover:shadow-lg transition-shadow duration-300">
                 <CardHeader className="text-center">
-                    <CardTitle className="text-2xl font-headline">Portal del Empleado</CardTitle>
+                    <CardTitle className="text-2xl">Portal del Empleado</CardTitle>
                     <CardDescription>Consulta tu información y gestiona tus solicitudes.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex justify-center">

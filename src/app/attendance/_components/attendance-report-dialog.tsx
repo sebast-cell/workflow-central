@@ -116,7 +116,7 @@ export function AttendanceReportDialog({ attendanceLog }: { attendanceLog: Atten
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-headline">Generar Informe de Asistencia</DialogTitle>
+          <DialogTitle>Generar Informe de Asistencia</DialogTitle>
           <DialogDescription>
             El informe se generará usando los filtros aplicados en la tabla.
           </DialogDescription>

@@ -23,7 +23,7 @@ export default function PerformancePage() {
     return (
         <div className="space-y-8">
             <div>
-                <h1 className="text-3xl font-headline font-bold tracking-tight">Gestión del Desempeño</h1>
+                <h1 className="text-3xl font-bold tracking-tight">Gestión del Desempeño</h1>
                 <p className="text-muted-foreground">Lanza evaluaciones, establece objetivos y fomenta el feedback continuo.</p>
             </div>
 
@@ -37,7 +37,7 @@ export default function PerformancePage() {
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div>
-                                <CardTitle className="font-headline">Ciclos de Evaluación</CardTitle>
+                                <CardTitle>Ciclos de Evaluación</CardTitle>
                                 <CardDescription>Gestiona y monitoriza todos los ciclos de evaluación de desempeño.</CardDescription>
                             </div>
                             <Dialog>
@@ -46,7 +46,7 @@ export default function PerformancePage() {
                                 </DialogTrigger>
                                 <DialogContent>
                                     <DialogHeader>
-                                        <DialogTitle className="font-headline">Lanzar Nuevo Ciclo de Evaluación</DialogTitle>
+                                        <DialogTitle>Lanzar Nuevo Ciclo de Evaluación</DialogTitle>
                                         <DialogDescription>Configura los detalles para el nuevo ciclo.</DialogDescription>
                                     </DialogHeader>
                                     <div className="grid gap-4 py-4">
@@ -122,7 +122,7 @@ export default function PerformancePage() {
                 <TabsContent value="goals">
                      <Card>
                         <CardHeader>
-                            <CardTitle className="font-headline">Seguimiento de Objetivos</CardTitle>
+                            <CardTitle>Seguimiento de Objetivos</CardTitle>
                             <CardDescription>Visualiza y gestiona los objetivos de la empresa y los equipos.</CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -136,7 +136,7 @@ export default function PerformancePage() {
                 <TabsContent value="feedback">
                      <Card>
                         <CardHeader>
-                            <CardTitle className="font-headline">Registro de Feedback Continuo</CardTitle>
+                            <CardTitle>Registro de Feedback Continuo</CardTitle>
                             <CardDescription>Un lugar central para el feedback constructivo fuera de los ciclos formales.</CardDescription>
                         </CardHeader>
                         <CardContent>

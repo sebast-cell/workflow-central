@@ -9,7 +9,7 @@ export default function EmployeeProfilePage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-headline font-bold tracking-tight">Mi Perfil</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Mi Perfil</h1>
         <p className="text-muted-foreground">Consulta y actualiza tu información personal y de contacto.</p>
       </div>
 
@@ -21,7 +21,7 @@ export default function EmployeeProfilePage() {
                     <AvatarFallback>OM</AvatarFallback>
                 </Avatar>
                 <div>
-                    <CardTitle className="text-2xl font-headline">Olivia Martin</CardTitle>
+                    <CardTitle className="text-2xl">Olivia Martin</CardTitle>
                     <CardDescription>Desarrollador Frontend en el departamento de Ingeniería.</CardDescription>
                 </div>
                 <Button variant="outline" className="ml-auto">Cambiar Foto</Button>
@@ -30,7 +30,7 @@ export default function EmployeeProfilePage() {
         <CardContent>
             <form className="space-y-8">
                 <div>
-                    <h3 className="text-lg font-medium font-headline">Información Personal</h3>
+                    <h3 className="text-lg font-medium">Información Personal</h3>
                     <Separator className="my-4" />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
@@ -53,7 +53,7 @@ export default function EmployeeProfilePage() {
                 </div>
 
                  <div>
-                    <h3 className="text-lg font-medium font-headline">Dirección</h3>
+                    <h3 className="text-lg font-medium">Dirección</h3>
                     <Separator className="my-4" />
                     <div className="space-y-4">
                          <div className="space-y-2">
@@ -78,7 +78,7 @@ export default function EmployeeProfilePage() {
                 </div>
 
                 <div>
-                    <h3 className="text-lg font-medium font-headline">Contacto de Emergencia</h3>
+                    <h3 className="text-lg font-medium">Contacto de Emergencia</h3>
                     <Separator className="my-4" />
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">

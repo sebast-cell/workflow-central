@@ -40,7 +40,7 @@ export default function ReportsPage() {
     return (
         <div className="space-y-8">
             <div>
-                <h1 className="text-3xl font-headline font-bold tracking-tight">Herramienta de Informes</h1>
+                <h1 className="text-3xl font-bold tracking-tight">Herramienta de Informes</h1>
                 <p className="text-muted-foreground">Genera informes personalizables sobre procesos clave de gestión de empleados.</p>
             </div>
             
@@ -48,7 +48,7 @@ export default function ReportsPage() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle className="font-headline">Últimos Informes</CardTitle>
+                    <CardTitle>Últimos Informes</CardTitle>
                     <CardDescription>Un historial de informes exportados recientemente para una descarga fácil.</CardDescription>
                 </CardHeader>
                 <CardContent>

@@ -15,10 +15,10 @@ function AdminSidebarContent() {
        <SidebarHeader>
            <div className="flex items-center justify-between">
             <Link href="/dashboard" className="flex items-center gap-2.5">
-              <div className="bg-primary text-primary-foreground p-2 rounded-lg">
+              <div className="bg-primary text-primary-foreground p-2 rounded-md">
                 <Briefcase className="h-6 w-6" />
               </div>
-               {isOpen && <h1 className="text-xl font-headline font-semibold text-sidebar-foreground">WorkFlow Central</h1>}
+               {isOpen && <h1 className="text-xl font-semibold text-sidebar-foreground">WorkFlow Central</h1>}
             </Link>
             {isOpen && <SidebarPin />}
           </div>

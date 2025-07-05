@@ -91,12 +91,12 @@ export default function AttendancePage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-headline font-bold tracking-tight">Tiempo y Asistencia</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Tiempo y Asistencia</h1>
         <p className="text-muted-foreground">Monitorea las entradas diarias, estados y cronogramas.</p>
       </div>
 
       <div>
-        <h2 className="text-2xl font-headline font-semibold tracking-tight mb-4">Husin (Quién está dentro)</h2>
+        <h2 className="text-2xl font-semibold tracking-tight mb-4">Husin (Quién está dentro)</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
             <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -148,7 +148,7 @@ export default function AttendancePage() {
       
       <Card>
         <CardHeader>
-          <CardTitle className="font-headline">Timeline de Fichajes</CardTitle>
+          <CardTitle>Timeline de Fichajes</CardTitle>
           <CardDescription>Un registro en tiempo real de los eventos de entrada del día seleccionado.</CardDescription>
           <div className="flex flex-col sm:flex-row gap-4 pt-4 sm:items-start border-t border-border mt-4">
               <div className="flex flex-wrap gap-2 items-center flex-1">

@@ -154,7 +154,7 @@ export default function EmployeeAttendancePage() {
     return (
         <div className="space-y-8">
             <div>
-                <h1 className="text-3xl font-headline font-bold tracking-tight">Mi Calendario de Fichajes</h1>
+                <h1 className="text-3xl font-bold tracking-tight">Mi Calendario de Fichajes</h1>
                 <p className="text-muted-foreground">Consulta tus registros de entrada y salida diarios, semanales y mensuales.</p>
             </div>
 
@@ -170,7 +170,7 @@ export default function EmployeeAttendancePage() {
                         <Card>
                             <CardHeader>
                                 <div className="flex items-center justify-between">
-                                    <CardTitle className="font-headline">
+                                    <CardTitle>
                                         {format(currentDate, "eeee, d 'de' MMMM 'de' yyyy", { locale: es })}
                                     </CardTitle>
                                     <div className="flex items-center gap-2">
@@ -261,7 +261,7 @@ export default function EmployeeAttendancePage() {
                      <Card>
                         <CardHeader>
                              <div className="flex items-center justify-between">
-                                <CardTitle className="font-headline">
+                                <CardTitle>
                                     Semana del {format(week[0], "d 'de' MMMM", { locale: es })}
                                 </CardTitle>
                                  <div className="flex items-center gap-2">
@@ -300,7 +300,7 @@ export default function EmployeeAttendancePage() {
                 <TabsContent value="month" className="mt-4">
                      <Card>
                         <CardHeader>
-                           <CardTitle className="font-headline">Resumen Mensual</CardTitle>
+                           <CardTitle>Resumen Mensual</CardTitle>
                             <CardDescription>Tu actividad de fichajes durante el mes. Selecciona un día para ver los detalles.</CardDescription>
                         </CardHeader>
                         <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-8">

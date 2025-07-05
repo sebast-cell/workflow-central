@@ -8,14 +8,14 @@ export default function EmployeeSettingsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-headline font-bold tracking-tight">Configuración</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Configuración</h1>
         <p className="text-muted-foreground">Gestiona la configuración de tu cuenta y tus preferencias.</p>
       </div>
 
       <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="font-headline">Preferencias de Notificaciones</CardTitle>
+            <CardTitle>Preferencias de Notificaciones</CardTitle>
             <CardDescription>Elige cómo quieres que te notifiquemos.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -45,7 +45,7 @@ export default function EmployeeSettingsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="font-headline">Seguridad de la Cuenta</CardTitle>
+            <CardTitle>Seguridad de la Cuenta</CardTitle>
             <CardDescription>Actualiza tu contraseña para mantener tu cuenta segura.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

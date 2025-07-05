@@ -53,7 +53,7 @@ export default function EmployeeDashboard() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-headline font-bold tracking-tight">Hola, Olivia</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Hola, Olivia</h1>
         <p className="text-muted-foreground">Aquí tienes un resumen de tu jornada y tus tareas.</p>
       </div>
 
@@ -103,7 +103,7 @@ export default function EmployeeDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <Card>
             <CardHeader>
-                <CardTitle className="font-headline">Acciones Rápidas</CardTitle>
+                <CardTitle>Acciones Rápidas</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-4">
                 <Button onClick={handleClockInOut}>{isClockedIn ? 'Marcar Salida' : 'Marcar Entrada'}</Button>
@@ -118,7 +118,7 @@ export default function EmployeeDashboard() {
         </Card>
         <Card>
             <CardHeader>
-                <CardTitle className="font-headline">Mi Perfil</CardTitle>
+                <CardTitle>Mi Perfil</CardTitle>
                 <CardDescription>Mantén tu información actualizada.</CardDescription>
             </CardHeader>
             <CardContent className="flex items-center gap-4">

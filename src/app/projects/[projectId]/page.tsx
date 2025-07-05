@@ -144,7 +144,7 @@ export default function ProjectDetailsPage() {
                     <CardHeader>
                         <div className="flex items-start justify-between">
                             <div>
-                                <CardTitle className="font-headline text-3xl">{project.name}</CardTitle>
+                                <CardTitle className="text-3xl">{project.name}</CardTitle>
                                 <CardDescription className="text-lg">{project.client}</CardDescription>
                             </div>
                             <div className="flex items-center gap-2">
@@ -172,7 +172,7 @@ export default function ProjectDetailsPage() {
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between">
                            <div>
-                             <CardTitle className="font-headline">Lista de Tareas</CardTitle>
+                             <CardTitle>Lista de Tareas</CardTitle>
                              <CardDescription>Seguimiento de todas las tareas asociadas al proyecto.</CardDescription>
                            </div>
                            <Dialog open={isTaskDialogOpen} onOpenChange={setIsTaskDialogOpen}>
@@ -181,7 +181,7 @@ export default function ProjectDetailsPage() {
                                </DialogTrigger>
                                <DialogContent>
                                    <DialogHeader>
-                                       <DialogTitle className="font-headline">Añadir Nueva Tarea</DialogTitle>
+                                       <DialogTitle>Añadir Nueva Tarea</DialogTitle>
                                    </DialogHeader>
                                    <form onSubmit={handleAddTask}>
                                         <div className="grid gap-4 py-4">
@@ -262,7 +262,7 @@ export default function ProjectDetailsPage() {
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between">
                            <div>
-                             <CardTitle className="font-headline">Miembros del Proyecto</CardTitle>
+                             <CardTitle>Miembros del Proyecto</CardTitle>
                              <CardDescription>Empleados asignados a este proyecto.</CardDescription>
                            </div>
                            <Button><PlusCircle className="mr-2 h-4 w-4"/> Asignar Miembros</Button>
@@ -290,7 +290,7 @@ export default function ProjectDetailsPage() {
                 <TabsContent value="profitability">
                     <Card>
                          <CardHeader>
-                             <CardTitle className="font-headline">Informe de Rentabilidad</CardTitle>
+                             <CardTitle>Informe de Rentabilidad</CardTitle>
                              <CardDescription>Análisis de costos y rentabilidad del proyecto.</CardDescription>
                          </CardHeader>
                          <CardContent>

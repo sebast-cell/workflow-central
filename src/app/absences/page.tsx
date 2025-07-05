@@ -30,7 +30,7 @@ export default function AbsencesPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-headline font-bold tracking-tight">Ausencias y Tiempo Libre</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Ausencias y Tiempo Libre</h1>
         <p className="text-muted-foreground">Gestiona vacaciones, licencias por enfermedad y otras ausencias de los empleados.</p>
       </div>
 
@@ -38,7 +38,7 @@ export default function AbsencesPage() {
         <div className="lg:col-span-2">
           <Card>
             <CardHeader>
-              <CardTitle className="font-headline">Calendario de Ausencias del Equipo</CardTitle>
+              <CardTitle>Calendario de Ausencias del Equipo</CardTitle>
               <CardDescription>Vista mensual de todas las ausencias del equipo.</CardDescription>
             </CardHeader>
             <CardContent>
@@ -53,7 +53,7 @@ export default function AbsencesPage() {
         <div className="lg:col-span-1 space-y-8">
           <Card>
             <CardHeader>
-              <CardTitle className="font-headline">Filtros</CardTitle>
+              <CardTitle>Filtros</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center space-x-2">
@@ -72,7 +72,7 @@ export default function AbsencesPage() {
           </Card>
           <Card>
             <CardHeader>
-                <CardTitle className="font-headline">Acciones</CardTitle>
+                <CardTitle>Acciones</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-2">
                 <Dialog>
@@ -84,7 +84,7 @@ export default function AbsencesPage() {
                     </DialogTrigger>
                     <DialogContent>
                         <DialogHeader>
-                            <DialogTitle className="font-headline">Asignar Nueva Ausencia</DialogTitle>
+                            <DialogTitle>Asignar Nueva Ausencia</DialogTitle>
                             <DialogDescription>
                                 Asigna directamente una ausencia a un empleado.
                             </DialogDescription>
@@ -171,7 +171,7 @@ export default function AbsencesPage() {
       </div>
        <Card>
         <CardHeader>
-          <CardTitle className="font-headline">Solicitudes Pendientes y Recientes</CardTitle>
+          <CardTitle>Solicitudes Pendientes y Recientes</CardTitle>
           <CardDescription>Revisa y gestiona las solicitudes de ausencia.</CardDescription>
         </CardHeader>
         <CardContent>

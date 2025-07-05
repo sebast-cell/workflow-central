@@ -18,7 +18,7 @@ export default function EmployeePerformancePage() {
     return (
         <div className="space-y-8">
             <div>
-                <h1 className="text-3xl font-headline font-bold tracking-tight">Mi Desempeño</h1>
+                <h1 className="text-3xl font-bold tracking-tight">Mi Desempeño</h1>
                 <p className="text-muted-foreground">Consulta tus evaluaciones, sigue tus objetivos y gestiona tu crecimiento.</p>
             </div>
 
@@ -26,7 +26,7 @@ export default function EmployeePerformancePage() {
                  <Card>
                     <CardHeader className="flex flex-row items-center justify-between">
                         <div>
-                            <CardTitle className="font-headline">Mis Objetivos</CardTitle>
+                            <CardTitle>Mis Objetivos</CardTitle>
                             <CardDescription>Tus metas personales y profesionales.</CardDescription>
                         </div>
                         <Button variant="outline" size="sm"><PlusCircle className="mr-2 h-4 w-4"/> Añadir Objetivo</Button>
@@ -50,7 +50,7 @@ export default function EmployeePerformancePage() {
                 </Card>
                  <Card>
                     <CardHeader>
-                        <CardTitle className="font-headline">Mis Evaluaciones de Desempeño</CardTitle>
+                        <CardTitle>Mis Evaluaciones de Desempeño</CardTitle>
                         <CardDescription>Historial de tus ciclos de evaluación.</CardDescription>
                     </CardHeader>
                     <CardContent>

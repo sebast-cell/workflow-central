@@ -30,7 +30,7 @@ export default function ReportGenerator({ formAction }: { formAction: (prevState
       <Card className="lg:col-span-1 h-fit">
         <form action={action}>
           <CardHeader>
-            <CardTitle className="font-headline">Nuevo Informe</CardTitle>
+            <CardTitle>Nuevo Informe</CardTitle>
             <CardDescription>Completa los detalles para generar un informe personalizado.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -83,7 +83,7 @@ export default function ReportGenerator({ formAction }: { formAction: (prevState
         {state.success && state.report && (
             <Card>
                 <CardHeader>
-                    <CardTitle className="font-headline">Informe Generado</CardTitle>
+                    <CardTitle>Informe Generado</CardTitle>
                     <CardDescription>Aquí está el informe generado según tus criterios.</CardDescription>
                 </CardHeader>
                 <CardContent>

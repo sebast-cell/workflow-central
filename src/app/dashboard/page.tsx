@@ -39,7 +39,7 @@ export default function Dashboard() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-3xl font-headline font-bold tracking-tight">Panel de Administración</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Panel de Administración</h1>
         <p className="text-muted-foreground">Un resumen de todas las tareas de gestión para tu equipo.</p>
       </div>
 
@@ -89,7 +89,7 @@ export default function Dashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="lg:col-span-4">
           <CardHeader>
-            <CardTitle className="font-headline">Resumen de Horas del Equipo</CardTitle>
+            <CardTitle>Resumen de Horas del Equipo</CardTitle>
             <CardDescription>Total de horas registradas esta semana.</CardDescription>
           </CardHeader>
           <CardContent className="pl-2">
@@ -118,7 +118,7 @@ export default function Dashboard() {
 
         <Card className="lg:col-span-3">
           <CardHeader>
-            <CardTitle className="font-headline">Actividad Reciente</CardTitle>
+            <CardTitle>Actividad Reciente</CardTitle>
             <CardDescription>Lo que tu equipo ha estado haciendo.</CardDescription>
           </CardHeader>
           <CardContent>
@@ -145,7 +145,7 @@ export default function Dashboard() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <CardTitle className="font-headline">Resumen del Equipo</CardTitle>
+                <CardTitle>Resumen del Equipo</CardTitle>
                 <CardDescription>
                   Un vistazo rápido al estado actual de tu equipo.
                 </CardDescription>

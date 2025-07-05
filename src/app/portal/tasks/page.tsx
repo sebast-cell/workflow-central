@@ -32,7 +32,7 @@ export default function EmployeeTasksPage() {
         <div className="space-y-8">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-headline font-bold tracking-tight">Mis Tareas</h1>
+                    <h1 className="text-3xl font-bold tracking-tight">Mis Tareas</h1>
                     <p className="text-muted-foreground">Imputa las horas dedicadas a cada tarea y proyecto.</p>
                 </div>
                 <Dialog>
@@ -44,7 +44,7 @@ export default function EmployeeTasksPage() {
                     </DialogTrigger>
                     <DialogContent>
                         <DialogHeader>
-                            <DialogTitle className="font-headline">Imputar Nueva Tarea</DialogTitle>
+                            <DialogTitle>Imputar Nueva Tarea</DialogTitle>
                             <DialogDescription>
                                 Registra el tiempo que has dedicado a una tarea específica.
                             </DialogDescription>
@@ -85,7 +85,7 @@ export default function EmployeeTasksPage() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle className="font-headline">Historial de Tareas Imputadas</CardTitle>
+                    <CardTitle>Historial de Tareas Imputadas</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <Table>

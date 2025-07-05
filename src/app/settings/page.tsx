@@ -325,7 +325,7 @@ const CenterDialogContent = ({
                 e.preventDefault();
             }
         }}>
-            <DialogHeader><DialogTitle className="font-headline">{mode === 'add' ? 'Nuevo Centro de Trabajo' : 'Editar Centro de Trabajo'}</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{mode === 'add' ? 'Nuevo Centro de Trabajo' : 'Editar Centro de Trabajo'}</DialogTitle></DialogHeader>
             <form onSubmit={handleSubmit}>
                 <div className="grid gap-4 py-4">
                     <div className="space-y-2">
@@ -492,7 +492,7 @@ const CentersTabContent = () => {
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                    <CardTitle className="font-headline">Centros de Trabajo</CardTitle>
+                    <CardTitle>Centros de Trabajo</CardTitle>
                     <CardDescription>Configura las ubicaciones de tu empresa para fichajes con geolocalización.</CardDescription>
                 </div>
                 <Button onClick={openAddCenterDialog} disabled={authError}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Centro</Button>
@@ -814,7 +814,6 @@ const SettingsTabs = () => {
         setDialogFlexibleScheduleMode('edit');
         setSelectedFlexibleSchedule(schedule);
         setFlexibleScheduleFormData(schedule);
-        setIsFlexibleScheduleDialogOpen(true);
     };
     
     const handleFlexibleScheduleFormSubmit = (e: React.FormEvent) => {
@@ -843,7 +842,6 @@ const SettingsTabs = () => {
         setDialogFixedScheduleMode('edit');
         setSelectedFixedSchedule(schedule);
         setFixedScheduleFormData(schedule);
-        setIsFixedScheduleDialogOpen(true);
     };
 
     const handleFixedScheduleFormSubmit = (e: React.FormEvent) => {
@@ -1022,7 +1020,7 @@ const SettingsTabs = () => {
                 <TabsContent value="general" className="space-y-4 m-0">
                     <Card>
                         <CardHeader>
-                            <CardTitle className="font-headline">Detalles de la Empresa</CardTitle>
+                            <CardTitle>Detalles de la Empresa</CardTitle>
                             <CardDescription>Actualiza la información de tu organización.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -1042,7 +1040,7 @@ const SettingsTabs = () => {
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div>
-                                <CardTitle className="font-headline">Roles de Usuario</CardTitle>
+                                <CardTitle>Roles de Usuario</CardTitle>
                                 <CardDescription>Indica qué usuarios tendrán más visibilidad o control.</CardDescription>
                             </div>
                             <Button onClick={openAddRoleDialog}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Rol</Button>
@@ -1062,7 +1060,7 @@ const SettingsTabs = () => {
                     <Dialog open={isRoleDialogOpen} onOpenChange={setIsRoleDialogOpen}>
                         <DialogContent className="sm:max-w-lg">
                             <DialogHeader>
-                                <DialogTitle className="font-headline">
+                                <DialogTitle>
                                     {dialogRoleMode === 'add' ? 'Añadir Nuevo Rol' : 'Editar Rol'}
                                 </DialogTitle>
                                 <DialogDescription>
@@ -1128,13 +1126,13 @@ const SettingsTabs = () => {
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div>
-                                <CardTitle className="font-headline">Departamentos</CardTitle>
+                                <CardTitle>Departamentos</CardTitle>
                                 <CardDescription>Organiza a tus empleados en diferentes departamentos.</CardDescription>
                             </div>
                             <Dialog open={isDeptDialogOpen} onOpenChange={setIsDeptDialogOpen}>
                                 <DialogTrigger asChild><Button onClick={openAddDeptDialog}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Depto.</Button></DialogTrigger>
                                 <DialogContent className="sm:max-w-xs">
-                                    <DialogHeader><DialogTitle className="font-headline">{dialogDeptMode === 'add' ? 'Nuevo Departamento' : 'Editar Departamento'}</DialogTitle></DialogHeader>
+                                    <DialogHeader><DialogTitle>{dialogDeptMode === 'add' ? 'Nuevo Departamento' : 'Editar Departamento'}</DialogTitle></DialogHeader>
                                     <form onSubmit={handleDepartmentFormSubmit}>
                                         <div className="grid gap-4 py-4">
                                             <div className="space-y-2">
@@ -1166,7 +1164,7 @@ const SettingsTabs = () => {
                 <TabsContent value="schedules" className="space-y-4 m-0">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between">
-                            <CardTitle className="font-headline">Horarios Flexibles</CardTitle>
+                            <CardTitle>Horarios Flexibles</CardTitle>
                             <Button onClick={openAddFlexibleScheduleDialog}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Horario Flexible</Button>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -1188,7 +1186,7 @@ const SettingsTabs = () => {
                     </Card>
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between">
-                            <CardTitle className="font-headline">Horarios Fijos</CardTitle>
+                            <CardTitle>Horarios Fijos</CardTitle>
                             <Button onClick={openAddFixedScheduleDialog}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Horario Fijo</Button>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -1210,7 +1208,7 @@ const SettingsTabs = () => {
                     </Card>
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between">
-                            <CardTitle className="font-headline">Turnos de Trabajo</CardTitle>
+                            <CardTitle>Turnos de Trabajo</CardTitle>
                             <Button onClick={openAddShiftDialog}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Turno</Button>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -1233,7 +1231,7 @@ const SettingsTabs = () => {
                 </TabsContent>
                 <Dialog open={isFlexibleScheduleDialogOpen} onOpenChange={setIsFlexibleScheduleDialogOpen}>
                     <DialogContent>
-                        <DialogHeader><DialogTitle className="font-headline">{dialogFlexibleScheduleMode === 'add' ? 'Nuevo Horario Flexible' : 'Editar Horario Flexible'}</DialogTitle></DialogHeader>
+                        <DialogHeader><DialogTitle>{dialogFlexibleScheduleMode === 'add' ? 'Nuevo Horario Flexible' : 'Editar Horario Flexible'}</DialogTitle></DialogHeader>
                         <form onSubmit={handleFlexibleScheduleFormSubmit} className="space-y-4 py-4">
                             <div className="space-y-2">
                                 <Label htmlFor="flex-name">Nombre del Horario</Label>
@@ -1272,7 +1270,7 @@ const SettingsTabs = () => {
                 </Dialog>
                 <Dialog open={isFixedScheduleDialogOpen} onOpenChange={setIsFixedScheduleDialogOpen}>
                     <DialogContent>
-                        <DialogHeader><DialogTitle className="font-headline">{dialogFixedScheduleMode === 'add' ? 'Nuevo Horario Fijo' : 'Editar Horario Fijo'}</DialogTitle></DialogHeader>
+                        <DialogHeader><DialogTitle>{dialogFixedScheduleMode === 'add' ? 'Nuevo Horario Fijo' : 'Editar Horario Fijo'}</DialogTitle></DialogHeader>
                         <form onSubmit={handleFixedScheduleFormSubmit} className="space-y-4 py-4">
                             <div className="space-y-2">
                                 <Label htmlFor="fixed-name">Nombre del Horario</Label>
@@ -1320,7 +1318,7 @@ const SettingsTabs = () => {
                 </Dialog>
                 <Dialog open={isShiftDialogOpen} onOpenChange={setIsShiftDialogOpen}>
                     <DialogContent>
-                        <DialogHeader><DialogTitle className="font-headline">{dialogShiftMode === 'add' ? 'Nuevo Turno' : 'Editar Turno'}</DialogTitle></DialogHeader>
+                        <DialogHeader><DialogTitle>{dialogShiftMode === 'add' ? 'Nuevo Turno' : 'Editar Turno'}</DialogTitle></DialogHeader>
                         <form onSubmit={handleShiftFormSubmit} className="space-y-4 py-4">
                             <div className="space-y-2">
                                 <Label htmlFor="shift-name">Nombre del Turno</Label>
@@ -1345,7 +1343,7 @@ const SettingsTabs = () => {
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div>
-                                <CardTitle className="font-headline">Gestión de Descansos</CardTitle>
+                                <CardTitle>Gestión de Descansos</CardTitle>
                                 <CardDescription>Configura los descansos, ya sean remunerados o no.</CardDescription>
                             </div>
                             <Dialog open={isBreakDialogOpen} onOpenChange={setIsBreakDialogOpen}>
@@ -1354,7 +1352,7 @@ const SettingsTabs = () => {
                                 </DialogTrigger>
                                 <DialogContent className="sm:max-w-md">
                                     <DialogHeader>
-                                        <DialogTitle className="font-headline">{dialogBreakMode === 'add' ? 'Añadir Nuevo Descanso' : 'Editar Descanso'}</DialogTitle>
+                                        <DialogTitle>{dialogBreakMode === 'add' ? 'Añadir Nuevo Descanso' : 'Editar Descanso'}</DialogTitle>
                                         <DialogDescription>Define las propiedades y reglas para este tipo de descanso.</DialogDescription>
                                     </DialogHeader>
                                     <form onSubmit={handleBreakFormSubmit}>
@@ -1477,7 +1475,7 @@ const SettingsTabs = () => {
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div>
-                                <CardTitle className="font-headline">Tipos de Fichaje</CardTitle>
+                                <CardTitle>Tipos de Fichaje</CardTitle>
                                 <CardDescription>Marca fichajes diferentes al normal, asignando un color para diferenciarlos.</CardDescription>
                             </div>
                             <Dialog open={isClockInTypeDialogOpen} onOpenChange={setIsClockInTypeDialogOpen}>
@@ -1486,7 +1484,7 @@ const SettingsTabs = () => {
                                 </DialogTrigger>
                                 <DialogContent className="sm:max-w-md">
                                     <DialogHeader>
-                                        <DialogTitle className="font-headline">{dialogClockInTypeMode === 'add' ? 'Añadir Nuevo Tipo de Fichaje' : 'Editar Tipo de Fichaje'}</DialogTitle>
+                                        <DialogTitle>{dialogClockInTypeMode === 'add' ? 'Añadir Nuevo Tipo de Fichaje' : 'Editar Tipo de Fichaje'}</DialogTitle>
                                     </DialogHeader>
                                     <form onSubmit={handleClockInTypeFormSubmit}>
                                         <div className="grid gap-4 py-4">
@@ -1590,13 +1588,13 @@ const SettingsTabs = () => {
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between">
                                 <div>
-                                    <CardTitle className="font-headline">Calendarios de Festivos</CardTitle>
+                                    <CardTitle>Calendarios de Festivos</CardTitle>
                                     <CardDescription>Gestiona calendarios para diferentes centros o departamentos.</CardDescription>
                                 </div>
                                 <Dialog open={isCalendarDialogOpen} onOpenChange={setIsCalendarDialogOpen}>
                                     <DialogTrigger asChild><Button><PlusCircle className="mr-2 h-4 w-4" /> Nuevo Calendario</Button></DialogTrigger>
                                     <DialogContent className="sm:max-w-xs">
-                                        <DialogHeader><DialogTitle className="font-headline">Crear Nuevo Calendario</DialogTitle></DialogHeader>
+                                        <DialogHeader><DialogTitle>Crear Nuevo Calendario</DialogTitle></DialogHeader>
                                         <form onSubmit={handleCalendarFormSubmit}>
                                             <div className="grid gap-4 py-4">
                                                 <Label htmlFor="cal-name">Nombre del Calendario</Label>
@@ -1628,7 +1626,7 @@ const SettingsTabs = () => {
                             <Card>
                                 <CardHeader className="flex flex-row items-center justify-between">
                                     <div>
-                                        <CardTitle className="font-headline">{selectedCalendar?.name}</CardTitle>
+                                        <CardTitle>{selectedCalendar?.name}</CardTitle>
                                         <CardDescription>Gestiona los festivos de este calendario.</CardDescription>
                                     </div>
                                     <div className="flex gap-2">
@@ -1636,7 +1634,7 @@ const SettingsTabs = () => {
                                         <Dialog open={isHolidayDialogOpen} onOpenChange={setIsHolidayDialogOpen}>
                                             <DialogTrigger asChild><Button><PlusCircle className="mr-2 h-4 w-4"/> Añadir Festivo</Button></DialogTrigger>
                                             <DialogContent className="sm:max-w-md">
-                                                <DialogHeader><DialogTitle className="font-headline">Añadir Festivo Personalizado</DialogTitle></DialogHeader>
+                                                <DialogHeader><DialogTitle>Añadir Festivo Personalizado</DialogTitle></DialogHeader>
                                                 <form onSubmit={handleHolidayFormSubmit} className="grid gap-4 py-4">
                                                     <div className="space-y-2">
                                                         <Label htmlFor="holiday-name">Nombre del Festivo</Label>
@@ -1708,7 +1706,7 @@ const SettingsTabs = () => {
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div>
-                                <CardTitle className="font-headline">Políticas de Vacaciones</CardTitle>
+                                <CardTitle>Políticas de Vacaciones</CardTitle>
                                 <CardDescription>Establece las políticas de vacaciones para la empresa.</CardDescription>
                             </div>
                             <Button onClick={openAddVacationPolicyDialog}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Política</Button>
@@ -1737,7 +1735,7 @@ const SettingsTabs = () => {
                     </Card>
                     <Dialog open={isVacationPolicyDialogOpen} onOpenChange={(open) => { if (!open) setNewBlockedPeriod(undefined); setIsVacationPolicyDialogOpen(open); }}>
                         <DialogContent className="max-h-[90vh] overflow-y-auto">
-                            <DialogHeader><DialogTitle className="font-headline">{dialogVacationPolicyMode === 'add' ? 'Añadir Política de Vacaciones' : 'Editar Política de Vacaciones'}</DialogTitle></DialogHeader>
+                            <DialogHeader><DialogTitle>{dialogVacationPolicyMode === 'add' ? 'Añadir Política de Vacaciones' : 'Editar Política de Vacaciones'}</DialogTitle></DialogHeader>
                             <form onSubmit={handleVacationPolicyFormSubmit} className="space-y-4 py-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="policy-name">Nombre de la Política</Label>
@@ -1911,7 +1909,7 @@ const SettingsTabs = () => {
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div>
-                                <CardTitle className="font-headline">Tipos de Ausencia</CardTitle>
+                                <CardTitle>Tipos de Ausencia</CardTitle>
                                 <CardDescription>Crea y configura diferentes tipos de permisos y ausencias.</CardDescription>
                             </div>
                             <Button onClick={openAddAbsenceTypeDialog}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Tipo</Button>
@@ -1941,7 +1939,7 @@ const SettingsTabs = () => {
                     <Dialog open={isAbsenceTypeDialogOpen} onOpenChange={(open) => { if (!open) setNewAbsenceBlockedPeriod(undefined); setIsAbsenceTypeDialogOpen(open); }}>
                         <DialogContent className="max-h-[90vh] overflow-y-auto">
                             <DialogHeader>
-                                <DialogTitle className="font-headline">{dialogAbsenceTypeMode === 'add' ? 'Añadir Tipo de Ausencia' : 'Editar Tipo de Ausencia'}</DialogTitle>
+                                <DialogTitle>{dialogAbsenceTypeMode === 'add' ? 'Añadir Tipo de Ausencia' : 'Editar Tipo de Ausencia'}</DialogTitle>
                             </DialogHeader>
                             <form onSubmit={handleAbsenceTypeFormSubmit} className="space-y-4 py-4">
                                 <div className="grid gap-4">
@@ -2135,7 +2133,7 @@ const SettingsTabs = () => {
                 <TabsContent value="automations" className="space-y-4 m-0">
                     <Card>
                         <CardHeader>
-                            <CardTitle className="font-headline">Automatizaciones de Jornada</CardTitle>
+                            <CardTitle>Automatizaciones de Jornada</CardTitle>
                             <CardDescription>Configura acciones automáticas para los fichajes de los empleados.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
@@ -2199,7 +2197,7 @@ const SettingsTabs = () => {
                 <TabsContent value="permissions" className="space-y-4 m-0">
                     <Card>
                         <CardHeader>
-                            <CardTitle className="font-headline">Permisos de Empleado</CardTitle>
+                            <CardTitle>Permisos de Empleado</CardTitle>
                             <CardDescription>Restringe la visibilidad de ciertas secciones para los empleados.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
@@ -2222,7 +2220,7 @@ const SettingsTabs = () => {
                 <TabsContent value="security" className="space-y-4 m-0">
                     <Card>
                         <CardHeader>
-                            <CardTitle className="font-headline">Autenticación</CardTitle>
+                            <CardTitle>Autenticación</CardTitle>
                             <CardDescription>Gestiona la configuración de seguridad de tu cuenta.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
@@ -2241,7 +2239,7 @@ const SettingsTabs = () => {
                 <TabsContent value="integrations" className="space-y-4 m-0">
                     <Card>
                         <CardHeader>
-                            <CardTitle className="font-headline">Integraciones de Aplicaciones</CardTitle>
+                            <CardTitle>Integraciones de Aplicaciones</CardTitle>
                             <CardDescription>Conecta WorkFlow Central con tus herramientas favoritas.</CardDescription>
                         </CardHeader>
                         <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -2264,7 +2262,7 @@ const SettingsTabs = () => {
                 <TabsContent value="notifications" className="space-y-4 m-0">
                     <Card>
                         <CardHeader>
-                            <CardTitle className="font-headline">Preferencias de Notificaciones</CardTitle>
+                            <CardTitle>Preferencias de Notificaciones</CardTitle>
                             <CardDescription>Gestiona cómo recibes las notificaciones como administrador.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
@@ -2312,7 +2310,7 @@ export default function SettingsPage() {
     return (
         <div className="space-y-8">
             <div>
-                <h1 className="text-3xl font-headline font-bold tracking-tight">Configuración</h1>
+                <h1 className="text-3xl font-bold tracking-tight">Configuración</h1>
                 <p className="text-muted-foreground">Gestiona la configuración de la cuenta y de la organización.</p>
             </div>
             <SettingsTabs />

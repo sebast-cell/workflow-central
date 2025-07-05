@@ -10,12 +10,11 @@ const config: Config = {
   theme: {
     extend: {
       boxShadow: {
-        default: '0 2px 8px rgba(0, 0, 0, 0.05)',
-        card: '0 4px 16px rgba(0, 0, 0, 0.06)',
+        default: '0 2px 4px rgba(0, 0, 0, 0.05)',
+        card: '0px 4px 8px rgba(0, 0, 0, 0.1)',
       },
       fontFamily: {
         body: ['Inter', 'sans-serif'],
-        headline: ['"Space Grotesk"', 'sans-serif'],
         code: ['monospace'],
       },
       colors: {
@@ -75,10 +74,11 @@ const config: Config = {
         },
       },
       borderRadius: {
-        xl: '32px',
-        lg: '24px',
-        md: '16px',
-        sm: '8px',
+        xl: '24px',
+        lg: '16px',
+        md: '8px',
+        sm: '4px',
+        full: '9999px',
       },
       keyframes: {
         'accordion-down': {
