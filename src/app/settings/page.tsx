@@ -159,6 +159,8 @@ type VacationPolicy = {
   requestLimit?: number;
   blockPeriods: boolean;
   blockedPeriods: { id: string; from: string; to: string }[];
+  assignment: 'all' | 'specific';
+  assignedTo: string[];
 };
 
 const initialCenters: Center[] = [
@@ -199,7 +201,7 @@ const initialCalendars: CalendarData[] = [
     { id: 'default-calendar', name: 'Calendario General', holidays: [] }
 ];
 const initialVacationPolicies: VacationPolicy[] = [
-    { id: 'default', name: 'General', unit: 'days', amount: 22, countBy: 'workdays', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [] }
+    { id: 'default', name: 'General', unit: 'days', amount: 22, countBy: 'workdays', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [], assignment: 'all', assignedTo: [] }
 ];
 
 const CENTERS_STORAGE_KEY = 'workflow-central-centers';
@@ -287,7 +289,6 @@ export default function SettingsPage() {
   const [selectedAbsenceType, setSelectedAbsenceType] = useState<AbsenceType | null>(null);
   const [absenceTypeFormData, setAbsenceTypeFormData] = useState<Omit<AbsenceType, 'id' | 'blockedPeriods'> & { blockedPeriods?: { id: string, from: string, to: string }[] }>({ name: '', color: 'bg-blue-500', remunerated: true, unit: 'days', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [], requiresApproval: true, allowAttachment: false, isDisabled: false, assignment: 'all', assignedTo: [] });
   const [newAbsenceBlockedPeriod, setNewAbsenceBlockedPeriod] = useState<DateRange | undefined>(undefined);
-  const [isAbsenceBlockedPeriodPopoverOpen, setIsAbsenceBlockedPeriodPopoverOpen] = useState(false);
 
 
   const [selectedCalendarId, setSelectedCalendarId] = useState<string | null>(null);
@@ -295,14 +296,12 @@ export default function SettingsPage() {
   const [newCalendarName, setNewCalendarName] = useState("");
   const [isHolidayDialogOpen, setIsHolidayDialogOpen] = useState(false);
   const [holidayFormData, setHolidayFormData] = useState<{name: string, date: Date | undefined}>({ name: "", date: undefined });
-  const [isHolidayPopoverOpen, setIsHolidayPopoverOpen] = useState(false);
   
   const [isVacationPolicyDialogOpen, setIsVacationPolicyDialogOpen] = useState(false);
   const [dialogVacationPolicyMode, setDialogVacationPolicyMode] = useState<'add' | 'edit'>('add');
   const [selectedVacationPolicy, setSelectedVacationPolicy] = useState<VacationPolicy | null>(null);
-  const [vacationPolicyFormData, setVacationPolicyFormData] = useState<Omit<VacationPolicy, 'id'>>({ name: '', unit: 'days', amount: 22, countBy: 'workdays', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [] });
+  const [vacationPolicyFormData, setVacationPolicyFormData] = useState<Omit<VacationPolicy, 'id'>>({ name: '', unit: 'days', amount: 22, countBy: 'workdays', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [], assignment: 'all', assignedTo: [] });
   const [newBlockedPeriod, setNewBlockedPeriod] = useState<DateRange | undefined>(undefined);
-  const [isBlockedPeriodPopoverOpen, setIsBlockedPeriodPopoverOpen] = useState(false);
 
   const allSchedules = ['Horario Fijo', 'Horario Flexible', ...shifts.map(s => s.name)];
 
@@ -333,7 +332,7 @@ export default function SettingsPage() {
       
       const breakMigration = (data: any[]) => data.map((b: any) => ({ ...b, assignedTo: Array.isArray(b.assignedTo) ? b.assignedTo : [] }));
       const clockInMigration = (data: any[]) => data.map((t: any) => ({ ...t, assignment: t.assignment || 'all', assignedTo: Array.isArray(t.assignedTo) ? t.assignedTo : []}));
-      const vacationPolicyMigration = (data: any[]) => data.map((p: any) => ({ ...p, blockedPeriods: Array.isArray(p.blockedPeriods) ? p.blockedPeriods : [], requestLimit: p.requestLimit || 0 }));
+      const vacationPolicyMigration = (data: any[]) => data.map((p: any) => ({ ...p, blockedPeriods: Array.isArray(p.blockedPeriods) ? p.blockedPeriods : [], requestLimit: p.requestLimit || 0, assignment: p.assignment || 'all', assignedTo: p.assignedTo || [] }));
       const absenceTypeMigration = (data: any[]) => data.map((p: any) => ({ ...p, color: p.color || 'bg-blue-500', requiresApproval: p.requiresApproval ?? true, allowAttachment: p.allowAttachment ?? false, isDisabled: p.isDisabled ?? false, assignment: p.assignment || 'all', assignedTo: p.assignedTo || [], limitRequests: p.limitRequests || false, requestLimit: p.requestLimit || 0, blockPeriods: p.blockPeriods || false, blockedPeriods: Array.isArray(p.blockedPeriods) ? p.blockedPeriods : [] }));
 
 
@@ -707,7 +706,7 @@ export default function SettingsPage() {
   const openAddVacationPolicyDialog = () => {
     setDialogVacationPolicyMode('add');
     setSelectedVacationPolicy(null);
-    setVacationPolicyFormData({ name: '', unit: 'days', amount: 22, countBy: 'workdays', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [] });
+    setVacationPolicyFormData({ name: '', unit: 'days', amount: 22, countBy: 'workdays', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [], assignment: 'all', assignedTo: [] });
     setIsVacationPolicyDialogOpen(true);
   };
 
@@ -717,7 +716,9 @@ export default function SettingsPage() {
     setVacationPolicyFormData({ 
         ...policy,
         requestLimit: policy.requestLimit || 0,
-        blockedPeriods: policy.blockedPeriods || []
+        blockedPeriods: policy.blockedPeriods || [],
+        assignment: policy.assignment || 'all',
+        assignedTo: policy.assignedTo || []
      });
     setIsVacationPolicyDialogOpen(true);
   };
@@ -1438,7 +1439,7 @@ export default function SettingsPage() {
                                 <Button variant="outline" onClick={handleImportHolidays}>Importar Festivos</Button>
                                 <Dialog open={isHolidayDialogOpen} onOpenChange={setIsHolidayDialogOpen}>
                                     <DialogTrigger asChild><Button><PlusCircle className="mr-2 h-4 w-4"/> Añadir Festivo</Button></DialogTrigger>
-                                    <DialogContent className="sm:max-w-md">
+                                    <DialogContent className="sm:max-w-md" onInteractOutside={(e) => { e.preventDefault(); }}>
                                         <DialogHeader><DialogTitle className="font-headline">Añadir Festivo Personalizado</DialogTitle></DialogHeader>
                                         <form onSubmit={handleHolidayFormSubmit} className="grid gap-4 py-4">
                                             <div className="space-y-2">
@@ -1447,7 +1448,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="space-y-2">
                                                 <Label>Fecha</Label>
-                                                <Popover modal={true} open={isHolidayPopoverOpen} onOpenChange={setIsHolidayPopoverOpen}>
+                                                <Popover modal={true}>
                                                     <PopoverTrigger asChild>
                                                         <Button
                                                             type="button"
@@ -1464,7 +1465,6 @@ export default function SettingsPage() {
                                                             selected={holidayFormData.date} 
                                                             onSelect={(date) => {
                                                               setHolidayFormData(prev => ({...prev, date}));
-                                                              setIsHolidayPopoverOpen(false);
                                                             }}
                                                             initialFocus
                                                         />
@@ -1523,6 +1523,11 @@ export default function SettingsPage() {
                             <div>
                                 <h3 className="font-semibold">{policy.name}</h3>
                                 <p className="text-sm text-muted-foreground">{policy.amount} {policy.unit === 'days' ? 'días' : 'horas'} por año</p>
+                                <p className="text-sm text-muted-foreground">
+                                    {policy.assignment === 'all'
+                                    ? 'Asignado a: Toda la empresa'
+                                    : `Asignado a: ${policy.assignedTo.length} empleado(s)`}
+                                </p>
                             </div>
                             <div className="flex items-center">
                                 <Button variant="ghost" size="sm" onClick={() => openEditVacationPolicyDialog(policy)}>Editar</Button>
@@ -1535,7 +1540,7 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
             <Dialog open={isVacationPolicyDialogOpen} onOpenChange={setIsVacationPolicyDialogOpen}>
-                <DialogContent className="max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-h-[90vh] overflow-y-auto" onInteractOutside={(e) => { e.preventDefault(); }}>
                     <DialogHeader><DialogTitle className="font-headline">{dialogVacationPolicyMode === 'add' ? 'Añadir Política de Vacaciones' : 'Editar Política de Vacaciones'}</DialogTitle></DialogHeader>
                     <form onSubmit={handleVacationPolicyFormSubmit} className="space-y-4 py-4">
                         <div className="space-y-2">
@@ -1570,7 +1575,7 @@ export default function SettingsPage() {
                             {vacationPolicyFormData.limitRequests && (
                                 <div className="pl-8 space-y-2">
                                     <Label htmlFor="policy-request-limit">Número máximo de solicitudes al año</Label>
-                                    <Input id="policy-request-limit" type="number" value={vacationPolicyFormData.requestLimit} onChange={e => setVacationPolicyFormData({...vacationPolicyFormData, requestLimit: Number(e.target.value)})} />
+                                    <Input id="policy-request-limit" type="number" value={vacationPolicyFormData.requestLimit} onChange={e => setVacationPolicyFormData({...vacationPolicyFormData, requestLimit: Number(e.target.value || 0)})} />
                                 </div>
                             )}
                             <div className="flex items-center space-x-2">
@@ -1600,7 +1605,7 @@ export default function SettingsPage() {
                                     )}
                                 </div>
                                 <div className="flex gap-2 pt-2">
-                                    <Popover modal={true} open={isBlockedPeriodPopoverOpen} onOpenChange={setIsBlockedPeriodPopoverOpen}>
+                                    <Popover modal={true}>
                                         <PopoverTrigger asChild>
                                             <Button
                                                 type="button"
@@ -1647,13 +1652,58 @@ export default function SettingsPage() {
                                                 blockedPeriods: [...(prev.blockedPeriods || []), newPeriod]
                                             }));
                                             setNewBlockedPeriod(undefined);
-                                            setIsBlockedPeriodPopoverOpen(false);
                                         }
                                     }} disabled={!newBlockedPeriod?.from || !newBlockedPeriod?.to}>
                                         Añadir
                                     </Button>
                                 </div>
                             </div>
+                        )}
+                         <Separator />
+                        <div className="space-y-2">
+                          <Label>Asignar a</Label>
+                          <RadioGroup
+                            value={vacationPolicyFormData.assignment}
+                            onValueChange={(value: 'all' | 'specific') =>
+                              setVacationPolicyFormData({ ...vacationPolicyFormData, assignment: value, assignedTo: [] })
+                            }
+                            className="flex gap-4 pt-2"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="all" id="vac-assign-all" />
+                              <Label htmlFor="vac-assign-all">Toda la empresa</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="specific" id="vac-assign-specific" />
+                              <Label htmlFor="vac-assign-specific">Empleados específicos</Label>
+                            </div>
+                          </RadioGroup>
+                        </div>
+                        {vacationPolicyFormData.assignment === 'specific' && (
+                          <div className="space-y-2">
+                            <Label>Empleados</Label>
+                            <ScrollArea className="h-40 rounded-md border p-4">
+                              <div className="space-y-2">
+                                {employees.map((employee) => (
+                                  <div key={`vac-emp-${employee.id}`} className="flex items-center space-x-2">
+                                    <Checkbox
+                                      id={`vac-emp-check-${employee.id}`}
+                                      checked={vacationPolicyFormData.assignedTo.includes(employee.name)}
+                                      onCheckedChange={(checked) => {
+                                        const newAssignedTo = checked
+                                          ? [...vacationPolicyFormData.assignedTo, employee.name]
+                                          : vacationPolicyFormData.assignedTo.filter((name) => name !== employee.name);
+                                        setVacationPolicyFormData({ ...vacationPolicyFormData, assignedTo: newAssignedTo });
+                                      }}
+                                    />
+                                    <Label htmlFor={`vac-emp-check-${employee.id}`} className="font-normal">
+                                      {employee.name}
+                                    </Label>
+                                  </div>
+                                ))}
+                              </div>
+                            </ScrollArea>
+                          </div>
                         )}
                         <DialogFooter><Button type="submit">Guardar Política</Button></DialogFooter>
                     </form>
@@ -1693,7 +1743,7 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
             <Dialog open={isAbsenceTypeDialogOpen} onOpenChange={setIsAbsenceTypeDialogOpen}>
-                <DialogContent className="max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-h-[90vh] overflow-y-auto" onInteractOutside={(e) => { e.preventDefault(); }}>
                     <DialogHeader>
                         <DialogTitle className="font-headline">{dialogAbsenceTypeMode === 'add' ? 'Añadir Tipo de Ausencia' : 'Editar Tipo de Ausencia'}</DialogTitle>
                     </DialogHeader>
@@ -1752,7 +1802,7 @@ export default function SettingsPage() {
                                 {absenceTypeFormData.limitRequests && (
                                     <div className="pl-8 space-y-2">
                                         <Label htmlFor="absence-request-limit">Número máximo de solicitudes</Label>
-                                        <Input id="absence-request-limit" type="number" value={absenceTypeFormData.requestLimit} onChange={e => setAbsenceTypeFormData({...absenceTypeFormData, requestLimit: Number(e.target.value)})} />
+                                        <Input id="absence-request-limit" type="number" value={absenceTypeFormData.requestLimit} onChange={e => setAbsenceTypeFormData({...absenceTypeFormData, requestLimit: Number(e.target.value || 0)})} />
                                     </div>
                                 )}
                                 <div className="flex items-center space-x-2">
@@ -1782,7 +1832,7 @@ export default function SettingsPage() {
                                         )}
                                     </div>
                                     <div className="flex gap-2 pt-2">
-                                        <Popover modal={true} open={isAbsenceBlockedPeriodPopoverOpen} onOpenChange={setIsAbsenceBlockedPeriodPopoverOpen}>
+                                        <Popover modal={true}>
                                             <PopoverTrigger asChild>
                                                 <Button
                                                     type="button"
@@ -1829,7 +1879,6 @@ export default function SettingsPage() {
                                                     blockedPeriods: [...(prev.blockedPeriods || []), newPeriod]
                                                 }));
                                                 setNewAbsenceBlockedPeriod(undefined);
-                                                setIsAbsenceBlockedPeriodPopoverOpen(false);
                                             }
                                         }} disabled={!newAbsenceBlockedPeriod?.from || !newAbsenceBlockedPeriod?.to}>
                                             Añadir
