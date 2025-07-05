@@ -48,6 +48,7 @@
   background-origin: content-box;
   box-sizing: border-box;
   border-radius: 1rem;
+  z-index: 20;
 }
 
 .react-grid-item > .react-resizable-handle::after {
