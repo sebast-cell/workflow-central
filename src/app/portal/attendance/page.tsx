@@ -35,15 +35,15 @@ const events: ClockInEvent[] = [
   { id: 1, date: new Date(2024, 7, 19), time: "09:01", type: "Entrada", location: "Oficina Central", lat: 40.416775, lng: -3.703790, project: "Rediseño Web", task: "Componentes UI" },
   { id: 2, date: new Date(2024, 7, 19), time: "13:00", type: "Descanso", location: "Oficina Central", lat: 40.416775, lng: -3.703790 },
   { id: 3, date: new Date(2024, 7, 19), time: "14:02", type: "Entrada", location: "Cliente - Soltech", lat: 40.421, lng: -3.705, project: "Rediseño Web", task: "Reunión de seguimiento" },
-  { id: 4, date: new Date(2024, 7, 19), time: "17:30", type: "Salida", location: "Cliente - Soltech", lat: 40.421, lng: -3.705 },
+  { id: 4, date: new Date(2024, 7, 19), time: "17:30", type: "Salida", location: "Cliente - Soltech", lat: 40.421, lng: -3.705, project: "Rediseño Web", task: "Finalizar informe" },
   { id: 5, date: new Date(2024, 7, 20), time: "09:05", type: "Entrada", location: "Remoto - Casa", lat: 40.43, lng: -3.69, project: "App Móvil", task: "Bugfixing" },
-  { id: 6, date: new Date(2024, 7, 20), time: "17:35", type: "Salida", location: "Remoto - Casa", lat: 40.43, lng: -3.69 },
+  { id: 6, date: new Date(2024, 7, 20), time: "17:35", type: "Salida", location: "Remoto - Casa", lat: 40.43, lng: -3.69, project: "App Móvil", task: "Subir cambios" },
   { id: 7, date: new Date(2024, 7, 21), time: "08:58", type: "Entrada", location: "Oficina Central", lat: 40.416775, lng: -3.703790, project: "Campaña Marketing", task: "Planificación" },
   { id: 8, date: new Date(2024, 7, 21), time: "12:30", type: "Descanso", location: "Oficina Central", lat: 40.416775, lng: -3.703790 },
   { id: 9, date: new Date(2024, 7, 21), time: "13:30", type: "Entrada", location: "Oficina Central", lat: 40.416775, lng: -3.703790, project: "Campaña Marketing", task: "Creación de contenido" },
-  { id: 10, date: new Date(2024, 7, 21), time: "18:00", type: "Salida", location: "Oficina Central", lat: 40.416775, lng: -3.703790 },
+  { id: 10, date: new Date(2024, 7, 21), time: "18:00", type: "Salida", location: "Oficina Central", lat: 40.416775, lng: -3.703790, project: "Campaña Marketing", task: "Revisión final" },
   { id: 11, date: new Date(new Date().setDate(new Date().getDate())), time: "09:00", type: "Entrada", location: "Oficina Central", lat: 40.416775, lng: -3.703790, project: "Interno", task: "Reunión equipo" },
-  { id: 12, date: new Date(new Date().setDate(new Date().getDate())), time: "17:00", type: "Salida", location: "Oficina Central", lat: 40.416775, lng: -3.703790 },
+  { id: 12, date: new Date(new Date().setDate(new Date().getDate())), time: "17:00", type: "Salida", location: "Oficina Central", lat: 40.416775, lng: -3.703790, project: "Interno", task: "Organización" },
 ];
 
 const getEventTypeBadge = (type: string) => {
@@ -329,9 +329,13 @@ export default function EmployeeAttendancePage() {
                                                 <div className="flex-1 pt-1.5">
                                                     <div className="flex items-baseline justify-between">
                                                         <p className="font-semibold text-foreground">{event.time}</p>
-                                                        <p className="text-sm text-muted-foreground">{event.project || ''}</p>
+                                                        <p className="text-sm text-muted-foreground">{event.location}</p>
                                                     </div>
-                                                    <p className="text-sm text-muted-foreground">{event.location}</p>
+                                                    {event.project && (
+                                                        <p className="text-sm text-muted-foreground">
+                                                            {event.project}{event.task ? ` • ${event.task}` : ''}
+                                                        </p>
+                                                    )}
                                                 </div>
                                             </li>
                                         ))}
