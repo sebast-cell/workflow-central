@@ -99,7 +99,7 @@ export default function ReportGenerator({ formAction }: { formAction: (prevState
             </Alert>
         )}
         {!state.report && !state.error && (
-            <div className="flex items-center justify-center h-full rounded-lg border-2 border-dashed border-muted-foreground/30">
+            <div className="flex items-center justify-center h-full rounded-2xl border-2 border-dashed border-muted-foreground/30">
                 <div className="text-center p-8">
                     <h3 className="text-lg font-semibold text-muted-foreground">Tu informe aparecerá aquí</h3>
                     <p className="text-sm text-muted-foreground/80 mt-2">Completa el formulario y haz clic en "Generar Informe" para empezar.</p>
