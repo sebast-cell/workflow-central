@@ -132,11 +132,19 @@ const RecentActivityWidget = () => {
             <div className="space-y-1">
               {recentActivities.map((activity, index) => (
                 <Link href={activity.link} key={index} className="block rounded-lg -mx-2 px-2 py-2 transition-colors hover:bg-muted">
-                    <div className="flex items-center">
-                    <Avatar className="h-9 w-9"> <AvatarImage src={`https://placehold.co/40x40.png`} data-ai-hint="people avatar" alt="Avatar" /> <AvatarFallback>{activity.avatar}</AvatarFallback> </Avatar>
-                    <div className="ml-4 space-y-1"> <p className="text-sm font-medium leading-none">{activity.name}</p> <p className="text-sm text-muted-foreground">{activity.activity}</p> </div>
-                    <div className="ml-auto font-medium text-xs text-muted-foreground">{activity.time}</div>
-                    </div>
+                    <>
+                      <div className="flex items-center">
+                      <Avatar className="h-9 w-9">
+                        <AvatarImage src={`https://placehold.co/40x40.png`} data-ai-hint="people avatar" alt="Avatar" />
+                        <AvatarFallback>{activity.avatar}</AvatarFallback>
+                      </Avatar>
+                      <div className="ml-4 space-y-1">
+                        <p className="text-sm font-medium leading-none">{activity.name}</p>
+                        <p className="text-sm text-muted-foreground">{activity.activity}</p>
+                      </div>
+                      <div className="ml-auto font-medium text-xs text-muted-foreground">{activity.time}</div>
+                      </div>
+                    </>
                 </Link>
               ))}
             </div>
@@ -152,7 +160,10 @@ const TeamSummaryWidget = () => {
        <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <div className="space-y-1"> <CardTitle>Resumen del Equipo</CardTitle> <CardDescription>Un vistazo rápido al estado actual de tu equipo.</CardDescription> </div>
+              <div className="space-y-1">
+                <CardTitle>Resumen del Equipo</CardTitle>
+                <CardDescription>Un vistazo rápido al estado actual de tu equipo.</CardDescription>
+              </div>
               <Button asChild size="sm" variant="outline">
                 <Link href="/employees">
                   <>
@@ -165,13 +176,25 @@ const TeamSummaryWidget = () => {
           </CardHeader>
           <CardContent>
             <Table>
-              <TableHeader> <TableRow> <TableHead>Empleado</TableHead> <TableHead>Departamento</TableHead> <TableHead className="hidden sm:table-cell">Estado</TableHead> <TableHead className="text-right">Horario</TableHead> </TableRow> </TableHeader>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Empleado</TableHead>
+                  <TableHead>Departamento</TableHead>
+                  <TableHead className="hidden sm:table-cell">Estado</TableHead>
+                  <TableHead className="text-right">Horario</TableHead>
+                </TableRow>
+              </TableHeader>
               <TableBody>
                 {teamSummary.map((member, index) => (
                     <TableRow key={index} className="hover:bg-muted/50 cursor-pointer" onClick={() => window.location.href = '/employees'}>
-                    <TableCell> <div className="font-medium">{member.name}</div> <div className="text-sm text-muted-foreground hidden md:inline">{member.email}</div> </TableCell>
+                    <TableCell>
+                      <div className="font-medium">{member.name}</div>
+                      <div className="text-sm text-muted-foreground hidden md:inline">{member.email}</div>
+                    </TableCell>
                     <TableCell>{member.department}</TableCell>
-                    <TableCell className="hidden sm:table-cell"> <Badge variant={getStatusVariant(member.status)}>{member.status}</Badge> </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      <Badge variant={getStatusVariant(member.status)}>{member.status}</Badge>
+                    </TableCell>
                     <TableCell className="text-right">{member.schedule}</TableCell>
                     </TableRow>
                 ))}
