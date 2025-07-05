@@ -162,6 +162,7 @@ export default function EmployeeAttendancePage() {
                                                 <React.Fragment key={event.id}>
                                                     <TableRow
                                                         className="cursor-pointer hover:bg-muted/50"
+                                                        data-state={openEventId === event.id ? "open" : "closed"}
                                                         onClick={() => setOpenEventId(prevId => prevId === event.id ? null : event.id)}
                                                     >
                                                         <TableCell className="font-medium">{event.time}</TableCell>
@@ -237,18 +238,18 @@ export default function EmployeeAttendancePage() {
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="grid grid-cols-1 sm:grid-cols-7 border rounded-lg overflow-hidden">
+                            <div className="grid grid-cols-1 sm:grid-cols-7 divide-y sm:divide-y-0 sm:divide-x divide-border rounded-lg border">
                                 {week.map(day => (
-                                    <div key={day.toString()} className="border-b sm:border-r last:border-r-0">
-                                        <div className="p-2 text-center bg-muted">
-                                            <p className="font-semibold text-sm capitalize">{format(day, "eee", { locale: es })}</p>
-                                            <p className="text-muted-foreground text-xs">{format(day, "d")}</p>
+                                    <div key={day.toString()}>
+                                        <div className="p-3 text-center bg-muted/50">
+                                            <p className="text-sm font-medium capitalize text-muted-foreground">{format(day, "eee", { locale: es })}</p>
+                                            <p className="mt-1 text-xl font-semibold">{format(day, "d")}</p>
                                         </div>
-                                        <div className="p-2 space-y-3 min-h-[120px]">
+                                        <div className="p-3 space-y-3 min-h-[140px]">
                                             {events.filter(e => isSameDay(e.date, day)).sort((a,b) => a.time.localeCompare(b.time)).map(event => (
-                                                <div key={event.id} className="flex items-center gap-2 text-sm p-1 rounded-md hover:bg-muted">
-                                                   <span className="font-semibold text-base text-foreground/80">{event.time}</span>
+                                                <div key={event.id} className="flex items-center gap-2">
                                                    {getEventTypeIcon(event.type)}
+                                                   <span className="font-medium text-foreground tabular-nums">{event.time}</span>
                                                 </div>
                                             ))}
                                         </div>
@@ -277,25 +278,28 @@ export default function EmployeeAttendancePage() {
                                     hasEvent: events.map(e => e.date)
                                 }}
                                 modifiersClassNames={{
-                                    hasEvent: 'bg-primary/20 rounded-full'
+                                    hasEvent: 'bg-accent/50'
                                 }}
                              />
                              <div className="flex-1">
                                 <h3 className="font-semibold mb-4 text-lg">
                                     Eventos del {format(currentDate, "d 'de' MMMM", { locale: es })}
                                 </h3>
-                                <div className="space-y-2">
+                                <div className="space-y-3">
                                      {dailyEvents.length > 0 ? (
                                         dailyEvents.map(event => (
-                                            <div key={event.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
-                                                <div className="flex items-center gap-2">
-                                                    {getEventTypeBadge(event.type)}
-                                                    <div>
-                                                        <div className="text-sm">{event.location}</div>
-                                                        <div className="text-xs text-muted-foreground">Lat: {event.lat.toFixed(4)}, Lon: {event.lng.toFixed(4)}</div>
+                                            <div key={event.id} className="flex items-start gap-4 rounded-lg border p-3">
+                                                <div className="flex-1 space-y-1">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-2">
+                                                            {getEventTypeBadge(event.type)}
+                                                            <span className="font-medium font-sans tabular-nums">{event.time}</span>
+                                                        </div>
+                                                        <p className="text-sm font-semibold">{event.project || ''}</p>
                                                     </div>
+                                                    <p className="text-sm text-muted-foreground">{event.location}</p>
+                                                    <p className="text-xs text-muted-foreground">{`Lat: ${event.lat.toFixed(4)}, Lon: ${event.lng.toFixed(4)}`}</p>
                                                 </div>
-                                                <span className="font-mono text-sm">{event.time}</span>
                                             </div>
                                         ))
                                     ) : (
