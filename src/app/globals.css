@@ -4,82 +4,82 @@
 
 @layer base {
   :root {
-    --background: 24 94% 95%; /* #FFF3E0 */
-    --foreground: 240 10% 21%; /* #333333 */
-    --card: 0 0% 100%; /* #FFFFFF */
-    --card-foreground: 240 10% 21%; /* #333333 */
-    --popover: 0 0% 100%; /* #FFFFFF */
-    --popover-foreground: 240 10% 21%; /* #333333 */
-    --primary: 15 100% 63%; /* #FF7043 */
-    --primary-foreground: 0 0% 100%; /* #FFFFFF */
-    --secondary: 187 72% 60%; /* #4DD0E1 */
-    --secondary-foreground: 240 10% 21%; /* #333333 */
-    --muted: 0 0% 96%; /* #F5F5F5 */
-    --muted-foreground: 240 5% 40%; /* #666666 */
-    --accent: 0 0% 96%; /* #F5F5F5 */
-    --accent-foreground: 240 10% 21%; /* #333333 */
-    --destructive: 4 90% 58%; /* #F44336 */
-    --destructive-foreground: 0 0% 100%;
-    --warning: 45 100% 51%; /* #FFC107 */
-    --warning-foreground: 240 10% 21%;
-    --border: 24 94% 95%; /* #FFF3E0 */
-    --input: 210 20% 94%;
-    --ring: 15 100% 63%; /* #FF7043 */
-    --radius: 9999px;
-    --chart-1: 15 100% 63%;
-    --chart-2: 187 72% 60%;
-    --chart-3: 45 100% 51%;
-    --chart-4: 4 90% 58%;
-    --chart-5: 240 5% 60%;
+    --background: 220 14% 96%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 239 84% 67%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 222 47% 90%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 220 13% 91%;
+    --muted-foreground: 221 10% 45%;
+    --accent: 159 73% 58%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    --warning: 48 96% 53%;
+    --warning-foreground: 222 47% 11%;
+    --border: 220 13% 89%;
+    --input: 220 13% 91%;
+    --ring: 239 84% 67%;
+    --radius: 16px;
+    --chart-1: 239 84% 67%;
+    --chart-2: 159 73% 58%;
+    --chart-3: 48 96% 53%;
+    --chart-4: 0 84% 60%;
+    --chart-5: 221 10% 60%;
 
-    /* Sidebar Theme */
-    --sidebar-background: 0 0% 96%; /* #F5F5F5, light grey */
-    --sidebar-foreground: 240 10% 21%; /* #333333, dark text */
-    --sidebar-accent: 0 0% 93%; /* #EEEEEE, slightly darker grey for hover */
-    --sidebar-accent-foreground: 240 10% 21%; /* #333333, dark text on hover */
-    --sidebar-active: 0 0% 93%; /* #EEEEEE, same as hover for active background */
-    --sidebar-active-foreground: 15 100% 63%; /* Primary orange text for active item */
-    --sidebar-border: 0 0% 90%; /* #E6E6E6, for the border */
-    --sidebar-ring: 15 100% 63%;
+    /* New Sidebar Theme */
+    --sidebar-background: 0 0% 100%; /* #FFFFFF */
+    --sidebar-foreground: 221 8% 48%; /* #6B7280 */
+    --sidebar-accent: 236 83% 97%; /* #F0F1FD, hover bg */
+    --sidebar-accent-foreground: 239 84% 67%; /* #6366F1, hover text */
+    --sidebar-active: 239 84% 67%; /* #6366F1, active bg */
+    --sidebar-active-foreground: 0 0% 100%; /* #FFFFFF, active text */
+    --sidebar-border: 220 14% 92%; /* #E5E7EB */
+    --sidebar-ring: 239 84% 67%;
   }
 
   .dark {
-    --background: 240 10% 15%;
-    --foreground: 0 0% 96%;
-    --card: 240 10% 20%;
-    --card-foreground: 0 0% 96%;
-    --popover: 240 10% 20%;
-    --popover-foreground: 0 0% 96%;
-    --primary: 15 100% 63%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 187 72% 60%;
-    --secondary-foreground: 240 10% 21%;
-    --muted: 240 5% 25%;
-    --muted-foreground: 240 5% 60%;
-    --accent: 240 5% 25%;
-    --accent-foreground: 0 0% 96%;
-    --destructive: 4 90% 58%;
-    --destructive-foreground: 0 0% 100%;
-    --warning: 45 100% 51%;
-    --warning-foreground: 240 10% 21%;
-    --border: 240 5% 25%;
-    --input: 240 5% 25%;
-    --ring: 15 100% 63%;
-    --chart-1: 15 100% 63%;
-    --chart-2: 187 72% 60%;
-    --chart-3: 45 100% 51%;
-    --chart-4: 4 90% 58%;
-    --chart-5: 240 5% 60%;
-
-    /* Sidebar Theme */
-    --sidebar-background: 0 0% 96%; /* #F5F5F5, light grey */
-    --sidebar-foreground: 240 10% 21%; /* #333333, dark text */
-    --sidebar-accent: 0 0% 93%; /* #EEEEEE, slightly darker grey for hover */
-    --sidebar-accent-foreground: 240 10% 21%; /* #333333, dark text on hover */
-    --sidebar-active: 0 0% 93%; /* #EEEEEE, same as hover for active background */
-    --sidebar-active-foreground: 15 100% 63%; /* Primary orange text for active item */
-    --sidebar-border: 0 0% 90%; /* #E6E6E6, for the border */
-    --sidebar-ring: 15 100% 63%;
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 15%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 15%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 239 84% 67%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 222 47% 25%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 222 47% 20%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 159 73% 58%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 210 40% 98%;
+    --warning: 48 96% 53%;
+    --warning-foreground: 222 47% 11%;
+    --border: 222 47% 20%;
+    --input: 222 47% 20%;
+    --ring: 239 84% 67%;
+    --chart-1: 239 84% 67%;
+    --chart-2: 159 73% 58%;
+    --chart-3: 48 96% 53%;
+    --chart-4: 0 72% 51%;
+    --chart-5: 215 20% 65%;
+    
+    /* New Sidebar Theme (same for both modes) */
+    --sidebar-background: 0 0% 100%; /* #FFFFFF */
+    --sidebar-foreground: 221 8% 48%; /* #6B7280 */
+    --sidebar-accent: 236 83% 97%; /* #F0F1FD, hover bg */
+    --sidebar-accent-foreground: 239 84% 67%; /* #6366F1, hover text */
+    --sidebar-active: 239 84% 67%; /* #6366F1, active bg */
+    --sidebar-active-foreground: 0 0% 100%; /* #FFFFFF, active text */
+    --sidebar-border: 220 14% 92%; /* #E5E7EB */
+    --sidebar-ring: 239 84% 67%;
   }
 }
 

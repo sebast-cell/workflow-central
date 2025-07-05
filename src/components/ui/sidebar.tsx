@@ -109,7 +109,7 @@ const sidebarVariants = cva(
         right: "right-0 border-l border-sidebar-border",
       },
       state: {
-        expanded: "w-64",
+        expanded: "w-60",
         collapsed: "w-14",
       },
     },
@@ -145,7 +145,7 @@ export const Sidebar = React.forwardRef<
   if (isMobile) {
     return (
        <Sheet open={openMobile} onOpenChange={setOpenMobile}>
-        <SheetContent side="left" className="w-64 bg-sidebar p-0 text-sidebar-foreground border-sidebar-border [&>button]:hidden">
+        <SheetContent side="left" className="w-60 bg-sidebar p-0 text-sidebar-foreground border-sidebar-border [&>button]:hidden">
           <div ref={ref} className={cn("flex h-full flex-col", className)} {...props} />
         </SheetContent>
       </Sheet>
@@ -178,7 +178,7 @@ export const SidebarInset = React.forwardRef<
 
   const style = {
     transition: 'margin-left 300ms ease-in-out',
-    marginLeft: !isMounted || isMobile ? '0' : (isOpen ? '16rem' : '3.5rem')
+    marginLeft: !isMounted || isMobile ? '0' : (isOpen ? '15rem' : '3.5rem')
   };
 
   return (
@@ -252,7 +252,7 @@ export const SidebarHeader = React.forwardRef<
   return (
     <div
       ref={ref}
-      className={cn("flex flex-col p-3 space-y-2", className)}
+      className={cn("flex flex-col space-y-2 p-4 border-b border-sidebar-border", className)}
       {...props}
     />
   )
@@ -266,7 +266,7 @@ export const SidebarContent = React.forwardRef<
   return (
     <div
       ref={ref}
-      className={cn("flex flex-1 flex-col gap-1 overflow-auto px-3", className)}
+      className={cn("flex flex-1 flex-col gap-1 overflow-auto p-4", className)}
       {...props}
     />
   )
@@ -280,7 +280,7 @@ export const SidebarFooter = React.forwardRef<
   return (
     <div
       ref={ref}
-      className={cn("flex flex-col p-3 mt-auto", className)}
+      className={cn("flex flex-col p-4 mt-auto border-t border-sidebar-border", className)}
       {...props}
     />
   )
@@ -313,11 +313,11 @@ SidebarMenuItem.displayName = "SidebarMenuItem"
 
 
 const sidebarMenuButtonVariants = cva(
-  "flex w-full items-center gap-3 overflow-hidden rounded-md p-2 text-left text-sm font-medium outline-none ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50",
+  "flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm font-normal outline-none ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-5 [&_svg]:shrink-0",
   {
     variants: {
       active: {
-        true: "bg-sidebar-active text-sidebar-active-foreground",
+        true: "bg-sidebar-active text-sidebar-active-foreground font-medium",
       },
       collapsed: {
         true: "justify-center",
