@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -39,7 +38,7 @@ export function useSidebar() {
 }
 
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
-  const { isMobile } = useIsMobile()
+  const { isMobile, isMounted } = useIsMobile()
   const [isOpen, setIsOpen] = React.useState(true)
   const [isPinned, setIsPinned] = React.useState(true)
   const [openMobile, setOpenMobile] = React.useState(false)
@@ -80,7 +79,7 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
     isOpen: isMobile ? true : isOpen,
     isPinned,
     isMobile,
-    onOpenChange,
+    onOpenChange, 
     togglePin,
     toggleSidebar,
     openMobile, 
@@ -121,9 +120,10 @@ export const Sidebar = React.forwardRef<
   const {
     isOpen,
     isMobile,
+    onOpenChange,
+    openMobile,
+    setOpenMobile,
   } = useSidebar() as SidebarContextType & { openMobile: boolean, setOpenMobile: React.Dispatch<React.SetStateAction<boolean>>};
-
-  const { openMobile, setOpenMobile } = useSidebar() as any;
 
   const state = isOpen ? "expanded" : "collapsed"
   
@@ -160,15 +160,18 @@ export const SidebarInset = React.forwardRef<
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => {
   const { isOpen, isMobile } = useSidebar();
+  const { isMounted } = useIsMobile();
   const [style, setStyle] = React.useState({});
 
   React.useEffect(() => {
     // We only want to set the style on the client to avoid hydration mismatch
-    setStyle({
-        transition: 'margin-left 300ms ease-in-out',
-        marginLeft: isMobile ? '0' : (isOpen ? '15rem' : '3.5rem')
-    });
-  }, [isOpen, isMobile]);
+    if (isMounted) {
+      setStyle({
+          transition: 'margin-left 300ms ease-in-out',
+          marginLeft: isMobile ? '0' : (isOpen ? '240px' : '3.5rem')
+      });
+    }
+  }, [isOpen, isMobile, isMounted]);
 
   return (
     <main
@@ -191,10 +194,9 @@ export const SidebarTrigger = React.forwardRef<
 >(({ className, ...props }, ref) => {
   const { toggleSidebar, isMobile } = useSidebar();
   
-  const [mounted, setMounted] = React.useState(false);
-  React.useEffect(() => setMounted(true), []);
-
-  if (!mounted || !isMobile) return null;
+  const { isMounted } = useIsMobile();
+  
+  if (!isMounted || !isMobile) return null;
 
   return (
     <Button
