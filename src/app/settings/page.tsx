@@ -241,58 +241,6 @@ const containerStyle = {
   overflow: 'hidden'
 };
 
-const AutocompleteInput = ({ value, onChange, onPlaceSelect }: { value: string, onChange: (value: string) => void, onPlaceSelect: (place: google.maps.places.PlaceResult | null) => void; }) => {
-    const inputRef = useRef<HTMLInputElement>(null);
-    const places = useMapsLibrary('places');
-
-    useEffect(() => {
-        if (!places || !inputRef.current) return;
-
-        const autocomplete = new places.Autocomplete(inputRef.current, {
-            fields: ["geometry.location", "formatted_address", "name"],
-        });
-
-        const listener = autocomplete.addListener('place_changed', () => {
-            onPlaceSelect(autocomplete.getPlace());
-        });
-
-        return () => {
-            listener.remove();
-             // The pac-container is the UI element for the dropdown, and it's not always cleaned up.
-            const pacContainers = document.querySelectorAll('.pac-container');
-            pacContainers.forEach(container => container.remove());
-        };
-    }, [places, onPlaceSelect]);
-
-    return (
-        <Input
-            ref={inputRef}
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={places ? "Ej. 123 Calle Falsa" : "Cargando mapa..."}
-            disabled={!places}
-            required
-        />
-    );
-};
-
-
-const MapComponent = ({ position }: { position: {lat: number, lng: number} }) => {
-    return (
-        <div style={containerStyle}>
-            <Map
-                center={position}
-                zoom={15}
-                gestureHandling={'greedy'}
-                disableDefaultUI={true}
-                mapId="workflow-map"
-            >
-                <AdvancedMarker position={position} />
-            </Map>
-        </div>
-    )
-}
-
 const CenterDialog = ({
     isOpen,
     onOpenChange,
@@ -309,7 +257,9 @@ const CenterDialog = ({
     const [centerData, setCenterData] = useState<Omit<Center, 'name'>>({ address: '', radius: 100, lat: defaultMapCenter.lat, lng: defaultMapCenter.lng, timezone: 'Europe/Madrid' });
     const [centerName, setCenterName] = useState('');
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
-    
+    const inputRef = useRef<HTMLInputElement>(null);
+    const places = useMapsLibrary('places');
+
     useEffect(() => {
         if (isOpen) {
             if (mode === 'edit' && center) {
@@ -328,41 +278,56 @@ const CenterDialog = ({
         }
     }, [isOpen, mode, center]);
     
+    useEffect(() => {
+        if (!places || !inputRef.current) return;
+
+        const autocomplete = new places.Autocomplete(inputRef.current, {
+            fields: ["geometry.location", "formatted_address", "name"],
+        });
+
+        const listener = autocomplete.addListener('place_changed', () => {
+            const place = autocomplete.getPlace();
+            if (place?.geometry?.location) {
+                const lat = place.geometry.location.lat();
+                const lng = place.geometry.location.lng();
+                const address = place.formatted_address || place.name || '';
+                
+                setCenterData(prev => ({
+                    ...prev,
+                    address: address,
+                    lat: lat,
+                    lng: lng,
+                    timezone: 'Cargando...',
+                }));
+
+                const timestamp = Math.floor(Date.now() / 1000);
+                fetch(`https://maps.googleapis.com/maps/api/timezone/json?location=${lat},${lng}&timestamp=${timestamp}&key=${apiKey}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status === 'OK' && data.timeZoneId) {
+                            setCenterData(prev => ({ ...prev, timezone: data.timeZoneId }));
+                        } else {
+                            setCenterData(prev => ({ ...prev, timezone: 'No disponible' }));
+                        }
+                    })
+                    .catch(() => {
+                        setCenterData(prev => ({ ...prev, timezone: 'Error al cargar' }));
+                    });
+            }
+        });
+
+        return () => {
+            listener.remove();
+            const pacContainers = document.querySelectorAll('.pac-container');
+            pacContainers.forEach(container => container.remove());
+        };
+    }, [places, apiKey]);
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!centerName) return;
         onSubmit({ ...centerData, name: centerName });
     }
-    
-    const handlePlaceSelect = useCallback((place: google.maps.places.PlaceResult | null) => {
-        if (place?.geometry?.location) {
-            const lat = place.geometry.location.lat();
-            const lng = place.geometry.location.lng();
-            const address = place.formatted_address || place.name || '';
-            
-            setCenterData(prev => ({
-                ...prev,
-                address: address,
-                lat: lat,
-                lng: lng,
-                timezone: 'Cargando...',
-            }));
-
-            const timestamp = Math.floor(Date.now() / 1000);
-            fetch(`https://maps.googleapis.com/maps/api/timezone/json?location=${lat},${lng}&timestamp=${timestamp}&key=${apiKey}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.status === 'OK' && data.timeZoneId) {
-                        setCenterData(prev => ({ ...prev, timezone: data.timeZoneId }));
-                    } else {
-                        setCenterData(prev => ({ ...prev, timezone: 'No disponible' }));
-                    }
-                })
-                .catch(() => {
-                    setCenterData(prev => ({ ...prev, timezone: 'Error al cargar' }));
-                });
-        }
-    }, [apiKey]);
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -377,14 +342,28 @@ const CenterDialog = ({
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="center-address">Dirección</Label>
-                                <AutocompleteInput 
+                                 <Input
+                                    ref={inputRef}
+                                    id="center-address"
                                     value={centerData.address}
-                                    onChange={(newAddress) => setCenterData(prev => ({...prev, address: newAddress}))}
-                                    onPlaceSelect={handlePlaceSelect}
+                                    onChange={(e) => setCenterData(prev => ({...prev, address: e.target.value}))}
+                                    placeholder={places ? "Ej. 123 Calle Falsa" : "Cargando mapa..."}
+                                    disabled={!places}
+                                    required
                                 />
                             </div>
                             
-                            <MapComponent position={{ lat: centerData.lat, lng: centerData.lng }} />
+                            <div style={containerStyle}>
+                                <Map
+                                    center={{ lat: centerData.lat, lng: centerData.lng }}
+                                    zoom={15}
+                                    gestureHandling={'greedy'}
+                                    disableDefaultUI={true}
+                                    mapId="workflow-map-dialog"
+                                >
+                                    <AdvancedMarker position={{ lat: centerData.lat, lng: centerData.lng }} />
+                                </Map>
+                            </div>
                             
                             <div className="space-y-2">
                                 <Label htmlFor="center-radius">Radio de Geolocalización (metros)</Label>
@@ -2293,8 +2272,17 @@ const SettingsTabs = () => {
 
 
 export default function SettingsPage() {
+  const [isClient, setIsClient] = useState(false);
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
   
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) {
+    return null; // or a loading skeleton
+  }
+
   if (!apiKey) {
       return (
           <div className="p-4">
