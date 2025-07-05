@@ -23,7 +23,7 @@ import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { DateRange } from "react-day-picker";
-import { GoogleMap, useJsApiLoader, Autocomplete } from "@react-google-maps/api";
+import { APIProvider, Map, AdvancedMarker, useApiIsLoaded } from "@vis.gl/react-google-maps";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 
@@ -234,9 +234,44 @@ const containerStyle = {
   width: '100%',
   height: '256px',
   borderRadius: '0.375rem',
+  overflow: 'hidden'
 };
 
-const LIBRARIES: "places"[] = ['places'];
+const AutocompleteInput = ({
+    defaultValue,
+    onAddressChange,
+    onPlaceSelect
+}: {
+    defaultValue: string;
+    onAddressChange: (value: string) => void;
+    onPlaceSelect: (place: google.maps.places.PlaceResult | null) => void;
+}) => {
+    const isLoaded = useApiIsLoaded();
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (isLoaded && inputRef.current) {
+            const autocomplete = new google.maps.places.Autocomplete(inputRef.current, {
+                fields: ["geometry.location", "formatted_address"],
+            });
+            autocomplete.addListener('place_changed', () => {
+                onPlaceSelect(autocomplete.getPlace());
+            });
+        }
+    }, [isLoaded, onPlaceSelect]);
+
+    return (
+        <Input
+            id="center-address"
+            ref={inputRef}
+            placeholder={isLoaded ? "Ej. 123 Calle Falsa" : "Cargando mapa..."}
+            defaultValue={defaultValue}
+            onChange={(e) => onAddressChange(e.target.value)}
+            disabled={!isLoaded}
+            required
+        />
+    );
+};
 
 export default function SettingsPage() {
   const [isClient, setIsClient] = useState(false);
@@ -314,31 +349,8 @@ export default function SettingsPage() {
   const [newBlockedPeriod, setNewBlockedPeriod] = useState<DateRange | undefined>(undefined);
 
   const allSchedules = ['Horario Fijo', 'Horario Flexible', ...shifts.map(s => s.name)];
-
-  const { isLoaded, loadError } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
-    libraries: LIBRARIES,
-  });
-
+  
   const [mapCenter, setMapCenter] = useState({ lat: 40.416775, lng: -3.703790 });
-  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
-
-  const handleAutocompleteLoad = (autocomplete: google.maps.places.Autocomplete) => {
-    autocompleteRef.current = autocomplete;
-  };
-
-  const handlePlaceChanged = () => {
-    if (autocompleteRef.current) {
-      const place = autocompleteRef.current.getPlace();
-      if (place.geometry?.location) {
-        const lat = place.geometry.location.lat();
-        const lng = place.geometry.location.lng();
-        setMapCenter({ lat, lng });
-        setNewCenterData(prev => ({...prev, address: place.formatted_address || prev.address }));
-      }
-    }
-  };
 
   useEffect(() => {
     setIsClient(true);
@@ -925,53 +937,41 @@ export default function SettingsPage() {
                 </DialogTrigger>
                 <DialogContent>
                     <DialogHeader><DialogTitle className="font-headline">{dialogCenterMode === 'add' ? 'Nuevo Centro de Trabajo' : 'Editar Centro de Trabajo'}</DialogTitle></DialogHeader>
-                    {loadError && (
-                        <Alert variant="destructive">
-                            <AlertTriangle className="h-4 w-4" />
-                            <AlertTitle>Error al Cargar Google Maps (ApiProjectMapError)</AlertTitle>
-                            <AlertDescription>
-                                <p>Revisa la configuración de tu proyecto "My First Project" en Google Cloud:</p>
-                                <ol className="list-decimal list-inside text-xs mt-2 space-y-1">
-                                    <li><b>Facturación Habilitada:</b> Confirma que tu proyecto está vinculado a una cuenta de facturación activa.</li>
-                                    <li><b>APIs Habilitadas:</b> Asegúrate de que "Maps JavaScript API" y "Places API" estén habilitadas.</li>
-                                    <li><b>Restricciones de Clave:</b> Ve a Credenciales, selecciona tu clave de API y comprueba que no tenga restricciones de sitios web (HTTP) que bloqueen esta página. Para depurar, puedes desactivar temporalmente las restricciones.</li>
-                                </ol>
-                            </AlertDescription>
-                        </Alert>
-                    )}
-                    {isLoaded && !loadError ? (
-                        <form onSubmit={handleCenterFormSubmit}>
-                            <div className="grid gap-4 py-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="center-name">Nombre del Centro</Label>
-                                    <Input id="center-name" placeholder="Ej. Oficina Principal" value={newCenterData.name} onChange={(e) => setNewCenterData({...newCenterData, name: e.target.value})} required/>
-                                </div>
+                    <form onSubmit={handleCenterFormSubmit}>
+                        <div className="grid gap-4 py-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="center-name">Nombre del Centro</Label>
+                                <Input id="center-name" placeholder="Ej. Oficina Principal" value={newCenterData.name} onChange={(e) => setNewCenterData({...newCenterData, name: e.target.value})} required/>
+                            </div>
+                            <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""}>
                                 <div className="space-y-2">
                                     <Label htmlFor="center-address">Dirección</Label>
-                                    <Autocomplete
-                                        onLoad={handleAutocompleteLoad}
-                                        onPlaceChanged={handlePlaceChanged}
-                                    >
-                                        <Input id="center-address" placeholder="Ej. 123 Calle Falsa" defaultValue={newCenterData.address} onChange={(e) => setNewCenterData({...newCenterData, address: e.target.value})} required/>
-                                    </Autocomplete>
-                                </div>
-                                <div style={containerStyle}>
-                                    <GoogleMap
-                                        mapContainerStyle={containerStyle}
-                                        center={mapCenter}
-                                        zoom={15}
+                                    <AutocompleteInput 
+                                        defaultValue={newCenterData.address}
+                                        onAddressChange={(value) => setNewCenterData(prev => ({...prev, address: value}))}
+                                        onPlaceSelect={(place) => {
+                                             if (place?.geometry?.location) {
+                                                const lat = place.geometry.location.lat();
+                                                const lng = place.geometry.location.lng();
+                                                setMapCenter({ lat, lng });
+                                                setNewCenterData(prev => ({...prev, address: place.formatted_address || prev.address }));
+                                            }
+                                        }}
                                     />
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="center-radius">Radio de Geolocalización (metros)</Label>
-                                    <Input id="center-radius" type="number" placeholder="Ej. 100" value={newCenterData.radius} onChange={(e) => setNewCenterData({...newCenterData, radius: parseInt(e.target.value) || 0})}/>
+                                <div style={containerStyle}>
+                                    <Map center={mapCenter} zoom={15} gestureHandling={'greedy'} disableDefaultUI={true}>
+                                        <AdvancedMarker position={mapCenter} />
+                                    </Map>
                                 </div>
+                            </APIProvider>
+                            <div className="space-y-2">
+                                <Label htmlFor="center-radius">Radio de Geolocalización (metros)</Label>
+                                <Input id="center-radius" type="number" placeholder="Ej. 100" value={newCenterData.radius} onChange={(e) => setNewCenterData({...newCenterData, radius: parseInt(e.target.value) || 0})}/>
                             </div>
-                            <DialogFooter><Button type="submit">Guardar Centro</Button></DialogFooter>
-                        </form>
-                    ) : (
-                       !loadError && <div>Cargando mapa...</div>
-                    )}
+                        </div>
+                        <DialogFooter><Button type="submit">Guardar Centro</Button></DialogFooter>
+                    </form>
                 </DialogContent>
                </Dialog>
             </CardHeader>
@@ -2163,8 +2163,3 @@ export default function SettingsPage() {
     </div>
   )
 }
-
-
-    
-
-
