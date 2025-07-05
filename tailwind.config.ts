@@ -10,9 +10,8 @@ const config: Config = {
   theme: {
     extend: {
       boxShadow: {
-        small: '0px 2px 4px rgba(0, 0, 0, 0.05)',
-        medium: '0px 4px 8px rgba(0, 0, 0, 0.1)',
-        large: '0px 8px 16px rgba(0, 0, 0, 0.15)',
+        default: '0 2px 8px rgba(0, 0, 0, 0.05)',
+        card: '0 4px 16px rgba(0, 0, 0, 0.06)',
       },
       fontFamily: {
         body: ['Inter', 'sans-serif'],
@@ -76,9 +75,9 @@ const config: Config = {
         },
       },
       borderRadius: {
-        lg: '1rem', // 16px
-        md: '0.5rem', // 8px
-        sm: '0.25rem', // 4px
+        lg: '1.5rem',
+        md: '1rem',
+        sm: '0.5rem',
       },
       keyframes: {
         'accordion-down': {
