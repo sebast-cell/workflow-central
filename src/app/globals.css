@@ -33,7 +33,7 @@
     --chart-5: 221 10% 60%;
 
     /* Sidebar Theme based on Design System */
-    --sidebar-background: 220 17% 95%; /* #F0F2F5 lightGray */
+    --sidebar-background: 128 44% 92%; /* #E0F2E3 pastelGreen */
     --sidebar-foreground: 215 14% 47%; /* textSecondary */
     --sidebar-accent: 239 84% 97%; /* primary with 10% alpha approx */
     --sidebar-accent-foreground: 239 84% 67%; /* primary */
@@ -72,13 +72,13 @@
     --chart-5: 215 9% 66%;
     
     /* Sidebar Theme - Dark Mode Adaptation */
-    --sidebar-background: 215 28% 21%;
-    --sidebar-foreground: 215 9% 66%;
-    --sidebar-accent: 239 20% 25%;
-    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-background: 128 44% 92%; /* #E0F2E3 pastelGreen */
+    --sidebar-foreground: 215 14% 47%;
+    --sidebar-accent: 239 84% 97%;
+    --sidebar-accent-foreground: 239 84% 67%;
     --sidebar-active: 239 84% 67%;
     --sidebar-active-foreground: 0 0% 100%;
-    --sidebar-border: 215 28% 25%;
+    --sidebar-border: 220 13% 91%;
     --sidebar-ring: 239 84% 67%;
   }
 }
