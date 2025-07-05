@@ -291,7 +291,7 @@ const CenterDialog = ({
             if (inputRef.current) {
                 inputRef.current.value = address;
             }
-
+            
             setCenterData(prev => ({ ...prev!, address, lat, lng, timezone: 'Cargando...' }));
             
             try {
