@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ShieldCheck, CalendarClock, Briefcase, UserPlus, SlidersHorizontal, Sun, Moon, Coffee, Timer, CalendarDays, Plane, Bell, Bot, Lock, Puzzle, List, PlusCircle, Trash2, ArrowLeft, Calendar as CalendarIcon } from "lucide-react";
+import { ShieldCheck, CalendarClock, Briefcase, UserPlus, SlidersHorizontal, Sun, Moon, Coffee, Timer, CalendarDays, Plane, Bell, Bot, Lock, Puzzle, List, PlusCircle, Trash2, ArrowLeft, Calendar as CalendarIcon, AlertTriangle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,6 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { DateRange } from "react-day-picker";
 import { GoogleMap, useJsApiLoader, Autocomplete } from "@react-google-maps/api";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 
 const allPermissions = [
@@ -596,7 +597,6 @@ export default function SettingsPage() {
     setDialogFlexibleScheduleMode('edit');
     setSelectedFlexibleSchedule(schedule);
     setFlexibleScheduleFormData(schedule);
-    setIsFlexibleScheduleDialogOpen(true);
   };
   
   const handleFlexibleScheduleFormSubmit = (e: React.FormEvent) => {
@@ -625,7 +625,6 @@ export default function SettingsPage() {
     setDialogFixedScheduleMode('edit');
     setSelectedFixedSchedule(schedule);
     setFixedScheduleFormData(schedule);
-    setIsFixedScheduleDialogOpen(true);
   };
 
   const handleFixedScheduleFormSubmit = (e: React.FormEvent) => {
@@ -927,16 +926,18 @@ export default function SettingsPage() {
                 <DialogContent>
                     <DialogHeader><DialogTitle className="font-headline">{dialogCenterMode === 'add' ? 'Nuevo Centro de Trabajo' : 'Editar Centro de Trabajo'}</DialogTitle></DialogHeader>
                     {loadError && (
-                        <div className="p-4 rounded-md bg-destructive/10 text-destructive text-sm space-y-2">
-                            <p className="font-bold">Error al cargar el mapa (ApiProjectMapError)</p>
-                            <p>Has confirmado que la facturación está activa, ¡genial! El último paso es habilitar las APIs necesarias en tu proyecto de Google Cloud.</p>
-                            <ol className="list-decimal list-inside text-xs">
-                                <li>Ve a la biblioteca de APIs de "My First Project".</li>
-                                <li>Busca y habilita <b>"Maps JavaScript API"</b>.</li>
-                                <li>Busca y habilita <b>"Places API"</b>.</li>
-                            </ol>
-                            <p className="text-xs mt-2 font-mono">Detalle técnico: {loadError.message}</p>
-                        </div>
+                        <Alert variant="destructive">
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertTitle>Error al Cargar Google Maps (ApiProjectMapError)</AlertTitle>
+                            <AlertDescription>
+                                <p>Revisa la configuración de tu proyecto "My First Project" en Google Cloud:</p>
+                                <ol className="list-decimal list-inside text-xs mt-2 space-y-1">
+                                    <li><b>Facturación Habilitada:</b> Confirma que tu proyecto está vinculado a una cuenta de facturación activa.</li>
+                                    <li><b>APIs Habilitadas:</b> Asegúrate de que "Maps JavaScript API" y "Places API" estén habilitadas.</li>
+                                    <li><b>Restricciones de Clave:</b> Ve a Credenciales, selecciona tu clave de API y comprueba que no tenga restricciones de sitios web (HTTP) que bloqueen esta página. Para depurar, puedes desactivar temporalmente las restricciones.</li>
+                                </ol>
+                            </AlertDescription>
+                        </Alert>
                     )}
                     {isLoaded && !loadError ? (
                         <form onSubmit={handleCenterFormSubmit}>
@@ -2165,4 +2166,5 @@ export default function SettingsPage() {
 
 
     
+
 
