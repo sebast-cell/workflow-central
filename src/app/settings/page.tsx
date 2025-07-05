@@ -124,6 +124,10 @@ type AbsenceType = {
   name: string;
   remunerated: boolean;
   unit: 'days' | 'hours';
+  limitRequests?: boolean;
+  requestLimit?: number;
+  blockPeriods?: boolean;
+  blockedPeriods?: { id: string; from: string; to: string }[];
 };
 
 type Holiday = {
@@ -145,6 +149,7 @@ type VacationPolicy = {
   amount: number;
   countBy: 'natural' | 'workdays';
   limitRequests: boolean;
+  requestLimit?: number;
   blockPeriods: boolean;
   blockedPeriods: { id: string; from: string; to: string }[];
 };
@@ -181,15 +186,15 @@ const initialShifts: Shift[] = [
     { id: "3", name: "Turno de Noche", start: "22:00", end: "06:00" },
 ];
 const initialAbsenceTypes: AbsenceType[] = [
-    { id: 'vacations', name: "Vacaciones", remunerated: true, unit: 'days' },
-    { id: 'sick_leave', name: "Licencia por enfermedad", remunerated: true, unit: 'days' },
-    { id: 'telework', name: "Teletrabajo", remunerated: true, unit: 'days' },
+    { id: 'vacations', name: "Vacaciones", remunerated: true, unit: 'days', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [] },
+    { id: 'sick_leave', name: "Licencia por enfermedad", remunerated: true, unit: 'days', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [] },
+    { id: 'telework', name: "Teletrabajo", remunerated: true, unit: 'days', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [] },
 ];
 const initialCalendars: CalendarData[] = [
     { id: 'default-calendar', name: 'Calendario General', holidays: [] }
 ];
 const initialVacationPolicies: VacationPolicy[] = [
-    { id: 'default', name: 'General', unit: 'days', amount: 22, countBy: 'workdays', limitRequests: false, blockPeriods: false, blockedPeriods: [] }
+    { id: 'default', name: 'General', unit: 'days', amount: 22, countBy: 'workdays', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [] }
 ];
 
 const CENTERS_STORAGE_KEY = 'workflow-central-centers';
@@ -275,7 +280,10 @@ export default function SettingsPage() {
   const [isAbsenceTypeDialogOpen, setIsAbsenceTypeDialogOpen] = useState(false);
   const [dialogAbsenceTypeMode, setDialogAbsenceTypeMode] = useState<'add' | 'edit'>('add');
   const [selectedAbsenceType, setSelectedAbsenceType] = useState<AbsenceType | null>(null);
-  const [absenceTypeFormData, setAbsenceTypeFormData] = useState<Omit<AbsenceType, 'id'>>({ name: "", remunerated: true, unit: 'days' });
+  const [absenceTypeFormData, setAbsenceTypeFormData] = useState<Omit<AbsenceType, 'id'>>({ name: '', remunerated: true, unit: 'days', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [] });
+  const [newAbsenceBlockedPeriod, setNewAbsenceBlockedPeriod] = useState<DateRange | undefined>(undefined);
+  const [isAbsenceBlockedPeriodPopoverOpen, setIsAbsenceBlockedPeriodPopoverOpen] = useState(false);
+
 
   const [selectedCalendarId, setSelectedCalendarId] = useState<string | null>(null);
   const [isCalendarDialogOpen, setIsCalendarDialogOpen] = useState(false);
@@ -286,7 +294,7 @@ export default function SettingsPage() {
   const [isVacationPolicyDialogOpen, setIsVacationPolicyDialogOpen] = useState(false);
   const [dialogVacationPolicyMode, setDialogVacationPolicyMode] = useState<'add' | 'edit'>('add');
   const [selectedVacationPolicy, setSelectedVacationPolicy] = useState<VacationPolicy | null>(null);
-  const [vacationPolicyFormData, setVacationPolicyFormData] = useState<Omit<VacationPolicy, 'id'>>({ name: '', unit: 'days', amount: 22, countBy: 'workdays', limitRequests: false, blockPeriods: false, blockedPeriods: [] });
+  const [vacationPolicyFormData, setVacationPolicyFormData] = useState<Omit<VacationPolicy, 'id'>>({ name: '', unit: 'days', amount: 22, countBy: 'workdays', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [] });
   const [newBlockedPeriod, setNewBlockedPeriod] = useState<DateRange | undefined>(undefined);
   const [isBlockedPeriodPopoverOpen, setIsBlockedPeriodPopoverOpen] = useState(false);
 
@@ -319,7 +327,8 @@ export default function SettingsPage() {
       
       const breakMigration = (data: any[]) => data.map((b: any) => ({ ...b, assignedTo: Array.isArray(b.assignedTo) ? b.assignedTo : [] }));
       const clockInMigration = (data: any[]) => data.map((t: any) => ({ ...t, assignment: t.assignment || 'all', assignedTo: Array.isArray(t.assignedTo) ? t.assignedTo : []}));
-      const vacationPolicyMigration = (data: any[]) => data.map((p: any) => ({ ...p, blockedPeriods: Array.isArray(p.blockedPeriods) ? p.blockedPeriods : [] }));
+      const vacationPolicyMigration = (data: any[]) => data.map((p: any) => ({ ...p, blockedPeriods: Array.isArray(p.blockedPeriods) ? p.blockedPeriods : [], requestLimit: p.requestLimit || 0 }));
+      const absenceTypeMigration = (data: any[]) => data.map((p: any) => ({ ...p, limitRequests: p.limitRequests || false, requestLimit: p.requestLimit || 0, blockPeriods: p.blockPeriods || false, blockedPeriods: Array.isArray(p.blockedPeriods) ? p.blockedPeriods : [] }));
 
 
       loadFromStorage(CENTERS_STORAGE_KEY, setCenters, initialCenters);
@@ -330,7 +339,7 @@ export default function SettingsPage() {
       loadFromStorage(SHIFTS_STORAGE_KEY, setShifts, initialShifts);
       loadFromStorage(FLEXIBLE_SCHEDULES_STORAGE_KEY, setFlexibleSchedules, []);
       loadFromStorage(FIXED_SCHEDULES_STORAGE_KEY, setFixedSchedules, []);
-      loadFromStorage(ABSENCE_TYPES_STORAGE_KEY, setAbsenceTypes, initialAbsenceTypes);
+      loadFromStorage(ABSENCE_TYPES_STORAGE_KEY, setAbsenceTypes, initialAbsenceTypes, absenceTypeMigration);
       loadFromStorage(CALENDARS_STORAGE_KEY, setCalendars, initialCalendars);
       loadFromStorage(VACATION_POLICIES_STORAGE_KEY, setVacationPolicies, initialVacationPolicies, vacationPolicyMigration);
 
@@ -598,25 +607,35 @@ export default function SettingsPage() {
   const openAddAbsenceTypeDialog = () => {
     setDialogAbsenceTypeMode('add');
     setSelectedAbsenceType(null);
-    setAbsenceTypeFormData({ name: '', remunerated: true, unit: 'days' });
+    setAbsenceTypeFormData({ name: '', remunerated: true, unit: 'days', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [] });
     setIsAbsenceTypeDialogOpen(true);
   };
 
   const openEditAbsenceTypeDialog = (type: AbsenceType) => {
     setDialogAbsenceTypeMode('edit');
     setSelectedAbsenceType(type);
-    setAbsenceTypeFormData({ name: type.name, remunerated: type.remunerated, unit: type.unit });
+    setAbsenceTypeFormData({
+        name: type.name, 
+        remunerated: type.remunerated, 
+        unit: type.unit,
+        limitRequests: type.limitRequests ?? false,
+        requestLimit: type.requestLimit ?? 0,
+        blockPeriods: type.blockPeriods ?? false,
+        blockedPeriods: type.blockedPeriods ?? [],
+    });
     setIsAbsenceTypeDialogOpen(true);
   };
 
   const handleAbsenceTypeFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!absenceTypeFormData.name) return;
+    
+    const payload = {...absenceTypeFormData, requestLimit: Number(absenceTypeFormData.requestLimit || 0)};
 
     if (dialogAbsenceTypeMode === 'add') {
-        setAbsenceTypes(prev => [...prev, { id: Date.now().toString(), ...absenceTypeFormData }]);
+        setAbsenceTypes(prev => [...prev, { id: Date.now().toString(), ...payload }]);
     } else if (selectedAbsenceType) {
-        setAbsenceTypes(prev => prev.map(t => t.id === selectedAbsenceType.id ? { ...t, ...absenceTypeFormData } : t));
+        setAbsenceTypes(prev => prev.map(t => t.id === selectedAbsenceType.id ? { ...t, ...payload } : t));
     }
     setIsAbsenceTypeDialogOpen(false);
   };
@@ -687,7 +706,7 @@ export default function SettingsPage() {
   const openAddVacationPolicyDialog = () => {
     setDialogVacationPolicyMode('add');
     setSelectedVacationPolicy(null);
-    setVacationPolicyFormData({ name: '', unit: 'days', amount: 22, countBy: 'workdays', limitRequests: false, blockPeriods: false, blockedPeriods: [] });
+    setVacationPolicyFormData({ name: '', unit: 'days', amount: 22, countBy: 'workdays', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [] });
     setIsVacationPolicyDialogOpen(true);
   };
 
@@ -696,6 +715,7 @@ export default function SettingsPage() {
     setSelectedVacationPolicy(policy);
     setVacationPolicyFormData({ 
         ...policy,
+        requestLimit: policy.requestLimit || 0,
         blockedPeriods: policy.blockedPeriods || []
      });
     setIsVacationPolicyDialogOpen(true);
@@ -704,7 +724,7 @@ export default function SettingsPage() {
   const handleVacationPolicyFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!vacationPolicyFormData.name) return;
-    const payload = { ...vacationPolicyFormData, amount: Number(vacationPolicyFormData.amount) };
+    const payload = { ...vacationPolicyFormData, amount: Number(vacationPolicyFormData.amount), requestLimit: Number(vacationPolicyFormData.requestLimit || 0) };
 
     if (dialogVacationPolicyMode === 'add') {
       setVacationPolicies(prev => [...prev, { id: Date.now().toString(), ...payload }]);
@@ -1441,7 +1461,9 @@ export default function SettingsPage() {
                                                         <Calendar 
                                                             mode="single" 
                                                             selected={holidayFormData.date} 
-                                                            onSelect={(date) => setHolidayFormData(prev => ({...prev, date}))}
+                                                            onSelect={(date) => {
+                                                              setHolidayFormData(prev => ({...prev, date}));
+                                                            }}
                                                             initialFocus
                                                         />
                                                     </PopoverContent>
@@ -1511,7 +1533,7 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
             <Dialog open={isVacationPolicyDialogOpen} onOpenChange={setIsVacationPolicyDialogOpen}>
-                <DialogContent>
+                <DialogContent className="max-h-[90vh] overflow-y-auto">
                     <DialogHeader><DialogTitle className="font-headline">{dialogVacationPolicyMode === 'add' ? 'Añadir Política de Vacaciones' : 'Editar Política de Vacaciones'}</DialogTitle></DialogHeader>
                     <form onSubmit={handleVacationPolicyFormSubmit} className="space-y-4 py-4">
                         <div className="space-y-2">
@@ -1541,8 +1563,14 @@ export default function SettingsPage() {
                         <div className="space-y-3 pt-2">
                             <div className="flex items-center space-x-2">
                                 <Switch id="policy-limit" checked={vacationPolicyFormData.limitRequests} onCheckedChange={checked => setVacationPolicyFormData({...vacationPolicyFormData, limitRequests: checked})} />
-                                <Label htmlFor="policy-limit">Limitar solicitudes</Label>
+                                <Label htmlFor="policy-limit">Limitar número de solicitudes</Label>
                             </div>
+                            {vacationPolicyFormData.limitRequests && (
+                                <div className="pl-8 space-y-2">
+                                    <Label htmlFor="policy-request-limit">Número máximo de solicitudes al año</Label>
+                                    <Input id="policy-request-limit" type="number" value={vacationPolicyFormData.requestLimit} onChange={e => setVacationPolicyFormData({...vacationPolicyFormData, requestLimit: Number(e.target.value)})} />
+                                </div>
+                            )}
                             <div className="flex items-center space-x-2">
                                 <Switch id="policy-block" checked={vacationPolicyFormData.blockPeriods} onCheckedChange={checked => setVacationPolicyFormData({...vacationPolicyFormData, blockPeriods: checked})} />
                                 <Label htmlFor="policy-block">Bloquear periodos</Label>
@@ -1660,12 +1688,12 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
             <Dialog open={isAbsenceTypeDialogOpen} onOpenChange={setIsAbsenceTypeDialogOpen}>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle className="font-headline">{dialogAbsenceTypeMode === 'add' ? 'Añadir Tipo de Ausencia' : 'Editar Tipo de Ausencia'}</DialogTitle>
                     </DialogHeader>
-                    <form onSubmit={handleAbsenceTypeFormSubmit}>
-                        <div className="grid gap-4 py-4">
+                    <form onSubmit={handleAbsenceTypeFormSubmit} className="space-y-4 py-4">
+                        <div className="grid gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="absence-name">Nombre de la Ausencia</Label>
                                 <Input id="absence-name" value={absenceTypeFormData.name} onChange={e => setAbsenceTypeFormData({...absenceTypeFormData, name: e.target.value})} required/>
@@ -1677,10 +1705,106 @@ export default function SettingsPage() {
                             <div className="space-y-2">
                                 <Label>Contabilizar en</Label>
                                 <RadioGroup value={absenceTypeFormData.unit} onValueChange={(value: 'days' | 'hours') => setAbsenceTypeFormData({...absenceTypeFormData, unit: value})} className="flex gap-4">
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="days" id="unit-days"/><Label htmlFor="unit-days">Días</Label></div>
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="hours" id="unit-hours"/><Label htmlFor="unit-hours">Horas</Label></div>
+                                    <div className="flex items-center space-x-2"><RadioGroupItem value="days" id="unit-days-abs"/><Label htmlFor="unit-days-abs">Días</Label></div>
+                                    <div className="flex items-center space-x-2"><RadioGroupItem value="hours" id="unit-hours-abs"/><Label htmlFor="unit-hours-abs">Horas</Label></div>
                                 </RadioGroup>
                             </div>
+
+                             <Separator/>
+                             
+                             <div className="space-y-3 pt-2">
+                                <div className="flex items-center space-x-2">
+                                    <Switch id="absence-limit" checked={absenceTypeFormData.limitRequests} onCheckedChange={checked => setAbsenceTypeFormData({...absenceTypeFormData, limitRequests: checked})} />
+                                    <Label htmlFor="absence-limit">Limitar número de solicitudes</Label>
+                                </div>
+                                {absenceTypeFormData.limitRequests && (
+                                    <div className="pl-8 space-y-2">
+                                        <Label htmlFor="absence-request-limit">Número máximo de solicitudes</Label>
+                                        <Input id="absence-request-limit" type="number" value={absenceTypeFormData.requestLimit} onChange={e => setAbsenceTypeFormData({...absenceTypeFormData, requestLimit: Number(e.target.value)})} />
+                                    </div>
+                                )}
+                                <div className="flex items-center space-x-2">
+                                    <Switch id="absence-block" checked={absenceTypeFormData.blockPeriods} onCheckedChange={checked => setAbsenceTypeFormData({...absenceTypeFormData, blockPeriods: checked})} />
+                                    <Label htmlFor="absence-block">Bloquear periodos de solicitud</Label>
+                                </div>
+                            </div>
+                            {absenceTypeFormData.blockPeriods && (
+                                <div className="space-y-3 rounded-lg border bg-muted/50 p-4">
+                                    <Label className="font-medium">Periodos Bloqueados</Label>
+                                    <div className="space-y-2">
+                                        {(absenceTypeFormData.blockedPeriods || []).map((period) => (
+                                            <div key={period.id} className="flex items-center justify-between text-sm bg-background p-2 rounded-md">
+                                                <span>{format(new Date(period.from), 'd LLL, y')} - {format(new Date(period.to), 'd LLL, y')}</span>
+                                                <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => {
+                                                    setAbsenceTypeFormData(prev => ({
+                                                        ...prev,
+                                                        blockedPeriods: (prev.blockedPeriods || []).filter(p => p.id !== period.id)
+                                                    }))
+                                                }}>
+                                                    <Trash2 className="h-3 w-3 text-destructive" />
+                                                </Button>
+                                            </div>
+                                        ))}
+                                        {(absenceTypeFormData.blockedPeriods || []).length === 0 && (
+                                            <p className="text-sm text-muted-foreground px-2">No hay periodos bloqueados.</p>
+                                        )}
+                                    </div>
+                                    <div className="flex gap-2 pt-2">
+                                        <Popover open={isAbsenceBlockedPeriodPopoverOpen} onOpenChange={setIsAbsenceBlockedPeriodPopoverOpen}>
+                                            <PopoverTrigger asChild>
+                                                <Button
+                                                    type="button"
+                                                    variant={"outline"}
+                                                    className={cn(
+                                                        "w-full justify-start text-left font-normal bg-background",
+                                                        !newAbsenceBlockedPeriod && "text-muted-foreground"
+                                                    )}
+                                                >
+                                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                                    {newAbsenceBlockedPeriod?.from ? (
+                                                        newAbsenceBlockedPeriod.to ? (
+                                                            <>
+                                                                {format(newAbsenceBlockedPeriod.from, "LLL dd, y")} -{" "}
+                                                                {format(newAbsenceBlockedPeriod.to, "LLL dd, y")}
+                                                            </>
+                                                        ) : (
+                                                            format(newAbsenceBlockedPeriod.from, "LLL dd, y")
+                                                        )
+                                                    ) : (
+                                                        <span>Selecciona un rango</span>
+                                                    )}
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
+                                                <Calendar
+                                                    initialFocus
+                                                    mode="range"
+                                                    selected={newAbsenceBlockedPeriod}
+                                                    onSelect={setNewAbsenceBlockedPeriod}
+                                                    numberOfMonths={1}
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
+                                        <Button type="button" size="sm" onClick={() => {
+                                            if (newAbsenceBlockedPeriod?.from && newAbsenceBlockedPeriod?.to) {
+                                                const newPeriod = {
+                                                    id: Date.now().toString(),
+                                                    from: newAbsenceBlockedPeriod.from.toISOString(),
+                                                    to: newAbsenceBlockedPeriod.to.toISOString(),
+                                                };
+                                                setAbsenceTypeFormData(prev => ({
+                                                    ...prev,
+                                                    blockedPeriods: [...(prev.blockedPeriods || []), newPeriod]
+                                                }));
+                                                setNewAbsenceBlockedPeriod(undefined);
+                                                setIsAbsenceBlockedPeriodPopoverOpen(false);
+                                            }
+                                        }} disabled={!newAbsenceBlockedPeriod?.from || !newAbsenceBlockedPeriod?.to}>
+                                            Añadir
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                         <DialogFooter><Button type="submit">Guardar</Button></DialogFooter>
                     </form>
