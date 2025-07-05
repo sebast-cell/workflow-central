@@ -24,7 +24,6 @@ interface SidebarContextType {
   isOpen: boolean
   isPinned: boolean
   isMobile: boolean
-  isMounted: boolean
   onOpenChange: (open: boolean) => void
   togglePin: () => void
   toggleSidebar: () => void
@@ -84,7 +83,6 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
     isOpen: isMobile ? true : isOpen, // On mobile, content is always "open"
     isPinned,
     isMobile,
-    isMounted,
     onOpenChange,
     togglePin,
     toggleSidebar,
@@ -126,9 +124,7 @@ export const Sidebar = React.forwardRef<
 >(({ className, ...props }, ref) => {
   const {
     isOpen,
-    isPinned,
     isMobile,
-    isMounted,
     onOpenChange,
     openMobile, 
     setOpenMobile
@@ -167,11 +163,11 @@ export const SidebarInset = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => {
-  const { isOpen, isMobile, isMounted } = useSidebar()
+  const { isOpen, isMobile } = useSidebar()
 
   const style = {
     transition: 'margin-left 300ms ease-in-out',
-    marginLeft: !isMounted || isMobile ? '0' : (isOpen ? '15rem' : '3.5rem')
+    marginLeft: isMobile ? '0' : (isOpen ? '15rem' : '3.5rem')
   };
 
   return (
@@ -327,10 +323,10 @@ export const SidebarMenuButton = React.forwardRef<
     tooltip?: React.ComponentProps<typeof TooltipContent>
   }
 >(({ asChild, isActive, tooltip, className, children, ...props }, ref) => {
-  const { isOpen, isMobile, isMounted } = useSidebar()
+  const { isOpen, isMobile } = useSidebar()
   const Comp = asChild ? Slot : "button"
   
-  const isEffectivelyCollapsed = !isMounted ? true : !isOpen && !isMobile
+  const isEffectivelyCollapsed = !isOpen && !isMobile
 
   const button = (
       <Comp
@@ -349,7 +345,7 @@ export const SidebarMenuButton = React.forwardRef<
   return (
     <Tooltip>
         <TooltipTrigger asChild>{button}</TooltipTrigger>
-        <TooltipContent {...tooltip} hidden={!isMounted || isOpen}>
+        <TooltipContent {...tooltip} hidden={isOpen}>
             {tooltip.children}
         </TooltipContent>
     </Tooltip>
