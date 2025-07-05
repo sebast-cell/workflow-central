@@ -100,7 +100,7 @@ export default function AttendancePage() {
                   </SelectContent>
                 </Select>
               </div>
-              <AttendanceReportDialog />
+              <AttendanceReportDialog attendanceLog={attendanceLog} />
           </div>
         </CardHeader>
         <CardContent>
