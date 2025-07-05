@@ -499,7 +499,7 @@ const CentersTabContent = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                 {centers.map((center, index) => (
-                    <div key={index} className="flex items-center justify-between rounded-lg border p-4">
+                    <div key={index} className="flex items-center justify-between rounded-xl border p-4">
                         <div>
                             <h3 className="font-semibold">{center.name}</h3>
                             <p className="text-sm text-muted-foreground">{center.address}</p>
@@ -1047,7 +1047,7 @@ const SettingsTabs = () => {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             {roles.map((role, index) => (
-                                <div key={index} className="flex items-center justify-between rounded-lg border p-4">
+                                <div key={index} className="flex items-center justify-between rounded-xl border p-4">
                                     <div>
                                         <h3 className="font-semibold">{role.name}</h3>
                                         <p className="text-sm text-muted-foreground">{role.description}</p>
@@ -1147,7 +1147,7 @@ const SettingsTabs = () => {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             {departments.map((dept, index) => (
-                                <div key={index} className="flex items-center justify-between rounded-lg border p-4">
+                                <div key={index} className="flex items-center justify-between rounded-xl border p-4">
                                     <h3 className="font-semibold">{dept.name}</h3>
                                     <div className="flex items-center">
                                         <Button variant="ghost" size="sm" onClick={() => openEditDeptDialog(dept)}>Editar</Button>
@@ -1169,7 +1169,7 @@ const SettingsTabs = () => {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             {flexibleSchedules.map(schedule => (
-                                <div key={schedule.id} className="flex items-center justify-between rounded-lg border p-4">
+                                <div key={schedule.id} className="flex items-center justify-between rounded-xl border p-4">
                                     <div>
                                         <h3 className="font-semibold">{schedule.name}</h3>
                                         <p className="text-sm text-muted-foreground">{schedule.noWeeklyHours ? "Sin límite de horas" : `${schedule.hoursPerDay * schedule.workDays.length}h semanales (${schedule.workDays.join(', ')})`}</p>
@@ -1191,7 +1191,7 @@ const SettingsTabs = () => {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             {fixedSchedules.map(schedule => (
-                                <div key={schedule.id} className="flex items-center justify-between rounded-lg border p-4">
+                                <div key={schedule.id} className="flex items-center justify-between rounded-xl border p-4">
                                     <div>
                                         <h3 className="font-semibold">{schedule.name}</h3>
                                         <p className="text-sm text-muted-foreground">{schedule.ranges.map(r => `${r.start}-${r.end}`).join(', ')} ({schedule.workDays.join(', ')})</p>
@@ -1213,7 +1213,7 @@ const SettingsTabs = () => {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             {shifts.map(shift => (
-                                <div key={shift.id} className="flex items-center justify-between rounded-lg border p-4">
+                                <div key={shift.id} className="flex items-center justify-between rounded-xl border p-4">
                                     <div>
                                         <h3 className="font-semibold">{shift.name}</h3>
                                         <p className="text-sm text-muted-foreground">{shift.start} - {shift.end}</p>
@@ -1371,7 +1371,7 @@ const SettingsTabs = () => {
                                             </div>
 
                                             {breakFormData.isAutomatic ? (
-                                                <div className="grid grid-cols-2 gap-4 p-3 bg-muted/50 rounded-lg">
+                                                <div className="grid grid-cols-2 gap-4 p-3 bg-muted/50 rounded-xl">
                                                     <div className="space-y-2">
                                                         <Label htmlFor="break-interval-start">Inicio del Intervalo</Label>
                                                         <Input id="break-interval-start" type="time" value={breakFormData.intervalStart} onChange={(e) => setBreakFormData({...breakFormData, intervalStart: e.target.value})} required/>
@@ -1446,7 +1446,7 @@ const SettingsTabs = () => {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             {breaks.map((br, index) => (
-                                <div key={index} className="flex items-center justify-between rounded-lg border p-4">
+                                <div key={index} className="flex items-center justify-between rounded-xl border p-4">
                                     <div>
                                         <h3 className="font-semibold">{br.name}</h3>
                                         <p className="text-sm text-muted-foreground">
@@ -1559,7 +1559,7 @@ const SettingsTabs = () => {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             {clockInTypes.map((type, index) => (
-                                <div key={index} className="flex items-center justify-between rounded-lg border p-4">
+                                <div key={index} className="flex items-center justify-between rounded-xl border p-4">
                                     <div>
                                             <div className="flex items-center gap-3">
                                                 <div className={`h-4 w-4 rounded-full ${type.color}`}></div>
@@ -1607,7 +1607,7 @@ const SettingsTabs = () => {
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 {calendars.map(cal => (
-                                    <div key={cal.id} className="flex items-center justify-between rounded-lg border p-4">
+                                    <div key={cal.id} className="flex items-center justify-between rounded-xl border p-4">
                                         <div>
                                             <h3 className="font-semibold">{cal.name}</h3>
                                             <p className="text-sm text-muted-foreground">{cal.holidays.length} festivos</p>
@@ -1713,7 +1713,7 @@ const SettingsTabs = () => {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             {vacationPolicies.map(policy => (
-                                <div key={policy.id} className="flex items-center justify-between rounded-lg border p-4">
+                                <div key={policy.id} className="flex items-center justify-between rounded-xl border p-4">
                                     <div>
                                         <h3 className="font-semibold">{policy.name}</h3>
                                         <p className="text-sm text-muted-foreground">{policy.amount} {policy.unit === 'days' ? 'días' : 'horas'} por año</p>
@@ -1778,7 +1778,7 @@ const SettingsTabs = () => {
                                     </div>
                                 </div>
                                 {vacationPolicyFormData.blockPeriods && (
-                                    <div className="space-y-3 rounded-lg border bg-muted/50 p-4">
+                                    <div className="space-y-3 rounded-xl border bg-muted/50 p-4">
                                         <Label className="font-medium">Periodos Bloqueados</Label>
                                         <div className="space-y-2">
                                             {(vacationPolicyFormData.blockedPeriods || []).map((period) => (
@@ -1916,7 +1916,7 @@ const SettingsTabs = () => {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             {absenceTypes.map((absence) => (
-                                <div key={absence.id} className="flex items-center justify-between rounded-lg border p-4">
+                                <div key={absence.id} className="flex items-center justify-between rounded-xl border p-4">
                                     <div className="flex items-center gap-3">
                                         <div className={`h-4 w-4 rounded-full ${absence.color}`}></div>
                                         <div>
@@ -2005,7 +2005,7 @@ const SettingsTabs = () => {
                                         </div>
                                     </div>
                                     {absenceTypeFormData.blockPeriods && (
-                                        <div className="space-y-3 rounded-lg border bg-muted/50 p-4">
+                                        <div className="space-y-3 rounded-xl border bg-muted/50 p-4">
                                             <Label className="font-medium">Periodos Bloqueados</Label>
                                             <div className="space-y-2">
                                                 {(absenceTypeFormData.blockedPeriods || []).map((period) => (
@@ -2137,7 +2137,7 @@ const SettingsTabs = () => {
                             <CardDescription>Configura acciones automáticas para los fichajes de los empleados.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
-                            <div className="rounded-lg border p-4 space-y-4">
+                            <div className="rounded-xl border p-4 space-y-4">
                                 <div className="flex items-start justify-between">
                                     <div>
                                         <h3 className="font-semibold">Cierre Automático al Cumplir Horario</h3>
@@ -2158,7 +2158,7 @@ const SettingsTabs = () => {
                                     </RadioGroup>
                                 </div>
                             </div>
-                            <div className="rounded-lg border p-4 space-y-4">
+                            <div className="rounded-xl border p-4 space-y-4">
                                 <div className="flex items-start justify-between">
                                     <div>
                                         <h3 className="font-semibold">Cierre Automático por Olvido</h3>
@@ -2201,15 +2201,15 @@ const SettingsTabs = () => {
                             <CardDescription>Restringe la visibilidad de ciertas secciones para los empleados.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
-                            <div className="flex items-center justify-between rounded-lg border p-4">
+                            <div className="flex items-center justify-between rounded-xl border p-4">
                                 <h3 className="font-semibold">Ver "Husin" y "Timeline"</h3>
                                 <Switch defaultChecked />
                             </div>
-                            <div className="flex items-center justify-between rounded-lg border p-4">
+                            <div className="flex items-center justify-between rounded-xl border p-4">
                                 <h3 className="font-semibold">Ver calendario de ausencias del equipo</h3>
                                 <Switch defaultChecked />
                             </div>
-                            <div className="flex items-center justify-between rounded-lg border p-4">
+                            <div className="flex items-center justify-between rounded-xl border p-4">
                                 <h3 className="font-semibold">Editar su propio perfil</h3>
                                 <Switch defaultChecked />
                             </div>
@@ -2224,7 +2224,7 @@ const SettingsTabs = () => {
                             <CardDescription>Gestiona la configuración de seguridad de tu cuenta.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
-                            <div className="flex items-center justify-between rounded-lg border p-4">
+                            <div className="flex items-center justify-between rounded-xl border p-4">
                                 <div>
                                     <h3 className="font-semibold">Autenticación de Dos Factores (2FA)</h3>
                                     <p className="text-sm text-muted-foreground">Añade una capa extra de seguridad a tu cuenta.</p>
@@ -2266,21 +2266,21 @@ const SettingsTabs = () => {
                             <CardDescription>Gestiona cómo recibes las notificaciones como administrador.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
-                            <div className="flex items-center justify-between rounded-lg border p-4">
+                            <div className="flex items-center justify-between rounded-xl border p-4">
                                 <div>
                                     <h3 className="font-semibold">Nuevas Solicitudes de Ausencia</h3>
                                     <p className="text-sm text-muted-foreground">Notificar por email cuando un empleado solicite tiempo libre.</p>
                                 </div>
                                 <Switch defaultChecked aria-label="Toggle absence request notifications" />
                             </div>
-                            <div className="flex items-center justify-between rounded-lg border p-4">
+                            <div className="flex items-center justify-between rounded-xl border p-4">
                                 <div>
                                     <h3 className="font-semibold">Alertas de Finalización de Proyecto</h3>
                                     <p className="text-sm text-muted-foreground">Recibir un email cuando un proyecto se marque como completado.</p>
                                 </div>
                                 <Switch defaultChecked aria-label="Toggle project completion notifications" />
                             </div>
-                            <div className="flex items-center justify-between rounded-lg border p-4">
+                            <div className="flex items-center justify-between rounded-xl border p-4">
                                 <div>
                                     <h3 className="font-semibold">Resumen Semanal de Actividad</h3>
                                     <p className="text-sm text-muted-foreground">Enviar un resumen de la actividad del equipo cada lunes.</p>

@@ -19,21 +19,21 @@ export default function EmployeeSettingsPage() {
             <CardDescription>Elige cómo quieres que te notifiquemos.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="flex items-center justify-between rounded-xl border p-4">
                 <div>
                     <h3 className="font-semibold">Notificaciones por Email</h3>
                     <p className="text-sm text-muted-foreground">Recibe emails sobre aprobaciones y actualizaciones.</p>
                 </div>
                 <Switch defaultChecked aria-label="Toggle email notifications" />
             </div>
-            <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="flex items-center justify-between rounded-xl border p-4">
                 <div>
                     <h3 className="font-semibold">Notificaciones Push</h3>
                     <p className="text-sm text-muted-foreground">Recibe notificaciones push en tus dispositivos.</p>
                 </div>
                 <Switch aria-label="Toggle push notifications" />
             </div>
-            <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="flex items-center justify-between rounded-xl border p-4">
                 <div>
                     <h3 className="font-semibold">Recordatorios de Calendario</h3>
                     <p className="text-sm text-muted-foreground">Recibe recordatorios de tus próximas ausencias.</p>
