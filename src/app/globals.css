@@ -18,9 +18,9 @@
     --secondary-foreground: 0 0% 100%; /* White text on secondary color */
     --muted: 220 13% 91%;
     --muted-foreground: 222 9% 47%; /* #6B7280 */
-    --accent: 160 64% 52%; /* #36D39F */
+    --accent: 153 66% 52%; /* #36d39f */
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 84% 60%; /* #EF4444 */
+    --destructive: 4 90% 58%; /* #f44034 */
     --destructive-foreground: 0 0% 100%;
     --warning: 45 100% 51%; /* #FFC107 */
     --warning-foreground: 220 29% 10%;
@@ -31,12 +31,12 @@
     --shadow-color: 0 0% 0%;
     --shadow-opacity: 0.08;
 
-    --status-active-bg: hsl(160 64% 52% / 0.1);
-    --status-active-text: hsl(160 64% 30%);
+    --status-active-bg: hsl(153 66% 52% / 0.1);
+    --status-active-text: hsl(153 66% 30%);
     --status-warning-bg: hsl(45 100% 51% / 0.1);
     --status-warning-text: hsl(35 80% 30%);
-    --status-destructive-bg: hsl(0 84% 60% / 0.1);
-    --status-destructive-text: hsl(0 70% 35%);
+    --status-destructive-bg: hsl(4 90% 58% / 0.1);
+    --status-destructive-text: hsl(4 70% 35%);
 
     --sidebar-background: 224 71% 4%;
     --sidebar-foreground: 210 40% 96%;
@@ -62,9 +62,9 @@
     --secondary-foreground: 0 0% 100%;
     --muted: 220 13% 25%;
     --muted-foreground: 220 12% 65%; /* #9CA3AF */
-    --accent: 160 64% 52%; /* #36D39F */
+    --accent: 153 66% 52%; /* #36d39f */
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 84% 60%;
+    --destructive: 4 90% 58%;
     --destructive-foreground: 0 0% 100%;
     --warning: 45 100% 51%;
     --warning-foreground: 220 29% 10%;
@@ -74,12 +74,12 @@
     --shadow-color: 0 0% 0%;
     --shadow-opacity: 0.25;
 
-    --status-active-bg: hsl(160 64% 52% / 0.15);
-    --status-active-text: hsl(160 64% 80%);
+    --status-active-bg: hsl(153 66% 52% / 0.15);
+    --status-active-text: hsl(153 66% 80%);
     --status-warning-bg: hsl(45 100% 51% / 0.15);
     --status-warning-text: hsl(45 100% 85%);
-    --status-destructive-bg: hsl(0 84% 60% / 0.15);
-    --status-destructive-text: hsl(0 84% 85%);
+    --status-destructive-bg: hsl(4 90% 58% / 0.15);
+    --status-destructive-text: hsl(4 84% 85%);
 
     --sidebar-background: 224 71% 4%;
     --sidebar-foreground: 210 40% 96%;
