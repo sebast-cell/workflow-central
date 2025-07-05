@@ -11,7 +11,7 @@ import { format, startOfWeek, addDays, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Coffee, ArrowRight, ArrowLeft, MapPin } from 'lucide-react';
 import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import React from 'react';
 
 
 // Add geolocation to event type
@@ -125,47 +125,46 @@ export default function EmployeeAttendancePage() {
                                     <TableBody>
                                         {dailyEvents.length > 0 ? (
                                             dailyEvents.map(event => (
-                                                <Collapsible asChild key={event.id} open={openEventId === event.id} onOpenChange={() => setOpenEventId(prevId => prevId === event.id ? null : event.id)}>
-                                                    <>
-                                                        <CollapsibleTrigger asChild>
-                                                            <TableRow className="cursor-pointer hover:bg-muted/50 data-[state=open]:bg-muted/50">
-                                                                <TableCell className="font-medium">{event.time}</TableCell>
-                                                                <TableCell>{getEventTypeBadge(event.type)}</TableCell>
-                                                                <TableCell>{event.location}</TableCell>
-                                                            </TableRow>
-                                                        </CollapsibleTrigger>
-                                                        <CollapsibleContent asChild>
-                                                            <TableRow>
-                                                                <TableCell colSpan={3} className="p-0">
-                                                                    <div className="p-4 bg-background">
-                                                                        <h4 className="font-semibold mb-2">Ubicación del Fichaje</h4>
-                                                                        <div className="h-[300px] w-full rounded-md overflow-hidden border">
-                                                                            {apiKey ? (
-                                                                                <APIProvider apiKey={apiKey}>
-                                                                                    <Map
-                                                                                        center={{ lat: event.lat, lng: event.lng }}
-                                                                                        zoom={15}
-                                                                                        gestureHandling={'greedy'}
-                                                                                        disableDefaultUI={true}
-                                                                                        mapId={`map-${event.id}`}
-                                                                                    >
-                                                                                        <AdvancedMarker position={{ lat: event.lat, lng: event.lng }} title={event.location}>
-                                                                                          <MapPin className={`h-6 w-6 text-primary`}/>
-                                                                                        </AdvancedMarker>
-                                                                                    </Map>
-                                                                                </APIProvider>
-                                                                            ) : (
-                                                                                <div className="flex items-center justify-center h-full bg-muted">
-                                                                                    <p className="text-sm text-muted-foreground">Clave de API de Google Maps no configurada.</p>
-                                                                                </div>
-                                                                            )}
-                                                                        </div>
+                                                <React.Fragment key={event.id}>
+                                                    <TableRow
+                                                        className="cursor-pointer hover:bg-muted/50"
+                                                        onClick={() => setOpenEventId(prevId => prevId === event.id ? null : event.id)}
+                                                    >
+                                                        <TableCell className="font-medium">{event.time}</TableCell>
+                                                        <TableCell>{getEventTypeBadge(event.type)}</TableCell>
+                                                        <TableCell>{event.location}</TableCell>
+                                                    </TableRow>
+                                                    {openEventId === event.id && (
+                                                        <TableRow>
+                                                            <TableCell colSpan={3} className="p-0">
+                                                                <div className="p-4 bg-background">
+                                                                    <h4 className="font-semibold mb-2">Ubicación del Fichaje</h4>
+                                                                    <div className="h-[300px] w-full rounded-md overflow-hidden border">
+                                                                        {apiKey ? (
+                                                                            <APIProvider apiKey={apiKey}>
+                                                                                <Map
+                                                                                    center={{ lat: event.lat, lng: event.lng }}
+                                                                                    zoom={15}
+                                                                                    gestureHandling={'greedy'}
+                                                                                    disableDefaultUI={true}
+                                                                                    mapId={`map-${event.id}`}
+                                                                                >
+                                                                                    <AdvancedMarker position={{ lat: event.lat, lng: event.lng }} title={event.location}>
+                                                                                        <MapPin className={`h-6 w-6 text-primary`}/>
+                                                                                    </AdvancedMarker>
+                                                                                </Map>
+                                                                            </APIProvider>
+                                                                        ) : (
+                                                                            <div className="flex items-center justify-center h-full bg-muted">
+                                                                                <p className="text-sm text-muted-foreground">Clave de API de Google Maps no configurada.</p>
+                                                                            </div>
+                                                                        )}
                                                                     </div>
-                                                                </TableCell>
-                                                            </TableRow>
-                                                        </CollapsibleContent>
-                                                    </>
-                                                </Collapsible>
+                                                                </div>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    )}
+                                                </React.Fragment>
                                             ))
                                         ) : (
                                             <TableRow>
