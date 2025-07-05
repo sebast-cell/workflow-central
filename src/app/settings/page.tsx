@@ -254,14 +254,75 @@ const CenterDialog = ({
     center: Center | null;
     onSubmit: (data: Center) => void;
 }) => {
-    const [centerData, setCenterData] = useState<Center>({ name: '', address: '', radius: 100, lat: defaultMapCenter.lat, lng: defaultMapCenter.lng, timezone: 'Europe/Madrid' });
+    const [centerData, setCenterData] = useState<Center | null>(null);
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
+    const inputRef = useRef<HTMLInputElement>(null);
+    const places = useMapsLibrary('places');
+
+    useEffect(() => {
+        if (isOpen) {
+            if (mode === 'edit' && center) {
+                setCenterData(center);
+            } else {
+                setCenterData({ name: '', address: '', radius: 100, lat: defaultMapCenter.lat, lng: defaultMapCenter.lng, timezone: 'Europe/Madrid' });
+            }
+        }
+    }, [isOpen, mode, center]);
     
+    useEffect(() => {
+        if (!places || !inputRef.current || !isOpen) return;
+        
+        const autocomplete = new places.Autocomplete(inputRef.current, {
+            fields: ["geometry.location", "formatted_address", "name"],
+        });
+
+        const listener = autocomplete.addListener('place_changed', async () => {
+            const place = autocomplete.getPlace();
+
+            if (!place.geometry?.location) {
+                console.error("Place has no geometry");
+                return;
+            }
+
+            const address = place.formatted_address || place.name || '';
+            const lat = place.geometry.location.lat();
+            const lng = place.geometry.location.lng();
+            
+            if (inputRef.current) {
+                inputRef.current.value = address;
+            }
+
+            setCenterData(prev => ({ ...prev!, address, lat, lng, timezone: 'Cargando...' }));
+            
+            try {
+                const timestamp = Math.floor(Date.now() / 1000);
+                const response = await fetch(`https://maps.googleapis.com/maps/api/timezone/json?location=${lat},${lng}&timestamp=${timestamp}&key=${apiKey}`);
+                const data = await response.json();
+                if (data.status === 'OK') {
+                    setCenterData(prev => ({...prev!, timezone: data.timeZoneId }));
+                } else {
+                    setCenterData(prev => ({...prev!, timezone: 'No disponible' }));
+                }
+            } catch (error) {
+                console.error("Failed to fetch timezone", error);
+                setCenterData(prev => ({...prev!, timezone: 'Error al cargar' }));
+            }
+        });
+
+        return () => {
+            listener.remove();
+            const pacContainers = document.querySelectorAll('.pac-container');
+            pacContainers.forEach(container => container.remove());
+        };
+    }, [places, apiKey, isOpen]);
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!centerData.name) return;
-        onSubmit(centerData);
-    }
+        if (!centerData || !centerData.name) return;
+        onSubmit({ ...centerData, address: inputRef.current?.value || centerData.address });
+    };
+
+    if (!isOpen || !centerData) return null;
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -271,42 +332,17 @@ const CenterDialog = ({
                     e.preventDefault();
                 }
             }}>
-                <APIProvider apiKey={apiKey} libraries={['places']}>
+                <APIProvider apiKey={apiKey}>
                     <DialogHeader><DialogTitle className="font-headline">{mode === 'add' ? 'Nuevo Centro de Trabajo' : 'Editar Centro de Trabajo'}</DialogTitle></DialogHeader>
                     <form onSubmit={handleSubmit}>
                         <div className="grid gap-4 py-4">
                             <div className="space-y-2">
                                 <Label htmlFor="center-name">Nombre del Centro</Label>
-                                <Input id="center-name" placeholder="Ej. Oficina Principal" value={centerData.name} onChange={(e) => setCenterData(prev => ({...prev, name: e.target.value}))} required />
+                                <Input id="center-name" placeholder="Ej. Oficina Principal" value={centerData.name} onChange={(e) => setCenterData(prev => ({...prev!, name: e.target.value}))} required />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="center-address">Dirección</Label>
-                                 <AutocompleteInput
-                                    value={centerData.address}
-                                    onPlaceSelect={(place) => {
-                                        if (place?.geometry?.location) {
-                                            const lat = place.geometry.location.lat();
-                                            const lng = place.geometry.location.lng();
-                                            const address = place.formatted_address || place.name || '';
-                                            
-                                            setCenterData(prev => ({ ...prev, address, lat, lng, timezone: 'Cargando...' }));
-
-                                            const timestamp = Math.floor(Date.now() / 1000);
-                                            fetch(`https://maps.googleapis.com/maps/api/timezone/json?location=${lat},${lng}&timestamp=${timestamp}&key=${apiKey}`)
-                                                .then(res => res.json())
-                                                .then(data => {
-                                                    if (data.status === 'OK' && data.timeZoneId) {
-                                                        setCenterData(prev => ({ ...prev, timezone: data.timeZoneId }));
-                                                    } else {
-                                                        setCenterData(prev => ({ ...prev, timezone: 'No disponible' }));
-                                                    }
-                                                })
-                                                .catch(() => {
-                                                    setCenterData(prev => ({ ...prev, timezone: 'Error al cargar' }));
-                                                });
-                                        }
-                                    }}
-                                 />
+                                <Input ref={inputRef} id="center-address" defaultValue={centerData.address} required />
                             </div>
                             
                             <div style={containerStyle}>
@@ -323,7 +359,7 @@ const CenterDialog = ({
                             
                             <div className="space-y-2">
                                 <Label htmlFor="center-radius">Radio de Geolocalización (metros)</Label>
-                                <Input id="center-radius" type="number" placeholder="Ej. 100" value={centerData.radius} onChange={(e) => setCenterData({ ...centerData, radius: parseInt(e.target.value) || 0 })} />
+                                <Input id="center-radius" type="number" placeholder="Ej. 100" value={centerData.radius} onChange={(e) => setCenterData(prev => ({ ...prev!, radius: parseInt(e.target.value) || 0 }))} />
                             </div>
 
                             <div className="space-y-2">
@@ -336,44 +372,6 @@ const CenterDialog = ({
                 </APIProvider>
             </DialogContent>
         </Dialog>
-    )
-}
-
-const AutocompleteInput = ({ value, onPlaceSelect }: { value: string, onPlaceSelect: (place: google.maps.places.PlaceResult | null) => void }) => {
-    const inputRef = useRef<HTMLInputElement>(null);
-    const places = useMapsLibrary('places');
-    
-    useEffect(() => {
-        if (!places || !inputRef.current) return;
-
-        const autocomplete = new places.Autocomplete(inputRef.current, {
-            fields: ["geometry.location", "formatted_address", "name"],
-        });
-
-        const listener = autocomplete.addListener('place_changed', () => {
-            const place = autocomplete.getPlace();
-            onPlaceSelect(place);
-            if (place.formatted_address && inputRef.current) {
-                inputRef.current.value = place.formatted_address;
-            }
-        });
-
-        return () => {
-            listener.remove();
-            const pacContainers = document.querySelectorAll('.pac-container');
-            pacContainers.forEach(container => container.remove());
-        };
-    }, [places, onPlaceSelect]);
-    
-    return (
-        <Input
-            ref={inputRef}
-            defaultValue={value}
-            id="center-address"
-            placeholder={places ? "Ej. 123 Calle Falsa" : "Cargando mapa..."}
-            disabled={!places}
-            required
-        />
     )
 }
 
@@ -486,15 +484,13 @@ const CentersTabContent = () => {
                 ))}
                 </CardContent>
             </Card>
-            {isCenterDialogOpen && (
-                <CenterDialog 
-                    isOpen={isCenterDialogOpen}
-                    onOpenChange={setIsCenterDialogOpen}
-                    mode={dialogCenterMode}
-                    center={selectedCenter}
-                    onSubmit={handleCenterFormSubmit}
-                />
-            )}
+            <CenterDialog 
+                isOpen={isCenterDialogOpen}
+                onOpenChange={setIsCenterDialogOpen}
+                mode={dialogCenterMode}
+                center={selectedCenter}
+                onSubmit={handleCenterFormSubmit}
+            />
         </>
     );
 };
@@ -2288,5 +2284,3 @@ export default function SettingsPage() {
     </div>
   )
 }
-
-    
