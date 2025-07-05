@@ -25,22 +25,24 @@ type ClockInEvent = {
   location: string;
   lat: number;
   lng: number;
+  project?: string;
+  task?: string;
 };
 
 // Mock data for clock-in events with geolocation
 const events: ClockInEvent[] = [
-  { id: 1, date: new Date(2024, 7, 19), time: "09:01", type: "Entrada", location: "Oficina Central", lat: 40.416775, lng: -3.703790 },
+  { id: 1, date: new Date(2024, 7, 19), time: "09:01", type: "Entrada", location: "Oficina Central", lat: 40.416775, lng: -3.703790, project: "Rediseño Web", task: "Componentes UI" },
   { id: 2, date: new Date(2024, 7, 19), time: "13:00", type: "Descanso", location: "Oficina Central", lat: 40.416775, lng: -3.703790 },
-  { id: 3, date: new Date(2024, 7, 19), time: "14:02", type: "Entrada", location: "Cliente - Soltech", lat: 40.421, lng: -3.705 },
+  { id: 3, date: new Date(2024, 7, 19), time: "14:02", type: "Entrada", location: "Cliente - Soltech", lat: 40.421, lng: -3.705, project: "Rediseño Web", task: "Reunión de seguimiento" },
   { id: 4, date: new Date(2024, 7, 19), time: "17:30", type: "Salida", location: "Cliente - Soltech", lat: 40.421, lng: -3.705 },
-  { id: 5, date: new Date(2024, 7, 20), time: "09:05", type: "Entrada", location: "Remoto - Casa", lat: 40.43, lng: -3.69 },
+  { id: 5, date: new Date(2024, 7, 20), time: "09:05", type: "Entrada", location: "Remoto - Casa", lat: 40.43, lng: -3.69, project: "App Móvil", task: "Bugfixing" },
   { id: 6, date: new Date(2024, 7, 20), time: "17:35", type: "Salida", location: "Remoto - Casa", lat: 40.43, lng: -3.69 },
-  { id: 7, date: new Date(2024, 7, 21), time: "08:58", type: "Entrada", location: "Oficina Central", lat: 40.416775, lng: -3.703790 },
+  { id: 7, date: new Date(2024, 7, 21), time: "08:58", type: "Entrada", location: "Oficina Central", lat: 40.416775, lng: -3.703790, project: "Campaña Marketing", task: "Planificación" },
   { id: 8, date: new Date(2024, 7, 21), time: "12:30", type: "Descanso", location: "Oficina Central", lat: 40.416775, lng: -3.703790 },
-  { id: 9, date: new Date(2024, 7, 21), time: "13:30", type: "Entrada", location: "Oficina Central", lat: 40.416775, lng: -3.703790 },
+  { id: 9, date: new Date(2024, 7, 21), time: "13:30", type: "Entrada", location: "Oficina Central", lat: 40.416775, lng: -3.703790, project: "Campaña Marketing", task: "Creación de contenido" },
   { id: 10, date: new Date(2024, 7, 21), time: "18:00", type: "Salida", location: "Oficina Central", lat: 40.416775, lng: -3.703790 },
-  { id: 11, date: new Date(new Date().setDate(new Date().getDate() - 1)), time: "09:00", type: "Entrada", location: "Oficina Central", lat: 40.416775, lng: -3.703790 },
-  { id: 12, date: new Date(new Date().setDate(new Date().getDate() - 1)), time: "17:00", type: "Salida", location: "Oficina Central", lat: 40.416775, lng: -3.703790 },
+  { id: 11, date: new Date(new Date().setDate(new Date().getDate())), time: "09:00", type: "Entrada", location: "Oficina Central", lat: 40.416775, lng: -3.703790, project: "Interno", task: "Reunión equipo" },
+  { id: 12, date: new Date(new Date().setDate(new Date().getDate())), time: "17:00", type: "Salida", location: "Oficina Central", lat: 40.416775, lng: -3.703790 },
 ];
 
 const getEventTypeBadge = (type: string) => {
@@ -67,7 +69,7 @@ const getEventTypeIcon = (type: string) => {
         <TooltipProvider delayDuration={100}>
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <span className={cn("flex h-6 w-6 items-center justify-center rounded-full", eventStyle.className)}>
+                    <span className={cn("flex h-8 w-8 items-center justify-center rounded-full", eventStyle.className)}>
                         {eventStyle.icon}
                     </span>
                 </TooltipTrigger>
@@ -150,6 +152,8 @@ export default function EmployeeAttendancePage() {
                                             <TableHead className="w-[100px]">Hora</TableHead>
                                             <TableHead>Tipo</TableHead>
                                             <TableHead>Ubicación</TableHead>
+                                            <TableHead>Proyecto</TableHead>
+                                            <TableHead>Tarea</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -166,10 +170,12 @@ export default function EmployeeAttendancePage() {
                                                             <div>{event.location}</div>
                                                             <div className="text-xs text-muted-foreground">Lat: {event.lat.toFixed(4)}, Lon: {event.lng.toFixed(4)}</div>
                                                         </TableCell>
+                                                        <TableCell>{event.project || '-'}</TableCell>
+                                                        <TableCell>{event.task || '-'}</TableCell>
                                                     </TableRow>
                                                     {openEventId === event.id && (
                                                         <TableRow>
-                                                            <TableCell colSpan={3} className="p-0">
+                                                            <TableCell colSpan={5} className="p-0">
                                                                 <div className="p-4 bg-background">
                                                                     <h4 className="font-semibold mb-2">Ubicación del Fichaje</h4>
                                                                     <div className="h-[300px] w-full rounded-md overflow-hidden border">
@@ -201,7 +207,7 @@ export default function EmployeeAttendancePage() {
                                             ))
                                         ) : (
                                             <TableRow>
-                                                <TableCell colSpan={3} className="text-center text-muted-foreground h-24">
+                                                <TableCell colSpan={5} className="text-center text-muted-foreground h-24">
                                                     No hay registros para este día.
                                                 </TableCell>
                                             </TableRow>
@@ -238,10 +244,10 @@ export default function EmployeeAttendancePage() {
                                             <p className="font-semibold text-sm capitalize">{format(day, "eee", { locale: es })}</p>
                                             <p className="text-muted-foreground text-xs">{format(day, "d")}</p>
                                         </div>
-                                        <div className="p-2 space-y-2 min-h-[120px]">
+                                        <div className="p-2 space-y-3 min-h-[120px]">
                                             {events.filter(e => isSameDay(e.date, day)).sort((a,b) => a.time.localeCompare(b.time)).map(event => (
                                                 <div key={event.id} className="flex items-center gap-2 text-sm p-1 rounded-md hover:bg-muted">
-                                                   <span className="font-medium text-sm text-muted-foreground">{event.time}</span>
+                                                   <span className="font-semibold text-base text-foreground/80">{event.time}</span>
                                                    {getEventTypeIcon(event.type)}
                                                 </div>
                                             ))}
