@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useState, useEffect } from 'react';
+import { useActionState, useState, useEffect, useTransition } from 'react';
 import { useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -28,13 +28,16 @@ export function AttendanceReportDialog() {
   const [state, action] = useActionState(generateAttendanceReportAction, initialState);
   const [formKey, setFormKey] = useState(Date.now());
   const [format, setFormat] = useState('PDF');
+  const [, startTransition] = useTransition();
 
   useEffect(() => {
     // When the dialog is opened, reset the form and the action state
     if (isOpen) {
       setFormKey(Date.now());
-      // Calling action with empty form data to reset state
-      action(new FormData());
+      // Calling action with empty form data to reset state, wrapped in a transition
+      startTransition(() => {
+        action(new FormData());
+      });
     }
   }, [isOpen, action]);
 
