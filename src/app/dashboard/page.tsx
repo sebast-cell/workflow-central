@@ -117,7 +117,7 @@ const RecentActivityWidget = () => {
             <CardTitle>Actividad Reciente</CardTitle>
             <CardDescription>Lo que tu equipo ha estado haciendo.</CardDescription>
           </CardHeader>
-          <CardContent className="flex-1 overflow-y-auto">
+          <CardContent className="flex-1 overflow-auto">
             <div className="space-y-1">
               {recentActivities.map((activity, index) => (
                 <Link href={activity.link} key={index} className="block rounded-lg -mx-2 px-2 py-2 transition-colors hover:bg-muted">
@@ -174,7 +174,7 @@ const TeamSummaryWidget = () => {
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="flex-1 overflow-y-auto">
+          <CardContent className="flex-1 overflow-auto">
             <Table>
               <TableHeader>
                 <TableRow>
