@@ -137,15 +137,15 @@ export default function AttendancePage() {
         <CardHeader>
           <CardTitle className="font-headline">Timeline de Fichajes</CardTitle>
           <CardDescription>Un registro en tiempo real de los eventos de entrada del día seleccionado.</CardDescription>
-          <div className="flex flex-col sm:flex-row gap-4 pt-4 sm:items-center border-t border-border mt-4">
-              <div className="flex flex-wrap gap-2 items-center">
+          <div className="flex flex-col sm:flex-row gap-4 pt-4 sm:items-start border-t border-border mt-4">
+              <div className="flex flex-wrap gap-2 items-center flex-1">
                   <Filter className="h-4 w-4 text-muted-foreground" />
                   <Popover>
                       <PopoverTrigger asChild>
                           <Button
                               variant={"outline"}
                               className={cn(
-                                "w-full sm:w-[240px] justify-start text-left font-normal",
+                                "w-full sm:w-auto md:w-[240px] justify-start text-left font-normal",
                                 !selectedDate && "text-muted-foreground"
                               )}
                           >
@@ -163,8 +163,19 @@ export default function AttendancePage() {
                       </PopoverContent>
                   </Popover>
 
+                <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+                  <SelectTrigger className="w-full sm:w-auto md:w-[180px]">
+                    <SelectValue placeholder="Ubicación" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas las Ubicaciones</SelectItem>
+                    <SelectItem value="Oficina">Oficina</SelectItem>
+                    <SelectItem value="Remoto">Remoto</SelectItem>
+                  </SelectContent>
+                </Select>
+
                 <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-                  <SelectTrigger className="w-full sm:w-[200px]">
+                  <SelectTrigger className="w-full sm:w-auto md:w-[180px]">
                     <SelectValue placeholder="Departamento" />
                   </SelectTrigger>
                   <SelectContent>
@@ -175,8 +186,8 @@ export default function AttendancePage() {
                   </SelectContent>
                 </Select>
 
-                 <Select value={selectedEmployee} onValueChange={setSelectedEmployee} disabled={selectedDepartment === 'all'}>
-                    <SelectTrigger className="w-full sm:w-[200px]">
+                 <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+                    <SelectTrigger className="w-full sm:w-auto md:w-[180px]">
                         <SelectValue placeholder="Empleado" />
                     </SelectTrigger>
                     <SelectContent>
@@ -185,17 +196,6 @@ export default function AttendancePage() {
                             <SelectItem key={emp.id} value={emp.name}>{emp.name}</SelectItem>
                         ))}
                     </SelectContent>
-                </Select>
-
-                <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-                  <SelectTrigger className="w-full sm:w-[200px]">
-                    <SelectValue placeholder="Ubicación" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas las Ubicaciones</SelectItem>
-                    <SelectItem value="Oficina">Oficina</SelectItem>
-                    <SelectItem value="Remoto">Remoto</SelectItem>
-                  </SelectContent>
                 </Select>
 
               </div>
