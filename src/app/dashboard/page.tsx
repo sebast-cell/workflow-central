@@ -22,11 +22,11 @@ export default function Dashboard() {
   ]
 
   const recentActivities = [
-    { name: "Olivia Martin", activity: "marcó entrada", time: "hace 5m", avatar: "OM" },
-    { name: "Jackson Lee", activity: "solicitó tiempo libre", time: "hace 15m", avatar: "JL" },
-    { name: "Isabella Nguyen", activity: "completó la tarea 'Diseño de UI'", time: "hace 30m", avatar: "IN" },
-    { name: "William Kim", activity: "está en descanso", time: "hace 45m", avatar: "WK" },
-    { name: "Sophia Davis", activity: "marcó salida", time: "hace 1h", avatar: "SD" },
+    { name: "Olivia Martin", activity: "marcó entrada", time: "hace 5m", avatar: "OM", link: "/attendance" },
+    { name: "Jackson Lee", activity: "solicitó tiempo libre", time: "hace 15m", avatar: "JL", link: "/absences" },
+    { name: "Isabella Nguyen", activity: "completó la tarea 'Diseño de UI'", time: "hace 30m", avatar: "IN", link: "/projects" },
+    { name: "William Kim", activity: "está en descanso", time: "hace 45m", avatar: "WK", link: "/attendance" },
+    { name: "Sophia Davis", activity: "marcó salida", time: "hace 1h", avatar: "SD", link: "/attendance" },
   ]
 
   const teamSummary = [
@@ -53,46 +53,54 @@ export default function Dashboard() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Empleados Activos</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">42 / 50</div>
-            <p className="text-xs text-muted-foreground">+2 desde la última hora</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Proyectos en Progreso</CardTitle>
-            <Zap className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">5</div>
-            <p className="text-xs text-muted-foreground">+1 desde ayer</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Solicitudes Pendientes</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground">3 vacaciones, 9 cambios de horario</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tareas Completadas Hoy</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">87</div>
-            <p className="text-xs text-muted-foreground">+15% desde la semana pasada</p>
-          </CardContent>
-        </Card>
+        <Link href="/employees" className="block">
+            <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Empleados Activos</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">42 / 50</div>
+                <p className="text-xs text-muted-foreground">+2 desde la última hora</p>
+            </CardContent>
+            </Card>
+        </Link>
+        <Link href="/projects" className="block">
+            <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Proyectos en Progreso</CardTitle>
+                <Zap className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">5</div>
+                <p className="text-xs text-muted-foreground">+1 desde ayer</p>
+            </CardContent>
+            </Card>
+        </Link>
+        <Link href="/absences" className="block">
+            <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Solicitudes Pendientes</CardTitle>
+                <Clock className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">12</div>
+                <p className="text-xs text-muted-foreground">3 vacaciones, 9 cambios de horario</p>
+            </CardContent>
+            </Card>
+        </Link>
+        <Link href="/projects" className="block">
+            <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Tareas Completadas Hoy</CardTitle>
+                <CheckCircle className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold">87</div>
+                <p className="text-xs text-muted-foreground">+15% desde la semana pasada</p>
+            </CardContent>
+            </Card>
+        </Link>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
@@ -131,19 +139,21 @@ export default function Dashboard() {
             <CardDescription>Lo que tu equipo ha estado haciendo.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-1">
               {recentActivities.map((activity, index) => (
-                <div key={index} className="flex items-center">
-                  <Avatar className="h-9 w-9">
-                    <AvatarImage src={`https://placehold.co/40x40.png`} data-ai-hint="people avatar" alt="Avatar" />
-                    <AvatarFallback>{activity.avatar}</AvatarFallback>
-                  </Avatar>
-                  <div className="ml-4 space-y-1">
-                    <p className="text-sm font-medium leading-none">{activity.name}</p>
-                    <p className="text-sm text-muted-foreground">{activity.activity}</p>
-                  </div>
-                  <div className="ml-auto font-medium text-xs text-muted-foreground">{activity.time}</div>
-                </div>
+                <Link href={activity.link} key={index} className="block rounded-lg -mx-2 px-2 py-2 transition-colors hover:bg-muted">
+                    <div className="flex items-center">
+                    <Avatar className="h-9 w-9">
+                        <AvatarImage src={`https://placehold.co/40x40.png`} data-ai-hint="people avatar" alt="Avatar" />
+                        <AvatarFallback>{activity.avatar}</AvatarFallback>
+                    </Avatar>
+                    <div className="ml-4 space-y-1">
+                        <p className="text-sm font-medium leading-none">{activity.name}</p>
+                        <p className="text-sm text-muted-foreground">{activity.activity}</p>
+                    </div>
+                    <div className="ml-auto font-medium text-xs text-muted-foreground">{activity.time}</div>
+                    </div>
+                </Link>
               ))}
             </div>
           </CardContent>
@@ -179,7 +189,7 @@ export default function Dashboard() {
               </TableHeader>
               <TableBody>
                 {teamSummary.map((member, index) => (
-                    <TableRow key={index}>
+                    <TableRow key={index} className="hover:bg-muted/50 cursor-pointer" onClick={() => window.location.href = '/employees'}>
                     <TableCell>
                         <div className="font-medium">{member.name}</div>
                         <div className="text-sm text-muted-foreground hidden md:inline">{member.email}</div>
