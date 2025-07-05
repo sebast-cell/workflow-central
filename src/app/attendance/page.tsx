@@ -1,21 +1,80 @@
+'use client';
+
+import { useState, useMemo, useEffect } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Briefcase, Coffee, Globe, Home, UserCheck, UserX } from "lucide-react";
+import { Briefcase, Coffee, Globe, Home, UserX, Calendar as CalendarIcon, Filter } from "lucide-react";
 import { AttendanceReportDialog } from "./_components/attendance-report-dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
+
+const fixedDate = new Date(2024, 7, 26);
+const yesterday = new Date(new Date().setDate(fixedDate.getDate() - 1));
+
+const employees = [
+  { id: 1, name: "Olivia Martin", department: "Ingeniería" },
+  { id: 2, name: "Jackson Lee", department: "Diseño" },
+  { id: 3, name: "Isabella Nguyen", department: "Marketing" },
+  { id: 4, name: "William Kim", department: "Ingeniería" },
+  { id: 5, name: "Sophia Davis", department: "Ventas" },
+  { id: 6, name: "Liam Garcia", department: "RRHH" },
+];
+
+const allDepartments = ["Ingeniería", "Diseño", "Marketing", "Ventas", "RRHH"];
 
 const attendanceLog = [
-  { time: "09:01 AM", employee: "Olivia Martin", status: "Entrada Marcada", location: "Oficina" },
-  { time: "09:03 AM", employee: "Jackson Lee", status: "Entrada Marcada", location: "Remoto" },
-  { time: "11:30 AM", employee: "Isabella Nguyen", status: "En Descanso", location: "Oficina" },
-  { time: "12:15 PM", employee: "Isabella Nguyen", status: "Entrada Marcada", location: "Oficina" },
-  { time: "02:00 PM", employee: "William Kim", status: "Entrada Marcada", location: "Oficina" },
-  { time: "05:05 PM", employee: "Olivia Martin", status: "Salida Marcada", location: "Oficina" },
+  { date: fixedDate, time: "09:01 AM", employee: "Olivia Martin", status: "Entrada Marcada", location: "Oficina", department: "Ingeniería" },
+  { date: fixedDate, time: "09:03 AM", employee: "Jackson Lee", status: "Entrada Marcada", location: "Remoto", department: "Diseño" },
+  { date: fixedDate, time: "11:30 AM", employee: "Isabella Nguyen", status: "En Descanso", location: "Oficina", department: "Marketing" },
+  { date: fixedDate, time: "12:15 PM", employee: "Isabella Nguyen", status: "Entrada Marcada", location: "Oficina", department: "Marketing" },
+  { date: fixedDate, time: "02:00 PM", employee: "William Kim", status: "Entrada Marcada", location: "Oficina", department: "Ingeniería" },
+  { date: fixedDate, time: "05:05 PM", employee: "Olivia Martin", status: "Salida Marcada", location: "Oficina", department: "Ingeniería" },
+  { date: yesterday, time: "09:00 AM", employee: "Sophia Davis", status: "Entrada Marcada", location: "Oficina", department: "Ventas" },
+  { date: yesterday, time: "05:30 PM", employee: "Sophia Davis", status: "Salida Marcada", location: "Oficina", department: "Ventas" },
 ];
 
 export default function AttendancePage() {
+    const [selectedDate, setSelectedDate] = useState<Date | undefined>(fixedDate);
+    const [selectedLocation, setSelectedLocation] = useState<string>('all');
+    const [selectedDepartment, setSelectedDepartment] = useState<string>('all');
+    const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
+
+    const availableEmployees = useMemo(() => {
+        if (selectedDepartment === 'all') {
+            return employees;
+        }
+        return employees.filter(emp => emp.department === selectedDepartment);
+    }, [selectedDepartment]);
+
+    useEffect(() => {
+        if (selectedEmployee !== 'all' && !availableEmployees.some(e => e.name === selectedEmployee)) {
+            setSelectedEmployee('all');
+        }
+    }, [availableEmployees, selectedEmployee]);
+
+    const filteredLog = useMemo(() => {
+        return attendanceLog.filter(log => {
+            const logDate = log.date;
+            const dateMatch = selectedDate 
+                ? logDate.getFullYear() === selectedDate.getFullYear() &&
+                  logDate.getMonth() === selectedDate.getMonth() &&
+                  logDate.getDate() === selectedDate.getDate()
+                : true;
+            
+            const locationMatch = selectedLocation === 'all' || log.location === selectedLocation;
+            const departmentMatch = selectedDepartment === 'all' || log.department === selectedDepartment;
+            const employeeMatch = selectedEmployee === 'all' || log.employee === selectedEmployee;
+
+            return dateMatch && locationMatch && departmentMatch && employeeMatch;
+        });
+    }, [selectedDate, selectedLocation, selectedDepartment, selectedEmployee]);
+
   return (
     <div className="space-y-8">
       <div>
@@ -77,30 +136,72 @@ export default function AttendancePage() {
       <Card>
         <CardHeader>
           <CardTitle className="font-headline">Timeline de Fichajes</CardTitle>
-          <CardDescription>Un registro en tiempo real de los eventos de entrada de hoy.</CardDescription>
-          <div className="flex flex-col sm:flex-row gap-2 pt-2 sm:justify-between sm:items-center">
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Select>
+          <CardDescription>Un registro en tiempo real de los eventos de entrada del día seleccionado.</CardDescription>
+          <div className="flex flex-col sm:flex-row gap-4 pt-4 sm:items-center border-t border-border mt-4">
+              <div className="flex flex-wrap gap-2 items-center">
+                  <Filter className="h-4 w-4 text-muted-foreground" />
+                  <Popover>
+                      <PopoverTrigger asChild>
+                          <Button
+                              variant={"outline"}
+                              className={cn(
+                                "w-full sm:w-[240px] justify-start text-left font-normal",
+                                !selectedDate && "text-muted-foreground"
+                              )}
+                          >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {selectedDate ? format(selectedDate, "PPP", { locale: es }) : <span>Elige una fecha</span>}
+                          </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                              mode="single"
+                              selected={selectedDate}
+                              onSelect={setSelectedDate}
+                              initialFocus
+                          />
+                      </PopoverContent>
+                  </Popover>
+
+                <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
                   <SelectTrigger className="w-full sm:w-[200px]">
-                    <SelectValue placeholder="Filtrar por Ubicación" />
+                    <SelectValue placeholder="Departamento" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="office">Oficina</SelectItem>
-                    <SelectItem value="remote">Remoto</SelectItem>
+                    <SelectItem value="all">Todos los Deptos.</SelectItem>
+                    {allDepartments.map(dept => (
+                         <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-                <Select>
+
+                 <Select value={selectedEmployee} onValueChange={setSelectedEmployee} disabled={selectedDepartment === 'all'}>
+                    <SelectTrigger className="w-full sm:w-[200px]">
+                        <SelectValue placeholder="Empleado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Todos los Empleados</SelectItem>
+                        {availableEmployees.map(emp => (
+                            <SelectItem key={emp.id} value={emp.name}>{emp.name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+
+                <Select value={selectedLocation} onValueChange={setSelectedLocation}>
                   <SelectTrigger className="w-full sm:w-[200px]">
-                    <SelectValue placeholder="Filtrar por Departamento" />
+                    <SelectValue placeholder="Ubicación" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="engineering">Ingeniería</SelectItem>
-                    <SelectItem value="design">Diseño</SelectItem>
-                    <SelectItem value="marketing">Marketing</SelectItem>
+                    <SelectItem value="all">Todas las Ubicaciones</SelectItem>
+                    <SelectItem value="Oficina">Oficina</SelectItem>
+                    <SelectItem value="Remoto">Remoto</SelectItem>
                   </SelectContent>
                 </Select>
+
               </div>
-              <AttendanceReportDialog attendanceLog={attendanceLog} />
+              <div className="sm:ml-auto">
+                 <AttendanceReportDialog attendanceLog={filteredLog} />
+              </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -114,7 +215,7 @@ export default function AttendancePage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {attendanceLog.map((log, index) => (
+              {filteredLog.length > 0 ? filteredLog.map((log, index) => (
                 <TableRow key={index}>
                   <TableCell className="font-medium">{log.time}</TableCell>
                   <TableCell>{log.employee}</TableCell>
@@ -130,7 +231,13 @@ export default function AttendancePage() {
                   </TableCell>
                   <TableCell className="text-right">{log.location}</TableCell>
                 </TableRow>
-              ))}
+              )) : (
+                  <TableRow>
+                      <TableCell colSpan={4} className="h-24 text-center">
+                          No se encontraron registros con los filtros aplicados.
+                      </TableCell>
+                  </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
