@@ -13,9 +13,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-
-const fixedDate = new Date(2024, 7, 26);
-const yesterday = new Date(new Date().setDate(fixedDate.getDate() - 1));
+import { DateRange } from 'react-day-picker';
 
 const employees = [
   { id: 1, name: "Olivia Martin", department: "Ingeniería" },
@@ -29,18 +27,25 @@ const employees = [
 const allDepartments = ["Ingeniería", "Diseño", "Marketing", "Ventas", "RRHH"];
 
 const attendanceLog = [
-  { date: fixedDate, time: "09:01 AM", employee: "Olivia Martin", status: "Entrada Marcada", location: "Oficina", department: "Ingeniería" },
-  { date: fixedDate, time: "09:03 AM", employee: "Jackson Lee", status: "Entrada Marcada", location: "Remoto", department: "Diseño" },
-  { date: fixedDate, time: "11:30 AM", employee: "Isabella Nguyen", status: "En Descanso", location: "Oficina", department: "Marketing" },
-  { date: fixedDate, time: "12:15 PM", employee: "Isabella Nguyen", status: "Entrada Marcada", location: "Oficina", department: "Marketing" },
-  { date: fixedDate, time: "02:00 PM", employee: "William Kim", status: "Entrada Marcada", location: "Oficina", department: "Ingeniería" },
-  { date: fixedDate, time: "05:05 PM", employee: "Olivia Martin", status: "Salida Marcada", location: "Oficina", department: "Ingeniería" },
-  { date: yesterday, time: "09:00 AM", employee: "Sophia Davis", status: "Entrada Marcada", location: "Oficina", department: "Ventas" },
-  { date: yesterday, time: "05:30 PM", employee: "Sophia Davis", status: "Salida Marcada", location: "Oficina", department: "Ventas" },
+  { date: new Date(2024, 7, 26), time: "09:01 AM", employee: "Olivia Martin", status: "Entrada Marcada", location: "Oficina", department: "Ingeniería" },
+  { date: new Date(2024, 7, 26), time: "09:03 AM", employee: "Jackson Lee", status: "Entrada Marcada", location: "Remoto", department: "Diseño" },
+  { date: new Date(2024, 7, 26), time: "11:30 AM", employee: "Isabella Nguyen", status: "En Descanso", location: "Oficina", department: "Marketing" },
+  { date: new Date(2024, 7, 26), time: "12:15 PM", employee: "Isabella Nguyen", status: "Entrada Marcada", location: "Oficina", department: "Marketing" },
+  { date: new Date(2024, 7, 26), time: "05:05 PM", employee: "Olivia Martin", status: "Salida Marcada", location: "Oficina", department: "Ingeniería" },
+  
+  { date: new Date(2024, 7, 25), time: "09:00 AM", employee: "Sophia Davis", status: "Entrada Marcada", location: "Oficina", department: "Ventas" },
+  { date: new Date(2024, 7, 25), time: "02:00 PM", employee: "William Kim", status: "Entrada Marcada", location: "Oficina", department: "Ingeniería" },
+  { date: new Date(2024, 7, 25), time: "05:30 PM", employee: "Sophia Davis", status: "Salida Marcada", location: "Oficina", department: "Ventas" },
+
+  { date: new Date(2024, 7, 24), time: "08:55 AM", employee: "Liam Garcia", status: "Entrada Marcada", location: "Remoto", department: "RRHH" },
+  { date: new Date(2024, 7, 24), time: "04:50 PM", employee: "Liam Garcia", status: "Salida Marcada", location: "Remoto", department: "RRHH" },
 ];
 
 export default function AttendancePage() {
-    const [selectedDate, setSelectedDate] = useState<Date | undefined>(fixedDate);
+    const [dateRange, setDateRange] = useState<DateRange | undefined>({
+      from: new Date(2024, 7, 24),
+      to: new Date(2024, 7, 26),
+    });
     const [selectedLocation, setSelectedLocation] = useState<string>('all');
     const [selectedDepartment, setSelectedDepartment] = useState<string>('all');
     const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
@@ -61,11 +66,17 @@ export default function AttendancePage() {
     const filteredLog = useMemo(() => {
         return attendanceLog.filter(log => {
             const logDate = log.date;
-            const dateMatch = selectedDate 
-                ? logDate.getFullYear() === selectedDate.getFullYear() &&
-                  logDate.getMonth() === selectedDate.getMonth() &&
-                  logDate.getDate() === selectedDate.getDate()
-                : true;
+
+            const dateMatch = (() => {
+                if (!dateRange?.from) return true;
+                const from = dateRange.from;
+                const to = dateRange.to || from; // If no 'to' date, range is a single day
+                // Normalize dates to ignore time of day for comparison
+                const start = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+                const end = new Date(to.getFullYear(), to.getMonth(), to.getDate());
+                const current = new Date(logDate.getFullYear(), logDate.getMonth(), logDate.getDate());
+                return current >= start && current <= end;
+            })();
             
             const locationMatch = selectedLocation === 'all' || log.location === selectedLocation;
             const departmentMatch = selectedDepartment === 'all' || log.department === selectedDepartment;
@@ -73,7 +84,7 @@ export default function AttendancePage() {
 
             return dateMatch && locationMatch && departmentMatch && employeeMatch;
         });
-    }, [selectedDate, selectedLocation, selectedDepartment, selectedEmployee]);
+    }, [dateRange, selectedLocation, selectedDepartment, selectedEmployee]);
 
   return (
     <div className="space-y-8">
@@ -145,20 +156,32 @@ export default function AttendancePage() {
                           <Button
                               variant={"outline"}
                               className={cn(
-                                "w-full sm:w-auto md:w-[240px] justify-start text-left font-normal",
-                                !selectedDate && "text-muted-foreground"
+                                "w-full sm:w-auto md:w-[290px] justify-start text-left font-normal",
+                                !dateRange && "text-muted-foreground"
                               )}
                           >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {selectedDate ? format(selectedDate, "PPP", { locale: es }) : <span>Elige una fecha</span>}
+                          {dateRange?.from ? (
+                            dateRange.to ? (
+                                <>
+                                {format(dateRange.from, "PPP", { locale: es })} - {format(dateRange.to, "PPP", { locale: es })}
+                                </>
+                            ) : (
+                                format(dateRange.from, "PPP", { locale: es })
+                            )
+                            ) : (
+                            <span>Elige un rango de fechas</span>
+                            )}
                           </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
                           <Calendar
-                              mode="single"
-                              selected={selectedDate}
-                              onSelect={setSelectedDate}
                               initialFocus
+                              mode="range"
+                              defaultMonth={dateRange?.from}
+                              selected={dateRange}
+                              onSelect={setDateRange}
+                              numberOfMonths={2}
                           />
                       </PopoverContent>
                   </Popover>
