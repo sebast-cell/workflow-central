@@ -12,9 +12,10 @@ const config: Config = {
       boxShadow: {
         default: '0 2px 8px rgba(0, 0, 0, 0.05)',
         card: '0 4px 16px rgba(0, 0, 0, 0.06)',
+        hover: '0 8px 24px rgba(0, 0, 0, 0.12)',
       },
       fontFamily: {
-        body: ['Inter', 'sans-serif'],
+        body: ['Inter', "'SF Pro Display'", 'sans-serif'],
         code: ['monospace'],
       },
       colors: {
@@ -75,10 +76,10 @@ const config: Config = {
         },
       },
       borderRadius: {
-        xl: '32px',
-        lg: '24px',
-        md: '16px',
-        sm: '8px',
+        xl: '24px',
+        lg: '16px',
+        md: '8px',
+        sm: '4px',
         full: '9999px',
       },
       keyframes: {

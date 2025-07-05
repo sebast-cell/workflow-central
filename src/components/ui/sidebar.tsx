@@ -24,7 +24,6 @@ interface SidebarContextType {
   isOpen: boolean
   isPinned: boolean
   isMobile: boolean
-  isMounted: boolean
   onOpenChange: (open: boolean) => void
   togglePin: () => void
   toggleSidebar: () => void
@@ -80,11 +79,10 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const contextValue = {
+  const contextValue: SidebarContextType & { openMobile: boolean, setOpenMobile: React.Dispatch<React.SetStateAction<boolean>>} = {
     isOpen: isMobile ? true : isOpen,
     isPinned,
     isMobile,
-    isMounted,
     onOpenChange,
     togglePin,
     toggleSidebar,
@@ -108,7 +106,7 @@ const sidebarVariants = cva(
         right: "right-0 border-l border-sidebar-border",
       },
       state: {
-        expanded: "w-60",
+        expanded: "w-[260px]",
         collapsed: "w-14",
       },
     },
@@ -126,17 +124,17 @@ export const Sidebar = React.forwardRef<
   const {
     isOpen,
     isMobile,
-    isMounted,
     onOpenChange,
-    openMobile, 
-    setOpenMobile
-  } = useSidebar()
+  } = useSidebar() as SidebarContextType & { openMobile: boolean, setOpenMobile: React.Dispatch<React.SetStateAction<boolean>>};
+
+  const { openMobile, setOpenMobile } = useSidebar() as any;
+
   const state = isOpen ? "expanded" : "collapsed"
   
-  if (isMounted && isMobile) {
+  if (isMobile) {
     return (
        <Sheet open={openMobile} onOpenChange={setOpenMobile}>
-        <SheetContent side="left" className="w-60 bg-sidebar p-0 text-sidebar-foreground border-sidebar-border [&>button]:hidden">
+        <SheetContent side="left" className="w-[260px] bg-sidebar p-0 text-sidebar-foreground border-sidebar-border [&>button]:hidden">
           <div ref={ref} className={cn("flex h-full flex-col px-4 py-6", className)} {...props} />
         </SheetContent>
       </Sheet>
@@ -165,11 +163,11 @@ export const SidebarInset = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => {
-  const { isOpen, isMobile, isMounted } = useSidebar()
+  const { isOpen, isMobile } = useSidebar();
 
   const style = {
     transition: 'margin-left 300ms ease-in-out',
-    marginLeft: isMounted && isMobile ? '0' : (isOpen ? '15rem' : '3.5rem')
+    marginLeft: isMobile ? '0' : (isOpen ? '16.25rem' : '3.5rem')
   };
 
   return (
@@ -191,8 +189,8 @@ export const SidebarTrigger = React.forwardRef<
   React.ElementRef<typeof Button>,
   React.ComponentProps<typeof Button>
 >(({ className, ...props }, ref) => {
-  const { toggleSidebar, isMobile, isMounted } = useSidebar()
-  if (!isMounted || !isMobile) return null;
+  const { toggleSidebar, isMobile } = useSidebar();
+  if (!isMobile) return null;
 
   return (
     <Button
@@ -304,7 +302,7 @@ SidebarMenuItem.displayName = "SidebarMenuItem"
 
 
 const sidebarMenuButtonVariants = cva(
-  "flex w-full items-center gap-2 overflow-hidden rounded-sm p-2 text-left text-sm font-normal outline-none ring-sidebar-ring transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-5 [&_svg]:shrink-0",
+  "flex w-full items-center gap-2 overflow-hidden rounded-sm p-2 text-left text-sm font-normal outline-none ring-sidebar-ring transition-colors duration-150 ease-out hover:bg-black/10 focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-5 [&_svg]:shrink-0",
   {
     variants: {
       active: {

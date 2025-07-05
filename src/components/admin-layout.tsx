@@ -14,10 +14,10 @@ function AdminSidebarContent() {
        <SidebarHeader>
            <div className="flex items-center justify-between">
             <Link href="/dashboard" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-primary/10 p-1.5 text-primary">
+              <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-black/10 p-1.5 text-sidebar-foreground">
                 <Briefcase className="h-5 w-5" />
               </div>
-               {isOpen && <h1 className="text-lg font-semibold text-foreground">WorkFlow Central</h1>}
+               {isOpen && <h1 className="text-lg font-semibold text-sidebar-foreground">WorkFlow Central</h1>}
             </Link>
             {isOpen && <SidebarPin />}
           </div>
@@ -28,8 +28,8 @@ function AdminSidebarContent() {
              </Avatar>
              {isOpen && (
                 <div className="flex flex-col">
-                  <span className="text-base font-medium text-foreground">Usuario Administrador</span>
-                  <span className="text-sm text-muted-foreground">Administrador</span>
+                  <span className="text-base font-medium text-sidebar-foreground">Usuario Administrador</span>
+                  <span className="text-sm font-normal text-sidebar-foreground/80">Administrador</span>
                 </div>
               )}
           </div>
