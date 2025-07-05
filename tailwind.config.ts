@@ -10,8 +10,8 @@ const config: Config = {
   theme: {
     extend: {
       boxShadow: {
-        default: '0px 2px 4px rgba(0, 0, 0, 0.05)',
-        card: '0px 4px 8px rgba(0, 0, 0, 0.1)',
+        default: '0 2px 8px rgba(0, 0, 0, 0.05)',
+        card: '0 4px 16px rgba(0, 0, 0, 0.06)',
       },
       fontFamily: {
         body: ['Inter', 'sans-serif'],
@@ -74,10 +74,10 @@ const config: Config = {
         },
       },
       borderRadius: {
-        xl: '24px',
-        lg: '16px',
-        md: '8px',
-        sm: '4px',
+        xl: '32px',
+        lg: '24px',
+        md: '16px',
+        sm: '8px',
         full: '9999px',
       },
       keyframes: {
