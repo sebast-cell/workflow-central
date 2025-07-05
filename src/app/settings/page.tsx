@@ -314,7 +314,7 @@ export default function SettingsPage() {
 
   const allSchedules = ['Horario Fijo', 'Horario Flexible', ...shifts.map(s => s.name)];
 
-  const { isLoaded } = useJsApiLoader({
+  const { isLoaded, loadError } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
     libraries: libraries,
@@ -926,7 +926,14 @@ export default function SettingsPage() {
                 </DialogTrigger>
                 <DialogContent>
                     <DialogHeader><DialogTitle className="font-headline">{dialogCenterMode === 'add' ? 'Nuevo Centro de Trabajo' : 'Editar Centro de Trabajo'}</DialogTitle></DialogHeader>
-                    {isLoaded ? (
+                    {loadError && (
+                        <div className="p-4 rounded-md bg-destructive/10 text-destructive text-sm">
+                            <p className="font-bold">Error al cargar el mapa</p>
+                            <p>Asegúrate de que la clave de API de Google Maps es correcta, está activa y tiene la facturación habilitada en Google Cloud.</p>
+                            <p className="text-xs mt-2 font-mono">{loadError.message}</p>
+                        </div>
+                    )}
+                    {isLoaded && !loadError ? (
                         <form onSubmit={handleCenterFormSubmit}>
                             <div className="grid gap-4 py-4">
                                 <div className="space-y-2">
@@ -956,7 +963,9 @@ export default function SettingsPage() {
                             </div>
                             <DialogFooter><Button type="submit">Guardar Centro</Button></DialogFooter>
                         </form>
-                    ) : <div>Cargando mapa...</div>}
+                    ) : (
+                       !loadError && <div>Cargando mapa...</div>
+                    )}
                 </DialogContent>
                </Dialog>
             </CardHeader>
@@ -1588,7 +1597,7 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
             <Dialog open={isVacationPolicyDialogOpen} onOpenChange={setIsVacationPolicyDialogOpen}>
-                <DialogContent className="max-h-[90vh] overflow-y-auto" onOpenChange={(open) => { if (!open) setNewBlockedPeriod(undefined); setIsVacationPolicyDialogOpen(open); }} onInteractOutside={(e) => { e.preventDefault(); }}>
+                <DialogContent modal={false} className="max-h-[90vh] overflow-y-auto" onOpenChange={(open) => { if (!open) setNewBlockedPeriod(undefined); setIsVacationPolicyDialogOpen(open); }} onInteractOutside={(e) => { e.preventDefault(); }}>
                     <DialogHeader><DialogTitle className="font-headline">{dialogVacationPolicyMode === 'add' ? 'Añadir Política de Vacaciones' : 'Editar Política de Vacaciones'}</DialogTitle></DialogHeader>
                     <form onSubmit={handleVacationPolicyFormSubmit} className="space-y-4 py-4">
                         <div className="space-y-2">
@@ -1791,7 +1800,7 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
             <Dialog open={isAbsenceTypeDialogOpen} onOpenChange={setIsAbsenceTypeDialogOpen}>
-                <DialogContent className="max-h-[90vh] overflow-y-auto" onOpenChange={(open) => { if (!open) setNewAbsenceBlockedPeriod(undefined); setIsAbsenceTypeDialogOpen(open); }} onInteractOutside={(e) => { e.preventDefault(); }}>
+                <DialogContent modal={false} className="max-h-[90vh] overflow-y-auto" onOpenChange={(open) => { if (!open) setNewAbsenceBlockedPeriod(undefined); setIsAbsenceTypeDialogOpen(open); }} onInteractOutside={(e) => { e.preventDefault(); }}>
                     <DialogHeader>
                         <DialogTitle className="font-headline">{dialogAbsenceTypeMode === 'add' ? 'Añadir Tipo de Ausencia' : 'Editar Tipo de Ausencia'}</DialogTitle>
                     </DialogHeader>
