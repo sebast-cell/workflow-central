@@ -17,6 +17,7 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  useSidebar,
 } from '@/components/ui/sidebar';
 
 const navItems = [
@@ -36,6 +37,7 @@ const secondaryNavItems = [
 
 export default function SidebarNav() {
   const pathname = usePathname();
+  const { isOpen } = useSidebar();
 
   return (
     <div className="flex flex-col justify-between h-full">
@@ -43,14 +45,14 @@ export default function SidebarNav() {
         {navItems.map((item) => (
             <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
-                asChild
-                isActive={pathname.startsWith(item.href) && (item.href !== '/dashboard' || pathname === '/dashboard')}
-                tooltip={{ children: item.label, side:'right' }}
+                  asChild
+                  isActive={pathname.startsWith(item.href) && (item.href !== '/dashboard' || pathname === '/dashboard')}
+                  tooltip={{ children: item.label, side:'right' }}
                 >
-                <Link href={item.href}>
-                    <item.icon className="h-5 w-5" />
-                    <span>{item.label}</span>
-                </Link>
+                    <Link href={item.href}>
+                        <item.icon className="h-5 w-5 shrink-0" />
+                        <span className="truncate">{item.label}</span>
+                    </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
         ))}
@@ -59,14 +61,14 @@ export default function SidebarNav() {
         {secondaryNavItems.map((item) => (
             <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
-                asChild
-                isActive={pathname.startsWith(item.href)}
-                tooltip={{ children: item.label, side: 'right' }}
+                  asChild
+                  isActive={pathname.startsWith(item.href)}
+                  tooltip={{ children: item.label, side: 'right' }}
                 >
-                <Link href={item.href}>
-                    <item.icon className="h-5 w-5" />
-                    <span>{item.label}</span>
-                </Link>
+                  <Link href={item.href}>
+                      <item.icon className="h-5 w-5 shrink-0" />
+                      <span className="truncate">{item.label}</span>
+                  </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
         ))}

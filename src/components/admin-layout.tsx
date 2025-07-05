@@ -1,25 +1,26 @@
 'use client';
 
-import { Sidebar, SidebarContent, SidebarInset, SidebarProvider, SidebarTrigger, SidebarHeader, SidebarFooter, SidebarPin } from '@/components/ui/sidebar';
+import { Sidebar, SidebarContent, SidebarInset, SidebarProvider, SidebarHeader, SidebarFooter, SidebarPin } from '@/components/ui/sidebar';
 import SidebarNav from '@/components/sidebar-nav';
 import { Briefcase } from 'lucide-react';
 import { Header } from '@/components/header';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
+import { useSidebar } from '@/components/ui/sidebar';
 
-export function AdminLayout({ children }: { children: React.ReactNode }) {
+function AdminSidebarContent() {
+  const { isOpen } = useSidebar();
   return (
-    <SidebarProvider>
-      <Sidebar>
-        <SidebarHeader>
+    <>
+       <SidebarHeader>
            <div className="flex items-center justify-between">
             <Link href="/dashboard" className="flex items-center gap-2.5">
               <div className="bg-primary text-primary-foreground p-2 rounded-lg">
                 <Briefcase className="h-6 w-6" />
               </div>
-              <h1 className="text-xl font-headline font-semibold text-sidebar-foreground group-data-[state=collapsed]:hidden">WorkFlow Central</h1>
+               {isOpen && <h1 className="text-xl font-headline font-semibold text-sidebar-foreground">WorkFlow Central</h1>}
             </Link>
-            <SidebarPin className="hidden group-data-[state=expanded]:md:flex" />
+            {isOpen && <SidebarPin />}
           </div>
         </SidebarHeader>
         <SidebarContent>
@@ -31,12 +32,24 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="user avatar" alt="Usuario Administrador" />
                <AvatarFallback>AU</AvatarFallback>
              </Avatar>
-             <div className="flex flex-col group-data-[state=collapsed]:hidden">
-               <span className="text-sm font-semibold text-sidebar-foreground">Usuario Administrador</span>
-               <span className="text-xs text-sidebar-foreground/70">admin@workflow.com</span>
-             </div>
+             {isOpen && (
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold text-sidebar-foreground">Usuario Administrador</span>
+                  <span className="text-xs text-sidebar-foreground/70">admin@workflow.com</span>
+                </div>
+              )}
           </div>
         </SidebarFooter>
+    </>
+  )
+}
+
+
+export function AdminLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <SidebarProvider>
+      <Sidebar>
+        <AdminSidebarContent />
       </Sidebar>
       <SidebarInset>
         <Header/>

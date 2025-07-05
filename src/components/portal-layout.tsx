@@ -1,25 +1,25 @@
 'use client';
 
-import { Sidebar, SidebarContent, SidebarInset, SidebarProvider, SidebarTrigger, SidebarHeader, SidebarFooter, SidebarPin } from '@/components/ui/sidebar';
+import { Sidebar, SidebarContent, SidebarInset, SidebarProvider, SidebarHeader, SidebarFooter, SidebarPin, useSidebar } from '@/components/ui/sidebar';
 import EmployeeSidebarNav from '@/components/employee-sidebar-nav';
 import { Briefcase } from 'lucide-react';
 import { Header } from '@/components/header';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
 
-export function PortalLayout({ children }: { children: React.ReactNode }) {
+function PortalSidebarContent() {
+  const { isOpen } = useSidebar();
   return (
-    <SidebarProvider>
-      <Sidebar>
-        <SidebarHeader>
+    <>
+       <SidebarHeader>
            <div className="flex items-center justify-between">
             <Link href="/portal" className="flex items-center gap-2.5">
               <div className="bg-primary text-primary-foreground p-2 rounded-lg">
                 <Briefcase className="h-6 w-6" />
               </div>
-              <h1 className="text-xl font-headline font-semibold text-sidebar-foreground group-data-[state=collapsed]:hidden">Portal Empleado</h1>
+              {isOpen && <h1 className="text-xl font-headline font-semibold text-sidebar-foreground">Portal Empleado</h1>}
             </Link>
-            <SidebarPin className="hidden group-data-[state=expanded]:md:flex" />
+            {isOpen && <SidebarPin />}
           </div>
         </SidebarHeader>
         <SidebarContent>
@@ -31,12 +31,23 @@ export function PortalLayout({ children }: { children: React.ReactNode }) {
                <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="employee avatar" alt="Olivia Martin" />
                <AvatarFallback>OM</AvatarFallback>
              </Avatar>
-             <div className="flex flex-col group-data-[state=collapsed]:hidden">
-               <span className="text-sm font-semibold text-sidebar-foreground">Olivia Martin</span>
-               <span className="text-xs text-sidebar-foreground/70">olivia.martin@example.com</span>
-             </div>
+             {isOpen && (
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold text-sidebar-foreground">Olivia Martin</span>
+                  <span className="text-xs text-sidebar-foreground/70">olivia.martin@example.com</span>
+                </div>
+              )}
           </div>
         </SidebarFooter>
+    </>
+  )
+}
+
+export function PortalLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <SidebarProvider>
+      <Sidebar>
+        <PortalSidebarContent />
       </Sidebar>
       <SidebarInset>
         <Header/>

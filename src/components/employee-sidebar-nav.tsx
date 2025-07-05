@@ -16,6 +16,7 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  useSidebar,
 } from '@/components/ui/sidebar';
 
 const navItems = [
@@ -34,6 +35,7 @@ const secondaryNavItems = [
 
 export default function EmployeeSidebarNav() {
   const pathname = usePathname();
+  const { isOpen } = useSidebar();
 
   return (
     <div className="flex flex-col justify-between h-full">
@@ -46,8 +48,8 @@ export default function EmployeeSidebarNav() {
                     tooltip={{ children: item.label, side:'right' }}
                 >
                     <Link href={item.href}>
-                        <item.icon className="h-5 w-5" />
-                        <span>{item.label}</span>
+                        <item.icon className="h-5 w-5 shrink-0" />
+                        <span className="truncate">{item.label}</span>
                     </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
@@ -62,8 +64,8 @@ export default function EmployeeSidebarNav() {
                     tooltip={{ children: item.label, side: 'right' }}
                 >
                     <Link href={item.href}>
-                        <item.icon className="h-5 w-5" />
-                        <span>{item.label}</span>
+                        <item.icon className="h-5 w-5 shrink-0" />
+                        <span className="truncate">{item.label}</span>
                     </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
