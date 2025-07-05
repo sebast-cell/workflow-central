@@ -33,13 +33,13 @@
     --chart-5: 240 5% 60%;
 
     /* Sidebar Theme */
-    --sidebar-background: 215 28% 17%; /* Charcoal */
-    --sidebar-foreground: 215 14% 84%; /* Light gray text */
-    --sidebar-accent: 215 19% 27%;     /* Darker charcoal for hover */
-    --sidebar-accent-foreground: 0 0% 100%; /* White on hover */
-    --sidebar-active: 215 19% 27%;
-    --sidebar-active-foreground: 15 100% 63%; /* Primary orange for active item */
-    --sidebar-border: 215 19% 27%;
+    --sidebar-background: 0 0% 96%; /* #F5F5F5, light grey */
+    --sidebar-foreground: 240 10% 21%; /* #333333, dark text */
+    --sidebar-accent: 0 0% 93%; /* #EEEEEE, slightly darker grey for hover */
+    --sidebar-accent-foreground: 240 10% 21%; /* #333333, dark text on hover */
+    --sidebar-active: 0 0% 93%; /* #EEEEEE, same as hover for active background */
+    --sidebar-active-foreground: 15 100% 63%; /* Primary orange text for active item */
+    --sidebar-border: 0 0% 90%; /* #E6E6E6, for the border */
     --sidebar-ring: 15 100% 63%;
   }
 
@@ -72,13 +72,13 @@
     --chart-5: 240 5% 60%;
 
     /* Sidebar Theme */
-    --sidebar-background: 215 28% 17%; /* Charcoal */
-    --sidebar-foreground: 215 14% 84%; /* Light gray text */
-    --sidebar-accent: 215 19% 27%;     /* Darker charcoal for hover */
-    --sidebar-accent-foreground: 0 0% 100%; /* White on hover */
-    --sidebar-active: 215 19% 27%;
-    --sidebar-active-foreground: 15 100% 63%; /* Primary orange for active item */
-    --sidebar-border: 215 19% 27%;
+    --sidebar-background: 0 0% 96%; /* #F5F5F5, light grey */
+    --sidebar-foreground: 240 10% 21%; /* #333333, dark text */
+    --sidebar-accent: 0 0% 93%; /* #EEEEEE, slightly darker grey for hover */
+    --sidebar-accent-foreground: 240 10% 21%; /* #333333, dark text on hover */
+    --sidebar-active: 0 0% 93%; /* #EEEEEE, same as hover for active background */
+    --sidebar-active-foreground: 15 100% 63%; /* Primary orange text for active item */
+    --sidebar-border: 0 0% 90%; /* #E6E6E6, for the border */
     --sidebar-ring: 15 100% 63%;
   }
 }
