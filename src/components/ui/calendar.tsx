@@ -39,17 +39,17 @@ function Calendar({
         cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-sm [&:has([aria-selected].day-outside)]:bg-muted/50 [&:has([aria-selected])]:bg-muted first:[&:has([aria-selected])]:rounded-l-sm last:[&:has([aria-selected])]:rounded-r-sm focus-within:relative focus-within:z-20",
         day: cn(
           buttonVariants({ variant: "ghost" }),
-          "h-9 w-9 p-0 font-normal aria-selected:opacity-100 !rounded-sm"
+          "h-9 w-9 p-0 font-normal aria-selected:opacity-100 rounded-sm"
         ),
         day_range_end: "day-range-end",
         day_selected:
           "!bg-primary !text-primary-foreground hover:!bg-primary hover:!text-primary-foreground focus:!bg-primary focus:!text-primary-foreground",
-        day_today: "border border-primary bg-transparent text-primary",
+        day_today: "border border-primary bg-transparent",
         day_outside:
           "day-outside text-muted-foreground opacity-50",
         day_disabled: "text-muted-foreground opacity-50",
         day_range_middle:
-          "aria-selected:!bg-muted aria-selected:!text-primary !rounded-none",
+          "aria-selected:!bg-muted aria-selected:!text-card-foreground !rounded-none",
         day_hidden: "invisible",
         ...classNames,
       }}

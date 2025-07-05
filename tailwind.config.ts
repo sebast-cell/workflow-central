@@ -75,6 +75,7 @@ const config: Config = {
         },
       },
       borderRadius: {
+        xl: '32px',
         lg: '24px',
         md: '16px',
         sm: '8px',
