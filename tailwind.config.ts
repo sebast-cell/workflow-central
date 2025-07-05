@@ -57,6 +57,14 @@ const config: Config = {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
+        status: {
+          'active-bg': 'hsl(var(--status-active-bg))',
+          'active-text': 'hsl(var(--status-active-text))',
+          'warning-bg': 'hsl(var(--status-warning-bg))',
+          'warning-text': 'hsl(var(--status-warning-text))',
+          'destructive-bg': 'hsl(var(--status-destructive-bg))',
+          'destructive-text': 'hsl(var(--status-destructive-text))',
+        }
       },
       borderRadius: {
         sm: '4px',
