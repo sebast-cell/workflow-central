@@ -295,6 +295,7 @@ export default function SettingsPage() {
   const [newCalendarName, setNewCalendarName] = useState("");
   const [isHolidayDialogOpen, setIsHolidayDialogOpen] = useState(false);
   const [holidayFormData, setHolidayFormData] = useState<{name: string, date: Date | undefined}>({ name: "", date: undefined });
+  const [isHolidayPopoverOpen, setIsHolidayPopoverOpen] = useState(false);
   
   const [isVacationPolicyDialogOpen, setIsVacationPolicyDialogOpen] = useState(false);
   const [dialogVacationPolicyMode, setDialogVacationPolicyMode] = useState<'add' | 'edit'>('add');
@@ -1446,7 +1447,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div className="space-y-2">
                                                 <Label>Fecha</Label>
-                                                <Popover>
+                                                <Popover open={isHolidayPopoverOpen} onOpenChange={setIsHolidayPopoverOpen}>
                                                     <PopoverTrigger asChild>
                                                         <Button
                                                             type="button"
@@ -1463,6 +1464,7 @@ export default function SettingsPage() {
                                                             selected={holidayFormData.date} 
                                                             onSelect={(date) => {
                                                               setHolidayFormData(prev => ({...prev, date}));
+                                                              setIsHolidayPopoverOpen(false);
                                                             }}
                                                             initialFocus
                                                         />
@@ -1533,7 +1535,7 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
             <Dialog open={isVacationPolicyDialogOpen} onOpenChange={setIsVacationPolicyDialogOpen}>
-                <DialogContent className="max-h-[90vh] overflow-y-auto" onOpenAutoFocus={(e) => e.preventDefault()}>
+                <DialogContent className="max-h-[90vh] overflow-y-auto">
                     <DialogHeader><DialogTitle className="font-headline">{dialogVacationPolicyMode === 'add' ? 'Añadir Política de Vacaciones' : 'Editar Política de Vacaciones'}</DialogTitle></DialogHeader>
                     <form onSubmit={handleVacationPolicyFormSubmit} className="space-y-4 py-4">
                         <div className="space-y-2">
@@ -1691,7 +1693,7 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
             <Dialog open={isAbsenceTypeDialogOpen} onOpenChange={setIsAbsenceTypeDialogOpen}>
-                <DialogContent className="max-h-[90vh] overflow-y-auto" onOpenAutoFocus={(e) => e.preventDefault()}>
+                <DialogContent className="max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle className="font-headline">{dialogAbsenceTypeMode === 'add' ? 'Añadir Tipo de Ausencia' : 'Editar Tipo de Ausencia'}</DialogTitle>
                     </DialogHeader>
