@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -255,64 +256,7 @@ const CenterDialog = ({
 }) => {
     const [centerData, setCenterData] = useState<Center>({ name: '', address: '', radius: 100, lat: defaultMapCenter.lat, lng: defaultMapCenter.lng, timezone: 'Europe/Madrid' });
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
-    const inputRef = useRef<HTMLInputElement>(null);
-    const places = useMapsLibrary('places');
-
-    useEffect(() => {
-        if (isOpen) {
-            if (mode === 'edit' && center) {
-                setCenterData(center);
-            } else {
-                setCenterData({ name: '', address: '', radius: 100, lat: defaultMapCenter.lat, lng: defaultMapCenter.lng, timezone: 'Europe/Madrid' });
-            }
-        }
-    }, [isOpen, mode, center]);
     
-    useEffect(() => {
-        if (!places || !inputRef.current) return;
-
-        const autocomplete = new places.Autocomplete(inputRef.current, {
-            fields: ["geometry.location", "formatted_address", "name"],
-        });
-
-        const listener = autocomplete.addListener('place_changed', () => {
-            const place = autocomplete.getPlace();
-            if (place?.geometry?.location) {
-                const lat = place.geometry.location.lat();
-                const lng = place.geometry.location.lng();
-                const address = place.formatted_address || place.name || '';
-                
-                setCenterData(prev => ({
-                    ...prev,
-                    address: address,
-                    lat: lat,
-                    lng: lng,
-                    timezone: 'Cargando...',
-                }));
-
-                const timestamp = Math.floor(Date.now() / 1000);
-                fetch(`https://maps.googleapis.com/maps/api/timezone/json?location=${lat},${lng}&timestamp=${timestamp}&key=${apiKey}`)
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.status === 'OK' && data.timeZoneId) {
-                            setCenterData(prev => ({ ...prev, timezone: data.timeZoneId }));
-                        } else {
-                            setCenterData(prev => ({ ...prev, timezone: 'No disponible' }));
-                        }
-                    })
-                    .catch(() => {
-                        setCenterData(prev => ({ ...prev, timezone: 'Error al cargar' }));
-                    });
-            }
-        });
-
-        return () => {
-            listener.remove();
-            const pacContainers = document.querySelectorAll('.pac-container');
-            pacContainers.forEach(container => container.remove());
-        };
-    }, [places, apiKey]);
-
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!centerData.name) return;
@@ -337,15 +281,32 @@ const CenterDialog = ({
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="center-address">Dirección</Label>
-                                 <Input
-                                    ref={inputRef}
-                                    id="center-address"
+                                 <AutocompleteInput
                                     value={centerData.address}
-                                    onChange={(e) => setCenterData(prev => ({...prev, address: e.target.value}))}
-                                    placeholder={places ? "Ej. 123 Calle Falsa" : "Cargando mapa..."}
-                                    disabled={!places}
-                                    required
-                                />
+                                    onPlaceSelect={(place) => {
+                                        if (place?.geometry?.location) {
+                                            const lat = place.geometry.location.lat();
+                                            const lng = place.geometry.location.lng();
+                                            const address = place.formatted_address || place.name || '';
+                                            
+                                            setCenterData(prev => ({ ...prev, address, lat, lng, timezone: 'Cargando...' }));
+
+                                            const timestamp = Math.floor(Date.now() / 1000);
+                                            fetch(`https://maps.googleapis.com/maps/api/timezone/json?location=${lat},${lng}&timestamp=${timestamp}&key=${apiKey}`)
+                                                .then(res => res.json())
+                                                .then(data => {
+                                                    if (data.status === 'OK' && data.timeZoneId) {
+                                                        setCenterData(prev => ({ ...prev, timezone: data.timeZoneId }));
+                                                    } else {
+                                                        setCenterData(prev => ({ ...prev, timezone: 'No disponible' }));
+                                                    }
+                                                })
+                                                .catch(() => {
+                                                    setCenterData(prev => ({ ...prev, timezone: 'Error al cargar' }));
+                                                });
+                                        }
+                                    }}
+                                 />
                             </div>
                             
                             <div style={containerStyle}>
@@ -375,6 +336,44 @@ const CenterDialog = ({
                 </APIProvider>
             </DialogContent>
         </Dialog>
+    )
+}
+
+const AutocompleteInput = ({ value, onPlaceSelect }: { value: string, onPlaceSelect: (place: google.maps.places.PlaceResult | null) => void }) => {
+    const inputRef = useRef<HTMLInputElement>(null);
+    const places = useMapsLibrary('places');
+    
+    useEffect(() => {
+        if (!places || !inputRef.current) return;
+
+        const autocomplete = new places.Autocomplete(inputRef.current, {
+            fields: ["geometry.location", "formatted_address", "name"],
+        });
+
+        const listener = autocomplete.addListener('place_changed', () => {
+            const place = autocomplete.getPlace();
+            onPlaceSelect(place);
+            if (place.formatted_address && inputRef.current) {
+                inputRef.current.value = place.formatted_address;
+            }
+        });
+
+        return () => {
+            listener.remove();
+            const pacContainers = document.querySelectorAll('.pac-container');
+            pacContainers.forEach(container => container.remove());
+        };
+    }, [places, onPlaceSelect]);
+    
+    return (
+        <Input
+            ref={inputRef}
+            defaultValue={value}
+            id="center-address"
+            placeholder={places ? "Ej. 123 Calle Falsa" : "Cargando mapa..."}
+            disabled={!places}
+            required
+        />
     )
 }
 
@@ -487,13 +486,15 @@ const CentersTabContent = () => {
                 ))}
                 </CardContent>
             </Card>
-            <CenterDialog 
-                isOpen={isCenterDialogOpen}
-                onOpenChange={setIsCenterDialogOpen}
-                mode={dialogCenterMode}
-                center={selectedCenter}
-                onSubmit={handleCenterFormSubmit}
-            />
+            {isCenterDialogOpen && (
+                <CenterDialog 
+                    isOpen={isCenterDialogOpen}
+                    onOpenChange={setIsCenterDialogOpen}
+                    mode={dialogCenterMode}
+                    center={selectedCenter}
+                    onSubmit={handleCenterFormSubmit}
+                />
+            )}
         </>
     );
 };
@@ -2287,3 +2288,5 @@ export default function SettingsPage() {
     </div>
   )
 }
+
+    
