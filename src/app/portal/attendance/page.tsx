@@ -13,6 +13,7 @@ import { ChevronLeft, ChevronRight, Coffee, ArrowRight, ArrowLeft, MapPin } from
 import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps';
 import React from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
 
 // Add geolocation to event type
@@ -53,20 +54,22 @@ const getEventTypeBadge = (type: string) => {
 
 const getEventTypeIcon = (type: string) => {
     const iconMap = {
-        "Entrada": <ArrowRight className="h-4 w-4 text-green-600" />,
-        "Salida": <ArrowLeft className="h-4 w-4 text-red-600" />,
-        "Descanso": <Coffee className="h-4 w-4 text-yellow-600" />,
+        "Entrada": { icon: <ArrowRight className="h-4 w-4 text-green-700" />, className: "bg-green-100" },
+        "Salida": { icon: <ArrowLeft className="h-4 w-4 text-red-700" />, className: "bg-red-100" },
+        "Descanso": { icon: <Coffee className="h-4 w-4 text-yellow-700" />, className: "bg-yellow-100" },
     };
 
-    const icon = iconMap[type as keyof typeof iconMap] || null;
+    const eventStyle = iconMap[type as keyof typeof iconMap];
 
-    if (!icon) return <Badge variant="secondary">{type}</Badge>;
+    if (!eventStyle) return <Badge variant="secondary">{type}</Badge>;
 
     return (
         <TooltipProvider delayDuration={100}>
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <span className="flex items-center cursor-default">{icon}</span>
+                    <span className={cn("flex h-6 w-6 items-center justify-center rounded-full", eventStyle.className)}>
+                        {eventStyle.icon}
+                    </span>
                 </TooltipTrigger>
                 <TooltipContent>
                     <p>{type}</p>
@@ -235,10 +238,10 @@ export default function EmployeeAttendancePage() {
                                             <p className="font-semibold text-sm capitalize">{format(day, "eee", { locale: es })}</p>
                                             <p className="text-muted-foreground text-xs">{format(day, "d")}</p>
                                         </div>
-                                        <div className="p-2 space-y-1 min-h-[120px]">
-                                            {events.filter(e => isSameDay(e.date, day)).map(event => (
-                                                <div key={event.id} className="flex items-center justify-between text-sm p-1 rounded-md hover:bg-muted">
-                                                   <span className="font-mono text-xs">{event.time}</span>
+                                        <div className="p-2 space-y-2 min-h-[120px]">
+                                            {events.filter(e => isSameDay(e.date, day)).sort((a,b) => a.time.localeCompare(b.time)).map(event => (
+                                                <div key={event.id} className="flex items-center gap-2 text-sm p-1 rounded-md hover:bg-muted">
+                                                   <span className="font-medium text-sm text-muted-foreground">{event.time}</span>
                                                    {getEventTypeIcon(event.type)}
                                                 </div>
                                             ))}
