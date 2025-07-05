@@ -53,7 +53,7 @@ export default function AbsencesPage() {
             <CardContent>
               <Calendar
                 mode="single"
-                className="rounded-md border w-full"
+                className="rounded-lg border w-full"
                 numberOfMonths={1}
               />
             </CardContent>

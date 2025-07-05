@@ -271,7 +271,7 @@ export default function EmployeeAbsencesPage() {
                         mode="multiple"
                         modifiers={modifiers}
                         modifiersClassNames={modifiersClassNames}
-                        className="rounded-md border"
+                        className="rounded-lg border"
                         components={{ Day: DayWithTooltip }}
                     />
                     <div className="mt-4 space-y-2 text-sm text-muted-foreground">

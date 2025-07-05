@@ -1675,7 +1675,7 @@ const SettingsTabs = () => {
                                 </CardHeader>
                                 <CardContent className="grid md:grid-cols-2 gap-8">
                                     <div>
-                                        <Calendar mode="multiple" selected={holidayDates} className="rounded-md border"/>
+                                        <Calendar mode="multiple" selected={holidayDates} className="rounded-lg border"/>
                                     </div>
                                     <div className="space-y-2">
                                         <h4 className="font-medium">Lista de Festivos</h4>

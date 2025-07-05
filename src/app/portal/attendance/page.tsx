@@ -311,7 +311,7 @@ export default function EmployeeAttendancePage() {
                                     onSelect={handleDateChange}
                                     month={currentDate}
                                     onMonthChange={setCurrentDate}
-                                    className="rounded-2xl border p-3"
+                                    className="rounded-lg border p-3"
                                     components={{ Day: DayWithDot }}
                                 />
                              </div>
@@ -341,7 +341,7 @@ export default function EmployeeAttendancePage() {
                                         ))}
                                     </ul>
                                 ) : (
-                                    <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8 rounded-2xl border-2 border-dashed bg-muted/50">
+                                    <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8 rounded-lg border-2 border-dashed bg-muted/50">
                                         <CalendarIcon className="h-10 w-10 mb-4 text-muted-foreground/50" />
                                         <p className="font-semibold">Sin registros</p>
                                         <p className="text-sm">No hay fichajes para el día seleccionado.</p>
