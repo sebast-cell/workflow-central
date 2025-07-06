@@ -94,10 +94,12 @@ export default function PerformancePage() {
         setIsLoadingDetails(true);
         setSelectedObjective(objective);
         try {
-            const [tasksData, incentiveData] = await Promise.all([
-                getTasksByObjective(objective.id),
-                objective.is_incentivized ? calculateIncentiveForObjective(objective.id) : Promise.resolve(null)
-            ]);
+            // Filter local tasks instead of making a new API call
+            const tasksData = tasks.filter(t => t.objective_id === objective.id);
+            const incentiveData = objective.is_incentivized
+                ? await calculateIncentiveForObjective(objective.id)
+                : null;
+
             setObjectiveTasks(tasksData);
             setIncentiveResult(incentiveData);
         } catch (error) {
@@ -430,5 +432,3 @@ export default function PerformancePage() {
         </div>
     )
 }
-
-    
