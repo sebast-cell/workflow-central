@@ -4,7 +4,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Briefcase, Coffee, Globe, Home, UserX, Calendar as CalendarIcon, Filter } from "lucide-react";
@@ -79,6 +79,8 @@ export default function AttendancePage() {
     const [selectedLocation, setSelectedLocation] = useState<string>('all');
     const [selectedDepartment, setSelectedDepartment] = useState<string>('all');
     const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5;
 
     const availableEmployees = useMemo(() => {
         if (selectedDepartment === 'all') {
@@ -92,6 +94,10 @@ export default function AttendancePage() {
             setSelectedEmployee('all');
         }
     }, [availableEmployees, selectedEmployee]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [dateRange, selectedLocation, selectedDepartment, selectedEmployee]);
 
     const husinStats = useMemo(() => {
         // For this mock data, "today" is the latest date in the log.
@@ -185,6 +191,15 @@ export default function AttendancePage() {
             return dateMatch && locationMatch && departmentMatch && employeeMatch;
         });
     }, [dateRange, selectedLocation, selectedDepartment, selectedEmployee]);
+
+    const { paginatedLog, totalPages } = useMemo(() => {
+        const total = Math.ceil(filteredLog.length / itemsPerPage);
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        return {
+            paginatedLog: filteredLog.slice(startIndex, startIndex + itemsPerPage),
+            totalPages: total > 0 ? total : 1,
+        };
+    }, [filteredLog, currentPage]);
 
     const getStatusVariant = (status: string) => {
       switch (status) {
@@ -461,7 +476,7 @@ export default function AttendancePage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredLog.length > 0 ? filteredLog.map((log, index) => (
+              {paginatedLog.length > 0 ? paginatedLog.map((log, index) => (
                 <TableRow key={index}>
                   <TableCell className="font-medium">{log.time}</TableCell>
                   <TableCell>{log.employee}</TableCell>
@@ -482,6 +497,29 @@ export default function AttendancePage() {
             </TableBody>
           </Table>
         </CardContent>
+        <CardFooter className="pt-4">
+            <div className="flex w-full items-center justify-end space-x-2">
+                <span className="text-sm text-muted-foreground">
+                    Página {currentPage} de {totalPages}
+                </span>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                >
+                    Anterior
+                </Button>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage >= totalPages}
+                >
+                    Siguiente
+                </Button>
+            </div>
+        </CardFooter>
       </Card>
     </div>
   )
