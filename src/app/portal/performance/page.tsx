@@ -1,20 +1,57 @@
 'use client'
 
+import { useState, useEffect } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle, Goal, PlusCircle } from "lucide-react";
+import { CheckCircle, Goal, PlusCircle, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const goals = [
-  { name: "Completar certificación de React Avanzado", progress: 75, status: "En Progreso" },
-  { name: "Liderar 2 sesiones de 'lunch & learn' sobre diseño de componentes", progress: 50, status: "En Progreso" },
-  { name: "Mejorar el rendimiento de la carga de la página del panel en un 15%", progress: 100, status: "Completado" },
-];
+type Goal = {
+  id: number;
+  name: string;
+  description: string;
+  assignee: string;
+  type: 'Individual' | 'Equipo' | 'Empresa';
+  metricType: 'Porcentaje' | 'Numérico';
+  targetValue: number;
+  currentValue: number;
+  status: 'Pendiente' | 'En Progreso' | 'Completado';
+};
+
+const GOALS_STORAGE_KEY = 'workflow-central-goals';
 
 export default function EmployeePerformancePage() {
+    const [myGoals, setMyGoals] = useState<Goal[]>([]);
+
+    useEffect(() => {
+        try {
+            const storedGoals = localStorage.getItem(GOALS_STORAGE_KEY);
+            if (storedGoals) {
+                const allGoals: Goal[] = JSON.parse(storedGoals);
+                // Assuming Olivia Martin is the logged-in user
+                setMyGoals(allGoals.filter(g => g.assignee === "Olivia Martin"));
+            }
+        } catch (error) {
+            console.error("Failed to load goals from localStorage", error);
+        }
+    }, []);
+    
+    const getStatusVariant = (status: string) => {
+        switch (status) {
+            case 'Completado': return 'active';
+            case 'En Progreso': return 'warning';
+            default: return 'secondary';
+        }
+    };
+    
+    const calculateProgress = (current: number, target: number) => {
+        if (target === 0) return 0;
+        return (current / target) * 100;
+    }
+
     return (
         <div className="space-y-8">
             <div>
@@ -27,25 +64,36 @@ export default function EmployeePerformancePage() {
                     <CardHeader className="flex flex-row items-center justify-between">
                         <div>
                             <CardTitle>Mis Objetivos</CardTitle>
-                            <CardDescription>Tus metas personales y profesionales.</CardDescription>
+                            <CardDescription>Tus metas personales y profesionales asignadas.</CardDescription>
                         </div>
-                        <Button variant="outline" size="sm"><PlusCircle className="mr-2 h-4 w-4"/> Añadir Objetivo</Button>
+                        <Button variant="outline" size="sm"><PlusCircle className="mr-2 h-4 w-4"/> Sugerir Objetivo</Button>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        {goals.map((goal, index) => (
-                            <div key={index}>
-                                <div className="flex items-center justify-between mb-2">
-                                    <p className="font-medium">{goal.name}</p>
-                                    <Badge variant={goal.status === 'Completado' ? 'secondary' : 'outline'} className={cn(
-                                        goal.status === 'Completado' && "bg-accent text-accent-foreground border-transparent",
-                                        goal.status === 'En Progreso' && "bg-warning text-warning-foreground border-transparent"
-                                    )}>
-                                        {goal.status}
-                                    </Badge>
+                        {myGoals.map((goal, index) => {
+                            const progress = calculateProgress(goal.currentValue, goal.targetValue);
+                            return (
+                                <div key={index}>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <p className="font-medium">{goal.name}</p>
+                                        <Badge variant={getStatusVariant(goal.status)}>
+                                            {goal.status}
+                                        </Badge>
+                                    </div>
+                                    <Progress value={progress} />
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        {goal.metricType === 'Numérico' 
+                                            ? `${goal.currentValue} / ${goal.targetValue}` 
+                                            : `${Math.round(progress)}%`}
+                                    </p>
                                 </div>
-                                <Progress value={goal.progress} />
+                            )
+                        })}
+                        {myGoals.length === 0 && (
+                            <div className="text-center text-muted-foreground py-8">
+                                <Goal className="mx-auto h-8 w-8 mb-2" />
+                                <p>No tienes objetivos asignados actualmente.</p>
                             </div>
-                        ))}
+                        )}
                     </CardContent>
                 </Card>
                  <Card className="bg-gradient-accent-to-card">
