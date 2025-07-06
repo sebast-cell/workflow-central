@@ -46,7 +46,7 @@ export function Header() {
                         <Button variant="ghost" size="icon" aria-label="Notifications" className="relative rounded-full">
                             <Bell className="h-5 w-5" />
                             {notifications.length > 0 && (
-                                <span className="absolute top-0.5 right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground ring-2 ring-background">
+                                <span className="absolute top-2 right-2 flex h-3 w-3 items-center justify-center rounded-full bg-destructive text-[8px] font-bold text-destructive-foreground ring-1 ring-background">
                                     {notifications.length}
                                 </span>
                             )}
