@@ -1,16 +1,35 @@
 'use client';
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Check, Clock, FileText, User, ClipboardList, XCircle } from "lucide-react";
+import { Calendar, Check, Clock, User, ClipboardList, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 
 export default function EmployeeDashboard() {
   const { toast } = useToast();
   const [isClockedIn, setIsClockedIn] = useState(true);
+  const [clockInTime, setClockInTime] = useState<Date | null>(new Date(new Date().getTime() - (91 * 60 * 1000))); // Mock: clocked in 91 mins ago
+  const [duration, setDuration] = useState("1h 31m");
   const [statusText, setStatusText] = useState("Entrada Marcada");
   const [statusTime, setStatusTime] = useState(`a las 09:01 AM`);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isClockedIn && clockInTime) {
+      const updateDuration = () => {
+        const now = new Date();
+        const diffMs = now.getTime() - clockInTime.getTime();
+        const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        setDuration(`${diffHrs}h ${diffMins}m`);
+      };
+
+      updateDuration(); // Initial call
+      interval = setInterval(updateDuration, 60000); // Update every minute
+    }
+    return () => clearInterval(interval);
+  }, [isClockedIn, clockInTime]);
 
   const handleClockInOut = () => {
     if (!navigator.geolocation) {
@@ -26,15 +45,36 @@ export default function EmployeeDashboard() {
       (position) => {
         const newStatus = !isClockedIn;
         setIsClockedIn(newStatus);
-        const newStatusText = newStatus ? "Entrada Marcada" : "Salida Marcada";
-        setStatusText(newStatusText);
         const time = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: true });
-        setStatusTime(`a las ${time}`);
-        
-        toast({
-          title: "Fichaje Exitoso",
-          description: `Se ha registrado tu ${newStatusText.toLowerCase()}.`,
-        });
+
+        if (newStatus) {
+            // Clocking IN
+            const newClockInTime = new Date();
+            setClockInTime(newClockInTime);
+            setStatusText("Entrada Marcada");
+            setStatusTime(`a las ${time}`);
+
+            const now = new Date();
+            const diffMs = now.getTime() - newClockInTime.getTime();
+            const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+            setDuration(`${diffHrs}h ${diffMins}m`);
+
+            toast({
+              title: "Fichaje Exitoso",
+              description: `Se ha registrado tu entrada.`,
+            });
+        } else {
+            // Clocking OUT
+            setClockInTime(null);
+            setDuration('');
+            setStatusText("Salida Marcada");
+            setStatusTime(`a las ${time}`);
+            toast({
+              title: "Fichaje Exitoso",
+              description: `Se ha registrado tu salida.`,
+            });
+        }
       },
       (error) => {
         let description = "No se pudo obtener tu ubicación. Por favor, activa los permisos en tu navegador.";
@@ -65,8 +105,20 @@ export default function EmployeeDashboard() {
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${isClockedIn ? 'text-accent' : 'text-destructive'}`}>{statusText}</div>
-            <p className="text-xs text-muted-foreground">{statusTime}</p>
+            <p className="text-xs text-muted-foreground">{isClockedIn ? `Llevas ${duration}` : statusTime}</p>
           </CardContent>
+        </Card>
+        <Card className="bg-gradient-accent-to-card hover:bg-muted/50 transition-colors">
+          <Link href="/portal/tasks">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Tarea Actual</CardTitle>
+                <ClipboardList className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold truncate">Componentes UI</div>
+                <p className="text-xs text-muted-foreground">Proyecto: Rediseño Web</p>
+            </CardContent>
+          </Link>
         </Card>
         <Card className="bg-gradient-accent-to-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -87,16 +139,6 @@ export default function EmployeeDashboard() {
             <div className="text-2xl font-bold">19 Ago</div>
             <p className="text-xs text-muted-foreground">Vacaciones (5 días)</p>
           </CardContent>
-        </Card>
-        <Card className="bg-gradient-accent-to-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Documentos</CardTitle>
-                <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-                <div className="text-2xl font-bold">3</div>
-                <p className="text-xs text-muted-foreground">Pendientes de firma</p>
-            </CardContent>
         </Card>
       </div>
       
