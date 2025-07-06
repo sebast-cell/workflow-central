@@ -7,41 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Gift, Goal, PlusCircle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Progress } from "@/components/ui/progress";
-
-type Objective = {
-  id: string; // UUID
-  title: string;
-  description: string;
-  type: 'individual' | 'equipo' | 'empresa';
-  assigned_to: string; // UserID or TeamID
-  project_id?: string; // UUID (nullable)
-  is_incentivized: boolean;
-  incentive_id?: string; // UUID (nullable)
-  weight?: number; // decimal
-  start_date?: string; // date
-  end_date?: string; // date
-};
-
-type Task = {
-  id: string;
-  title: string;
-  objective_id: string;
-  completed: boolean;
-  is_incentivized: boolean;
-  incentive_id?: string;
-};
-
-type Incentive = {
-  id: string;
-  name: string;
-  type: 'económico' | 'días_libres' | 'formación' | 'otro';
-  value: string | number;
-  period: 'mensual' | 'trimestral' | 'anual';
-};
-
-const OBJECTIVES_STORAGE_KEY = 'workflow-central-objectives';
-const TASKS_STORAGE_KEY = 'workflow-central-tasks';
-const INCENTIVES_STORAGE_KEY = 'workflow-central-incentives';
+import { type Objective, type Task, type Incentive, listObjectives, listTasks, listIncentives } from "@/lib/api";
 
 const calculateIncentive = (objective: Objective, allTasks: Task[], allIncentives: Incentive[]) => {
     if (!objective.is_incentivized || !objective.incentive_id) {
@@ -99,27 +65,28 @@ export default function EmployeePerformancePage() {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [incentives, setIncentives] = useState<Incentive[]>([]);
 
-    useEffect(() => {
+    // Simulating logged in user
+    const currentUserId = "a1b2c3d4-e5f6-7890-1234-567890abcdef"; // Olivia Martin's UUID
+
+    const fetchData = async () => {
         try {
-            const storedObjectives = localStorage.getItem(OBJECTIVES_STORAGE_KEY);
-            if (storedObjectives) {
-                const allObjectives: Objective[] = JSON.parse(storedObjectives);
-                // Assuming Olivia Martin is the logged-in user
-                setMyObjectives(allObjectives.filter(g => g.assigned_to === "Olivia Martin"));
-            }
-
-            const storedTasks = localStorage.getItem(TASKS_STORAGE_KEY);
-            if (storedTasks) {
-                setTasks(JSON.parse(storedTasks));
-            }
-
-            const storedIncentives = localStorage.getItem(INCENTIVES_STORAGE_KEY);
-            if (storedIncentives) {
-                setIncentives(JSON.parse(storedIncentives));
-            }
+            const [allObjectives, allTasks, allIncentives] = await Promise.all([
+                listObjectives(),
+                listTasks(),
+                listIncentives()
+            ]);
+            
+            // This filtering should ideally happen on the backend
+            setMyObjectives(allObjectives.filter(o => o.assigned_to === currentUserId));
+            setTasks(allTasks);
+            setIncentives(allIncentives);
         } catch (error) {
-            console.error("Failed to load data from localStorage", error);
+            console.error("Failed to fetch data:", error);
         }
+    };
+
+    useEffect(() => {
+        fetchData();
     }, []);
     
     const getObjectiveProgress = (objectiveId: string) => {

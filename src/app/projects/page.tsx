@@ -9,25 +9,11 @@ import { Label } from "@/components/ui/label";
 import { PlusCircle } from "lucide-react";
 import Link from "next/link";
 import { Textarea } from "@/components/ui/textarea";
-
-type Project = {
-    id: string;
-    name: string;
-    description: string;
-};
-
-const initialProjects: Project[] = [
-  { id: "1", name: "Rediseño del Sitio Web", description: "Modernizar la interfaz de usuario y la experiencia del sitio web corporativo." },
-  { id: "2", name: "Desarrollo de App Móvil", description: "Crear una aplicación móvil nativa para iOS y Android." },
-  { id: "3", name: "Campaña de Marketing", description: "Campaña de marketing digital para el lanzamiento del nuevo producto en el T4." },
-  { id: "4", name: "Integración de API", description: "Integrar un nuevo sistema de pagos de terceros." },
-  { id: "5", name: "Análisis de Informe T3", description: "Proyecto interno para analizar los resultados del tercer trimestre." },
-];
-
-const PROJECTS_STORAGE_KEY = 'workflow-central-projects';
+import { type Project, listProjects, createProject } from "@/lib/api";
+import { v4 as uuidv4 } from 'uuid';
 
 export default function ProjectsPage() {
-  const [projects, setProjects] = useState<Project[]>(initialProjects);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isClient, setIsClient] = useState(false);
   
@@ -36,52 +22,46 @@ export default function ProjectsPage() {
     description: "",
   });
 
+  const fetchData = async () => {
+      try {
+          const projectsData = await listProjects();
+          setProjects(projectsData);
+      } catch (error) {
+          console.error("Failed to fetch projects from API", error);
+      }
+  };
+
   useEffect(() => {
     setIsClient(true);
+    fetchData();
   }, []);
-
-  useEffect(() => {
-    if (isClient) {
-      try {
-        const storedProjects = localStorage.getItem(PROJECTS_STORAGE_KEY);
-        if (storedProjects) {
-          setProjects(JSON.parse(storedProjects));
-        } else {
-          localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(initialProjects));
-        }
-      } catch (error) {
-        console.error("Failed to access localStorage for projects", error);
-      }
-    }
-  }, [isClient]);
-
-  useEffect(() => {
-    if (isClient) {
-      localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(projects));
-    }
-  }, [projects, isClient]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
     setNewProjectData(prev => ({ ...prev, [id]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProjectData.name) return;
 
     const newProject: Project = {
-      id: Date.now().toString(),
+      id: uuidv4(),
       name: newProjectData.name,
       description: newProjectData.description,
     };
 
-    setProjects(prev => [...prev, newProject]);
-    setIsDialogOpen(false);
-    setNewProjectData({
-      name: "",
-      description: "",
-    });
+    try {
+        const savedProject = await createProject(newProject);
+        setProjects(prev => [...prev, savedProject]);
+        setIsDialogOpen(false);
+        setNewProjectData({
+          name: "",
+          description: "",
+        });
+    } catch (error) {
+        console.error("Failed to create project:", error);
+    }
   };
 
   if (!isClient) {

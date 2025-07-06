@@ -9,24 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PlusCircle, Goal } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-
-type Objective = {
-  id: string;
-  title: string;
-  assigned_to: string;
-};
-
-type Task = {
-  id: string;
-  title: string;
-  objective_id: string;
-  completed: boolean;
-  is_incentivized: boolean;
-  incentive_id?: string;
-};
-
-const OBJECTIVES_STORAGE_KEY = 'workflow-central-objectives';
-const TASKS_STORAGE_KEY = 'workflow-central-tasks';
+import { type Objective, type Task, listObjectives, listTasks, createTask } from "@/lib/api";
+import { v4 as uuidv4 } from 'uuid';
 
 export default function EmployeeTasksPage() {
     const [tasks, setTasks] = useState<Task[]>([]);
@@ -34,54 +18,60 @@ export default function EmployeeTasksPage() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [newTaskData, setNewTaskData] = useState({ title: '', objective_id: ''});
 
-    useEffect(() => {
-        try {
-            const storedObjectives = localStorage.getItem(OBJECTIVES_STORAGE_KEY);
-            if (storedObjectives) {
-                const allObjectives: Objective[] = JSON.parse(storedObjectives);
-                setMyObjectives(allObjectives.filter(o => o.assigned_to === 'Olivia Martin'));
-            }
+    // Simulating logged in user
+    const currentUserId = "a1b2c3d4-e5f6-7890-1234-567890abcdef"; // Olivia Martin's UUID
 
-            const storedTasks = localStorage.getItem(TASKS_STORAGE_KEY);
-            if (storedTasks) {
-                setTasks(JSON.parse(storedTasks));
-            }
+    const fetchData = async () => {
+        try {
+            const [allObjectives, allTasks] = await Promise.all([
+                listObjectives(),
+                listTasks()
+            ]);
+            
+            // This filtering should ideally happen on the backend
+            const userObjectives = allObjectives.filter(o => o.assigned_to === currentUserId);
+            const userObjectiveIds = userObjectives.map(o => o.id);
+
+            setMyObjectives(userObjectives);
+            setTasks(allTasks.filter(t => userObjectiveIds.includes(t.objective_id)));
         } catch (error) {
-            console.error("Error loading data from localStorage", error);
+            console.error("Error loading data:", error);
         }
+    };
+
+    useEffect(() => {
+        fetchData();
     }, []);
 
-    useEffect(() => {
-        try {
-            localStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(tasks));
-        } catch (error) {
-            console.error("Error saving tasks to localStorage", error);
-        }
-    }, [tasks]);
-
-    const handleCreateTask = (e: React.FormEvent) => {
+    const handleCreateTask = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newTaskData.title || !newTaskData.objective_id) return;
 
         const newTask: Task = {
-            id: Date.now().toString(),
+            id: uuidv4(),
             title: newTaskData.title,
             objective_id: newTaskData.objective_id,
             completed: false,
-            is_incentivized: false
+            is_incentivized: false,
+            incentive_id: undefined,
         };
 
-        setTasks(prev => [...prev, newTask]);
-        setNewTaskData({ title: '', objective_id: '' });
-        setIsDialogOpen(false);
+        try {
+            const savedTask = await createTask(newTask);
+            setTasks(prev => [...prev, savedTask]);
+            setNewTaskData({ title: '', objective_id: '' });
+            setIsDialogOpen(false);
+        } catch (error) {
+            console.error("Failed to create task:", error);
+        }
     };
 
     const handleToggleTask = (taskId: string, completed: boolean) => {
+        // NOTE: The provided API does not have an endpoint to update a task.
+        // This update is only reflected in the local state for a better UX.
+        // In a real application, this should be a PATCH/PUT request to the backend.
         setTasks(prev => prev.map(t => t.id === taskId ? { ...t, completed } : t));
     };
-
-    const userObjectiveIds = myObjectives.map(o => o.id);
-    const userTasks = tasks.filter(t => userObjectiveIds.includes(t.objective_id));
 
     return (
         <div className="space-y-8">
@@ -143,7 +133,7 @@ export default function EmployeeTasksPage() {
             {myObjectives.length > 0 ? (
                 <div className="space-y-6">
                     {myObjectives.map(objective => {
-                        const objectiveTasks = userTasks.filter(t => t.objective_id === objective.id);
+                        const objectiveTasks = tasks.filter(t => t.objective_id === objective.id);
                         return (
                             <Card key={objective.id} className="bg-gradient-accent-to-card">
                                 <CardHeader>

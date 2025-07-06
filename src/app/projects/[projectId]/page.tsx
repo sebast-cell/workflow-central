@@ -14,89 +14,49 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-
-
-type Project = {
-    id: string;
-    name: string;
-    description: string;
-};
-
-type Objective = {
-  id: string;
-  title: string;
-  description: string;
-  type: 'individual' | 'equipo' | 'empresa';
-  assigned_to: string;
-  project_id: string;
-  is_incentivized: boolean;
-  incentive_id?: string;
-  weight?: number;
-};
-
-type Task = {
-  id: string;
-  title: string;
-  objective_id: string;
-  completed: boolean;
-};
-
-type Incentive = {
-  id: string;
-  name: string;
-  type: string;
-  value: string | number;
-};
-
-
-const PROJECTS_STORAGE_KEY = 'workflow-central-projects';
-const OBJECTIVES_STORAGE_KEY = 'workflow-central-objectives';
-const TASKS_STORAGE_KEY = 'workflow-central-tasks';
-const INCENTIVES_STORAGE_KEY = 'workflow-central-incentives';
+import { type Project, type Objective, type Task, type Incentive, listProjects, listObjectives, listTasks, listIncentives } from "@/lib/api";
 
 export default function ProjectDetailsPage() {
     const params = useParams();
     const projectId = params.projectId as string;
-    const [projects, setProjects] = useState<Project[]>([]);
-    const [objectives, setObjectives] = useState<Objective[]>([]);
+    
+    const [project, setProject] = useState<Project | null>(null);
+    const [projectObjectives, setProjectObjectives] = useState<Objective[]>([]);
     const [tasks, setTasks] = useState<Task[]>([]);
     const [incentives, setIncentives] = useState<Incentive[]>([]);
-
     const [isClient, setIsClient] = useState(false);
     const [isObjectiveDialogOpen, setIsObjectiveDialogOpen] = useState(false);
-
+    
     useEffect(() => {
         setIsClient(true);
-    }, []);
-
-    useEffect(() => {
-        if (isClient) {
+        const fetchData = async () => {
+            if (!projectId) return;
             try {
-                const storedProjects = localStorage.getItem(PROJECTS_STORAGE_KEY);
-                if (storedProjects) setProjects(JSON.parse(storedProjects));
-
-                const storedObjectives = localStorage.getItem(OBJECTIVES_STORAGE_KEY);
-                if (storedObjectives) setObjectives(JSON.parse(storedObjectives));
-
-                const storedTasks = localStorage.getItem(TASKS_STORAGE_KEY);
-                if (storedTasks) setTasks(JSON.parse(storedTasks));
+                const [allProjects, allObjectives, allTasks, allIncentives] = await Promise.all([
+                    listProjects(),
+                    listObjectives(),
+                    listTasks(),
+                    listIncentives()
+                ]);
                 
-                const storedIncentives = localStorage.getItem(INCENTIVES_STORAGE_KEY);
-                if (storedIncentives) setIncentives(JSON.parse(storedIncentives));
-
-
+                const currentProject = allProjects.find(p => p.id === projectId);
+                const objectivesForProject = allObjectives.filter(o => o.project_id === projectId);
+                
+                setProject(currentProject || null);
+                setProjectObjectives(objectivesForProject);
+                setTasks(allTasks);
+                setIncentives(allIncentives);
             } catch (error) {
-                console.error("Failed to load data from localStorage", error);
+                console.error("Failed to load project data from API", error);
             }
-        }
-    }, [isClient]);
-    
-    const project = projects.find(p => p.id.toString() === projectId);
-    const projectObjectives = objectives.filter(o => o.project_id === projectId);
+        };
 
+        fetchData();
+    }, [isClient, projectId]);
+    
     const handleAddObjective = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        // Logic to add a new objective would go here
+        // Logic to add a new objective would go here, calling the API
         setIsObjectiveDialogOpen(false);
     }
 

@@ -24,6 +24,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import type { DateRange } from "react-day-picker";
 import { APIProvider, Map, AdvancedMarker, useMapsLibrary } from "@vis.gl/react-google-maps";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { type Employee, type Center, type Department, type Role, type Break, type ClockInType, type Shift, type FlexibleSchedule, type FixedSchedule, type AbsenceType, type Holiday, type CalendarData, type VacationPolicy, type Incentive, listIncentives, createIncentive } from "@/lib/api";
+import { v4 as uuidv4 } from 'uuid';
 
 
 const allPermissions = [
@@ -39,144 +41,7 @@ const allPermissions = [
     { id: 'manage_roles', label: 'Gestionar Roles y Permisos' },
 ];
 
-type Employee = {
-    id: number;
-    name: string;
-    email: string;
-    department: string;
-    role: string;
-    status: string;
-    schedule: string;
-    avatar: string;
-    workCenter: string;
-    vacationManager: string;
-    clockInManager: string;
-    calendarId?: string;
-    vacationPolicyId?: string;
-};
-
-const EMPLOYEES_STORAGE_KEY = 'workflow-central-employees';
-
-type Center = {
-    name: string;
-    address: string;
-    radius: number;
-    lat: number;
-    lng: number;
-    timezone: string;
-};
-
-type Department = {
-    name: string;
-};
-
-type Role = {
-    name: string;
-    description: string;
-    permissions: string[];
-};
-
-type Break = {
-    name: string;
-    remunerated: boolean;
-    limit: number; // in minutes
-    isAutomatic: boolean;
-    intervalStart?: string;
-    intervalEnd?: string;
-    notifyStart: boolean;
-    notifyEnd: boolean;
-    assignedTo: string[];
-};
-
-type ClockInType = {
-    name: string;
-    color: string;
-    assignment: 'all' | 'specific';
-    assignedTo: string[];
-};
-
-type FlexibleSchedule = {
-    id: string;
-    name: string;
-    workDays: string[];
-    hoursPerDay: number;
-    noWeeklyHours: boolean;
-};
-
-type FixedScheduleRange = {
-    id: string;
-    start: string;
-    end: string;
-};
-
-type FixedSchedule = {
-    id: string;
-    name: string;
-    workDays: string[];
-    ranges: FixedScheduleRange[];
-    isNightShift: boolean;
-};
-
-type Shift = {
-    id: string;
-    name: string;
-    start: string;
-    end: string;
-};
-
-type AbsenceType = {
-    id: string;
-    name: string;
-    color: string;
-    remunerated: boolean;
-    unit: 'days' | 'hours';
-    limitRequests?: boolean;
-    requestLimit?: number;
-    blockPeriods?: boolean;
-    blockedPeriods?: { id: string; from: string; to: string }[];
-    requiresApproval: boolean;
-    allowAttachment: boolean;
-    isDisabled: boolean;
-    assignment: 'all' | 'specific';
-    assignedTo: string[];
-};
-
-type Holiday = {
-    id: string;
-    name: string;
-    date: string; // ISO string for localStorage
-};
-
-type CalendarData = {
-    id: string;
-    name: string;
-    holidays: Holiday[];
-};
-
-type VacationPolicy = {
-    id: string;
-    name: string;
-    unit: 'days' | 'hours';
-    amount: number;
-    countBy: 'workdays' | 'natural';
-    limitRequests: boolean;
-    requestLimit?: number;
-    blockPeriods: boolean;
-    blockedPeriods: { id: string; from: string; to: string }[];
-    assignment: 'all' | 'specific';
-    assignedTo: string[];
-};
-
-type Incentive = {
-  id: string; // UUID
-  name: string;
-  type: 'económico' | 'días_libres' | 'formación' | 'otro';
-  value: string | number;
-  period: 'mensual' | 'trimestral' | 'anual';
-  active: boolean;
-  condition_expression?: string; // JSON logical expression
-};
-
+const initialEmployees: Employee[] = [];
 
 const defaultMapCenter = { lat: 40.416775, lng: -3.703790 };
 
@@ -220,24 +85,6 @@ const initialCalendars: CalendarData[] = [
 const initialVacationPolicies: VacationPolicy[] = [
     { id: 'default', name: 'General', unit: 'days', amount: 22, countBy: 'workdays', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [], assignment: 'all', assignedTo: [] }
 ];
-const initialIncentives: Incentive[] = [
-    { id: 'inc-1', name: 'Bono Trimestral por Lanzamiento', type: 'económico', value: '1000€', period: 'trimestral', active: true, condition_expression: '' },
-    { id: 'inc-2', name: 'Días Libres Extra', type: 'días_libres', value: '2', period: 'anual', active: true, condition_expression: '' },
-];
-
-const CENTERS_STORAGE_KEY = 'workflow-central-centers';
-const DEPARTMENTS_STORAGE_KEY = 'workflow-central-departments';
-const ROLES_STORAGE_KEY = 'workflow-central-roles';
-const BREAKS_STORAGE_KEY = 'workflow-central-breaks';
-const CLOCK_IN_TYPES_STORAGE_KEY = 'workflow-central-clock-in-types';
-const SHIFTS_STORAGE_KEY = 'workflow-central-shifts';
-const FLEXIBLE_SCHEDULES_STORAGE_KEY = 'workflow-central-flexible-schedules';
-const FIXED_SCHEDULES_STORAGE_KEY = 'workflow-central-fixed-schedules';
-const ABSENCE_TYPES_STORAGE_KEY = 'workflow-central-absence-types';
-const CALENDARS_STORAGE_KEY = 'workflow-central-calendars';
-const VACATION_POLICIES_STORAGE_KEY = 'workflow-central-vacation-policies';
-const INCENTIVES_STORAGE_KEY = 'workflow-central-incentives';
-
 
 const projectColors = [
     { value: 'bg-blue-500', label: 'Azul' },
@@ -440,30 +287,6 @@ const CentersTabContent = () => {
         return () => window.removeEventListener('gm_authFailure', handleAuthError);
     }, []);
 
-    useEffect(() => {
-        try {
-            const storedData = localStorage.getItem(CENTERS_STORAGE_KEY);
-            if(storedData) {
-                const parsed = JSON.parse(storedData);
-                const migrated = parsed.map((c: any) => ({ 
-                    ...c, 
-                    lat: c.lat ?? defaultMapCenter.lat, 
-                    lng: c.lng ?? defaultMapCenter.lng,
-                    timezone: c.timezone || 'Europe/Madrid'
-                }));
-                setCenters(migrated);
-            } else {
-                 localStorage.setItem(CENTERS_STORAGE_KEY, JSON.stringify(initialCenters));
-            }
-        } catch (error) {
-            console.error("Failed to load centers from localStorage", error);
-        }
-    }, []);
-
-    useEffect(() => {
-        localStorage.setItem(CENTERS_STORAGE_KEY, JSON.stringify(centers));
-    }, [centers]);
-    
     const openAddCenterDialog = () => {
         setDialogCenterMode('add');
         setSelectedCenter(null);
@@ -551,14 +374,14 @@ const SettingsTabs = () => {
     const [roles, setRoles] = useState<Role[]>(initialRoles);
     const [breaks, setBreaks] = useState<Break[]>(initialBreaks);
     const [clockInTypes, setClockInTypes] = useState<ClockInType[]>(initialClockInTypes);
-    const [employees, setEmployees] = useState<Employee[]>([]);
+    const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
     const [shifts, setShifts] = useState<Shift[]>(initialShifts);
     const [flexibleSchedules, setFlexibleSchedules] = useState<FlexibleSchedule[]>([]);
     const [fixedSchedules, setFixedSchedules] = useState<FixedSchedule[]>([]);
     const [absenceTypes, setAbsenceTypes] = useState<AbsenceType[]>(initialAbsenceTypes);
     const [calendars, setCalendars] = useState<CalendarData[]>(initialCalendars);
     const [vacationPolicies, setVacationPolicies] = useState<VacationPolicy[]>(initialVacationPolicies);
-    const [incentives, setIncentives] = useState<Incentive[]>(initialIncentives);
+    const [incentives, setIncentives] = useState<Incentive[]>([]);
     
     const [isDeptDialogOpen, setIsDeptDialogOpen] = useState(false);
     const [dialogDeptMode, setDialogDeptMode] = useState<'add' | 'edit'>('add');
@@ -617,69 +440,22 @@ const SettingsTabs = () => {
     const [isIncentiveDialogOpen, setIsIncentiveDialogOpen] = useState(false);
     const [dialogIncentiveMode, setDialogIncentiveMode] = useState<'add' | 'edit'>('add');
     const [selectedIncentive, setSelectedIncentive] = useState<Incentive | null>(null);
-    const [incentiveFormData, setIncentiveFormData] = useState<Omit<Incentive, 'id'>>({ name: "", type: "económico", value: "", period: "anual", active: true, condition_expression: ""});
+    const [incentiveFormData, setIncentiveFormData] = useState<Omit<Incentive, 'id' | 'company_id'>>({ name: "", type: "económico", value: "", period: "anual", active: true, condition_expression: {}});
 
 
     const allSchedules = ['Horario Fijo', 'Horario Flexible', ...shifts.map(s => s.name)];
     
     useEffect(() => {
-        const loadFromStorage = (key: string, setter: (data: any) => void, initialData: any, migration?: (data: any) => any) => {
+        const fetchIncentives = async () => {
             try {
-                let storedData = localStorage.getItem(key);
-                if (storedData) {
-                    let parsedData = JSON.parse(storedData);
-                    if (migration) {
-                        parsedData = migration(parsedData);
-                    }
-                    setter(parsedData);
-                } else {
-                    setter(initialData);
-                    localStorage.setItem(key, JSON.stringify(initialData));
-                }
+                const data = await listIncentives();
+                setIncentives(data);
             } catch (error) {
-                console.error(`Failed to access localStorage for key "${key}"`, error);
-                setter(initialData);
+                console.error("Failed to fetch incentives:", error);
             }
         };
-        
-        const breakMigration = (data: any[]) => data.map((b: any) => ({ ...b, assignedTo: Array.isArray(b.assignedTo) ? b.assignedTo : [] }));
-        const clockInMigration = (data: any[]) => data.map((t: any) => ({ ...t, assignment: t.assignment || 'all', assignedTo: Array.isArray(t.assignedTo) ? t.assignedTo : []}));
-        const vacationPolicyMigration = (data: any[]) => data.map((p: any) => ({ ...p, blockedPeriods: Array.isArray(p.blockedPeriods) ? p.blockedPeriods : [], requestLimit: p.requestLimit || 0, assignment: p.assignment || 'all', assignedTo: p.assignedTo || [] }));
-        const absenceTypeMigration = (data: any[]) => data.map((p: any) => ({ ...p, color: p.color || 'bg-blue-500', requiresApproval: p.requiresApproval ?? true, allowAttachment: p.allowAttachment ?? false, isDisabled: p.isDisabled ?? false, assignment: p.assignment || 'all', assignedTo: p.assignedTo || [], limitRequests: p.limitRequests || false, requestLimit: p.requestLimit || 0, blockPeriods: p.blockPeriods || false, blockedPeriods: Array.isArray(p.blockedPeriods) ? p.blockedPeriods : [] }));
-        const incentiveMigration = (data: any[]) => data.map((i: any) => ({...i, details: undefined, value: i.details || i.value, period: i.period || 'anual', active: i.active ?? true, condition_expression: i.condition_expression || ''}));
-
-
-        loadFromStorage(DEPARTMENTS_STORAGE_KEY, setDepartments, initialDepartments);
-        loadFromStorage(ROLES_STORAGE_KEY, setRoles, initialRoles);
-        loadFromStorage(BREAKS_STORAGE_KEY, setBreaks, initialBreaks, breakMigration);
-        loadFromStorage(CLOCK_IN_TYPES_STORAGE_KEY, setClockInTypes, initialClockInTypes, clockInMigration);
-        loadFromStorage(SHIFTS_STORAGE_KEY, setShifts, initialShifts);
-        loadFromStorage(FLEXIBLE_SCHEDULES_STORAGE_KEY, setFlexibleSchedules, []);
-        loadFromStorage(FIXED_SCHEDULES_STORAGE_KEY, setFixedSchedules, []);
-        loadFromStorage(ABSENCE_TYPES_STORAGE_KEY, setAbsenceTypes, initialAbsenceTypes, absenceTypeMigration);
-        loadFromStorage(CALENDARS_STORAGE_KEY, setCalendars, initialCalendars);
-        loadFromStorage(VACATION_POLICIES_STORAGE_KEY, setVacationPolicies, initialVacationPolicies);
-        loadFromStorage(INCENTIVES_STORAGE_KEY, setIncentives, initialIncentives, incentiveMigration);
-
-        const storedEmployees = localStorage.getItem(EMPLOYEES_STORAGE_KEY);
-        if (storedEmployees) setEmployees(JSON.parse(storedEmployees));
-
+        fetchIncentives();
     }, []);
-
-    useEffect(() => {
-        localStorage.setItem(DEPARTMENTS_STORAGE_KEY, JSON.stringify(departments));
-        localStorage.setItem(ROLES_STORAGE_KEY, JSON.stringify(roles));
-        localStorage.setItem(BREAKS_STORAGE_KEY, JSON.stringify(breaks));
-        localStorage.setItem(CLOCK_IN_TYPES_STORAGE_KEY, JSON.stringify(clockInTypes));
-        localStorage.setItem(SHIFTS_STORAGE_KEY, JSON.stringify(shifts));
-        localStorage.setItem(FLEXIBLE_SCHEDULES_STORAGE_KEY, JSON.stringify(flexibleSchedules));
-        localStorage.setItem(FIXED_SCHEDULES_STORAGE_KEY, JSON.stringify(fixedSchedules));
-        localStorage.setItem(ABSENCE_TYPES_STORAGE_KEY, JSON.stringify(absenceTypes));
-        localStorage.setItem(CALENDARS_STORAGE_KEY, JSON.stringify(calendars));
-        localStorage.setItem(VACATION_POLICIES_STORAGE_KEY, JSON.stringify(vacationPolicies));
-        localStorage.setItem(INCENTIVES_STORAGE_KEY, JSON.stringify(incentives));
-    }, [departments, roles, breaks, clockInTypes, shifts, flexibleSchedules, fixedSchedules, absenceTypes, calendars, vacationPolicies, incentives]);
-
 
     const openAddRoleDialog = () => {
         setDialogRoleMode('add');
@@ -782,7 +558,6 @@ const SettingsTabs = () => {
         setDialogClockInTypeMode('edit');
         setSelectedClockInType(type);
         setClockInTypeFormData(type);
-        setIsClockInTypeDialogOpen(true);
     };
 
     const handleClockInTypeFormSubmit = (e: React.FormEvent) => {
@@ -1020,29 +795,41 @@ const SettingsTabs = () => {
     const openAddIncentiveDialog = () => {
         setDialogIncentiveMode('add');
         setSelectedIncentive(null);
-        setIncentiveFormData({ name: "", type: "económico", value: "", period: "anual", active: true, condition_expression: "" });
+        setIncentiveFormData({ name: "", type: "económico", value: "", period: "anual", active: true, condition_expression: {} });
         setIsIncentiveDialogOpen(true);
     };
 
     const openEditIncentiveDialog = (incentive: Incentive) => {
         setDialogIncentiveMode('edit');
         setSelectedIncentive(incentive);
-        setIncentiveFormData(incentive);
+        setIncentiveFormData({
+            ...incentive,
+            condition_expression: incentive.condition_expression || {}
+        });
     };
 
-    const handleIncentiveFormSubmit = (e: React.FormEvent) => {
+    const handleIncentiveFormSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!incentiveFormData.name) return;
+        
+        const newIncentive: Incentive = {
+            id: selectedIncentive?.id || uuidv4(),
+            company_id: uuidv4(), // Should come from user context
+            ...incentiveFormData
+        };
 
         if (dialogIncentiveMode === 'add') {
-            setIncentives(prev => [...prev, { id: Date.now().toString(), ...incentiveFormData }]);
-        } else if (selectedIncentive) {
-            setIncentives(prev => prev.map(i => i.id === selectedIncentive.id ? { ...i, ...incentiveFormData } : i));
+            const saved = await createIncentive(newIncentive);
+            setIncentives(prev => [...prev, saved]);
+        } else {
+            // Update logic would go here (requires a PUT/PATCH endpoint)
+            setIncentives(prev => prev.map(i => i.id === newIncentive.id ? newIncentive : i));
         }
         setIsIncentiveDialogOpen(false);
     };
     
     const handleDeleteIncentive = (id: string) => {
+        // Delete logic would go here (requires a DELETE endpoint)
         setIncentives(prev => prev.filter(i => i.id !== id));
     };
 
@@ -2288,8 +2075,14 @@ const SettingsTabs = () => {
                                     </div>
                                 </div>
                                  <div className="space-y-2">
-                                    <Label htmlFor="incentive-condition">Condiciones (Opcional)</Label>
-                                    <Textarea id="incentive-condition" value={incentiveFormData.condition_expression} onChange={e => setIncentiveFormData({...incentiveFormData, condition_expression: e.target.value})} placeholder='Ej. {"operator": "AND", "conditions": [{"metric": "sales", "operator": ">=", "value": 10000}]}'/>
+                                    <Label htmlFor="incentive-condition">Condiciones (Opcional, JSON)</Label>
+                                    <Textarea id="incentive-condition" value={JSON.stringify(incentiveFormData.condition_expression, null, 2)} onChange={e => {
+                                        try {
+                                            setIncentiveFormData({...incentiveFormData, condition_expression: JSON.parse(e.target.value)})
+                                        } catch (err) {
+                                            // Handle invalid JSON
+                                        }
+                                    }} placeholder='Ej. {"operator": "AND", "conditions": [{"metric": "sales", "operator": ">=", "value": 10000}]}'/>
                                 </div>
                                 <DialogFooter><Button type="submit">Guardar</Button></DialogFooter>
                             </form>

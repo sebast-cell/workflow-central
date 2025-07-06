@@ -16,6 +16,8 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Progress } from "@/components/ui/progress";
+import { type Objective, type Task, type Incentive, type Project, type Department, type Employee, listObjectives, listTasks, listIncentives, listProjects, createObjective } from "@/lib/api";
+import { v4 as uuidv4 } from 'uuid';
 
 const reviewCycles = [
   { name: "Revisión Anual 2024", status: "Completado", period: "01 Ene - 31 Dic, 2024", participants: 48 },
@@ -23,74 +25,16 @@ const reviewCycles = [
   { name: "Evaluación de Nuevas Incorporaciones", status: "Programado", period: "01 Oct - 31 Oct, 2024", participants: 4 },
 ];
 
-type Employee = {
-    id: number;
-    name: string;
-    email: string;
-};
-
-type Objective = {
-  id: string; // UUID
-  title: string;
-  description: string;
-  type: 'individual' | 'equipo' | 'empresa';
-  assigned_to: string; // UserID, TeamID or 'company'
-  project_id?: string; // UUID (nullable)
-  is_incentivized: boolean;
-  incentive_id?: string; // UUID (nullable)
-  weight?: number; // decimal
-  start_date?: string; // date
-  end_date?: string; // date
-};
-
-type Task = {
-  id: string;
-  title: string;
-  objective_id: string;
-  completed: boolean;
-  is_incentivized: boolean;
-  incentive_id?: string;
-};
-
-type Incentive = {
-  id: string;
-  name: string;
-  type: 'económico' | 'días_libres' | 'formación' | 'otro';
-  value: string | number;
-  period: 'mensual' | 'trimestral' | 'anual';
-};
-
-type Project = {
-    id: string;
-    name: string;
-    description: string;
-}
-
-type Department = {
-    name: string;
-};
-
-const EMPLOYEES_STORAGE_KEY = 'workflow-central-employees';
-const OBJECTIVES_STORAGE_KEY = 'workflow-central-objectives';
-const TASKS_STORAGE_KEY = 'workflow-central-tasks';
-const INCENTIVES_STORAGE_KEY = 'workflow-central-incentives';
-const PROJECTS_STORAGE_KEY = 'workflow-central-projects';
-const DEPARTMENTS_STORAGE_KEY = 'workflow-central-departments';
-
-
-const initialObjectives: Objective[] = [
-  { id: "obj-1", title: "Lanzar el rediseño de la web", description: "Completar y lanzar el nuevo diseño del sitio web.", type: 'equipo', assigned_to: 'Ingeniería', project_id: '1', is_incentivized: true, incentive_id: 'inc-1', weight: 50, start_date: '2024-08-01', end_date: '2024-10-31' },
-  { id: "obj-2", title: "Aumentar el engagement en redes sociales un 15%", description: "Incrementar la interacción en las principales plataformas sociales.", type: 'individual', assigned_to: 'Isabella Nguyen', project_id: '3', is_incentivized: false, weight: 30, start_date: '2024-09-01', end_date: '2024-12-31' },
-  { id: "obj-3", title: "Desarrollar la pantalla de perfil de usuario", description: "Implementar la vista de perfil en la app móvil.", type: 'individual', assigned_to: 'Olivia Martin', project_id: '2', is_incentivized: true, incentive_id: 'inc-2', weight: 20, start_date: '2024-09-01', end_date: '2024-09-30' },
+const initialEmployees: Employee[] = [
+  { id: "a1b2c3d4-e5f6-7890-1234-567890abcdef", name: "Olivia Martin", email: "olivia.martin@example.com" },
+  { id: "b2c3d4e5-f6a7-8901-2345-67890abcdef1", name: "Jackson Lee", email: "jackson.lee@example.com" },
+  { id: "c3d4e5f6-a7b8-9012-3456-7890abcdef2", name: "Isabella Nguyen", email: "isabella.nguyen@example.com" },
 ];
 
-const initialTasks: Task[] = [
-    { id: "task-1", title: "Definir arquitectura de componentes", objective_id: "obj-1", completed: true, is_incentivized: false },
-    { id: "task-2", title: "Crear mockups de alta fidelidad", objective_id: "obj-1", completed: true, is_incentivized: false },
-    { id: "task-3", title: "Desarrollar landing page", objective_id: "obj-1", completed: false, is_incentivized: false },
-    { id: "task-4", title: "Crear API de perfil", objective_id: "obj-3", completed: true, is_incentivized: false },
-    { id: "task-5", title: "Implementar UI de perfil", objective_id: "obj-3", completed: false, is_incentivized: false },
-    { id: "task-6", title: "Tests de integración de perfil", objective_id: "obj-3", completed: false, is_incentivized: false },
+const initialDepartments: Department[] = [
+    { name: "Ingeniería" },
+    { name: "Diseño" },
+    { name: "Marketing" },
 ];
 
 const calculateIncentive = (objective: Objective, allTasks: Task[], allIncentives: Incentive[]) => {
@@ -145,12 +89,12 @@ const calculateIncentive = (objective: Objective, allTasks: Task[], allIncentive
 
 
 export default function PerformancePage() {
-    const [employees, setEmployees] = useState<Employee[]>([]);
+    const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
     const [objectives, setObjectives] = useState<Objective[]>([]);
     const [tasks, setTasks] = useState<Task[]>([]);
     const [incentives, setIncentives] = useState<Incentive[]>([]);
     const [projects, setProjects] = useState<Project[]>([]);
-    const [departments, setDepartments] = useState<Department[]>([]);
+    const [departments, setDepartments] = useState<Department[]>(initialDepartments);
 
 
     const [isObjectiveDialogOpen, setIsObjectiveDialogOpen] = useState(false);
@@ -169,50 +113,26 @@ export default function PerformancePage() {
         end_date: "",
     });
 
+    const fetchData = async () => {
+        try {
+            const [objectivesData, tasksData, incentivesData, projectsData] = await Promise.all([
+                listObjectives(),
+                listTasks(),
+                listIncentives(),
+                listProjects()
+            ]);
+            setObjectives(objectivesData);
+            setTasks(tasksData);
+            setIncentives(incentivesData);
+            setProjects(projectsData);
+        } catch (error) {
+            console.error("Failed to fetch data:", error);
+        }
+    };
 
     useEffect(() => {
-        try {
-            const storedEmployees = localStorage.getItem(EMPLOYEES_STORAGE_KEY);
-            if (storedEmployees) setEmployees(JSON.parse(storedEmployees));
-
-            const storedObjectives = localStorage.getItem(OBJECTIVES_STORAGE_KEY);
-            if (storedObjectives) {
-                 setObjectives(JSON.parse(storedObjectives));
-            } else {
-                setObjectives(initialObjectives);
-                localStorage.setItem(OBJECTIVES_STORAGE_KEY, JSON.stringify(initialObjectives));
-            }
-
-            const storedTasks = localStorage.getItem(TASKS_STORAGE_KEY);
-            if (storedTasks) {
-                setTasks(JSON.parse(storedTasks));
-            } else {
-                setTasks(initialTasks);
-                localStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(initialTasks));
-            }
-
-            const storedIncentives = localStorage.getItem(INCENTIVES_STORAGE_KEY);
-            if (storedIncentives) setIncentives(JSON.parse(storedIncentives));
-            
-            const storedProjects = localStorage.getItem(PROJECTS_STORAGE_KEY);
-            if(storedProjects) setProjects(JSON.parse(storedProjects));
-
-            const storedDepartments = localStorage.getItem(DEPARTMENTS_STORAGE_KEY);
-            if(storedDepartments) setDepartments(JSON.parse(storedDepartments));
-
-        } catch (error) {
-            console.error("Failed to load data from localStorage", error);
-        }
+        fetchData();
     }, []);
-
-    useEffect(() => {
-        try {
-            localStorage.setItem(OBJECTIVES_STORAGE_KEY, JSON.stringify(objectives));
-        } catch (error) {
-            console.error("Failed to save objectives to localStorage", error);
-        }
-    }, [objectives]);
-
 
     const getStatusVariant = (status: string) => {
       switch (status) {
@@ -233,25 +153,7 @@ export default function PerformancePage() {
         setIsObjectiveDialogOpen(true);
     }
     
-    const handleOpenEditObjectiveDialog = (objective: Objective) => {
-        setDialogObjectiveMode('edit');
-        setSelectedObjective(objective);
-        setObjectiveFormData({
-            title: objective.title,
-            description: objective.description,
-            assigned_to: objective.assigned_to,
-            type: objective.type,
-            project_id: objective.project_id,
-            is_incentivized: objective.is_incentivized,
-            incentive_id: objective.incentive_id,
-            weight: objective.weight,
-            start_date: objective.start_date,
-            end_date: objective.end_date,
-        });
-        setIsObjectiveDialogOpen(true);
-    };
-
-    const handleObjectiveFormSubmit = (e: React.FormEvent) => {
+    const handleObjectiveFormSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
         const dataToSave = {...objectiveFormData};
@@ -261,20 +163,18 @@ export default function PerformancePage() {
         
         if (!dataToSave.title || !dataToSave.assigned_to) return;
         
-        if (dialogObjectiveMode === 'add') {
-            const newObjective: Objective = {
-                id: Date.now().toString(),
-                ...dataToSave,
-            };
-            setObjectives(prev => [...prev, newObjective]);
-        } else if (selectedObjective) {
-            setObjectives(prev => prev.map(g => g.id === selectedObjective.id ? { ...g, ...dataToSave } : g));
-        }
-        setIsObjectiveDialogOpen(false);
-    };
+        const newObjective: Objective = {
+            id: uuidv4(),
+            ...dataToSave,
+        };
 
-    const handleDeleteObjective = (objectiveId: string) => {
-        setObjectives(prev => prev.filter(g => g.id !== objectiveId));
+        try {
+            const savedObjective = await createObjective(newObjective);
+            setObjectives(prev => [...prev, savedObjective]);
+            setIsObjectiveDialogOpen(false);
+        } catch (error) {
+            console.error("Failed to create objective:", error);
+        }
     };
 
     const getObjectiveProgress = (objectiveId: string) => {
@@ -285,6 +185,18 @@ export default function PerformancePage() {
         const progress = (completedTasks.length / relevantTasks.length) * 100;
         return { progress, completed: completedTasks.length, total: relevantTasks.length };
     };
+
+    const getAssignedToName = (objective: Objective) => {
+        if (objective.type === 'individual') {
+            const employee = employees.find(e => e.id === objective.assigned_to);
+            return employee ? employee.name : objective.assigned_to;
+        }
+        if (objective.type === 'empresa') {
+            return "Toda la empresa";
+        }
+        return objective.assigned_to;
+    }
+
 
     return (
         <div className="space-y-8">
@@ -425,7 +337,7 @@ export default function PerformancePage() {
                                                     </div>
                                                      <p className="text-sm text-muted-foreground">{projects.find(p => p.id === objective.project_id)?.name || ''}</p>
                                                 </TableCell>
-                                                <TableCell>{objective.assigned_to}</TableCell>
+                                                <TableCell>{getAssignedToName(objective)}</TableCell>
                                                 <TableCell>
                                                     <div className="flex items-center gap-2">
                                                         <Progress value={progress} className="w-24" />
@@ -437,8 +349,8 @@ export default function PerformancePage() {
                                                      <DropdownMenu>
                                                         <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4"/></Button></DropdownMenuTrigger>
                                                         <DropdownMenuContent>
-                                                            <DropdownMenuItem onClick={() => handleOpenEditObjectiveDialog(objective)}>Editar</DropdownMenuItem>
-                                                            <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteObjective(objective.id)}>Eliminar</DropdownMenuItem>
+                                                            <DropdownMenuItem>Editar</DropdownMenuItem>
+                                                            <DropdownMenuItem className="text-destructive">Eliminar</DropdownMenuItem>
                                                         </DropdownMenuContent>
                                                     </DropdownMenu>
                                                 </TableCell>
@@ -503,7 +415,7 @@ export default function PerformancePage() {
                                         <Select value={objectiveFormData.assigned_to} onValueChange={(value) => setObjectiveFormData({...objectiveFormData, assigned_to: value})}>
                                             <SelectTrigger id="objective-assignee"><SelectValue placeholder="Seleccionar empleado"/></SelectTrigger>
                                             <SelectContent>
-                                                {employees.map(e => <SelectItem key={e.id} value={e.name}>{e.name}</SelectItem>)}
+                                                {employees.map(e => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
                                             </SelectContent>
                                         </Select>
                                     )}
