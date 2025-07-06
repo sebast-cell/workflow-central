@@ -14,7 +14,7 @@ export default function PortalSelectionPage() {
            <p className="mt-4 text-lg text-muted-foreground">Tu centro de mando para la gestión de equipos y el autoservicio de empleados.</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <Card className="p-8 text-center hover:shadow-xl transition-shadow duration-300">
+          <Card className="p-8 text-center hover:shadow-xl transition-shadow duration-300 bg-gradient-accent-to-card">
               <h2 className="text-2xl font-bold text-card-foreground">Portal de Administrador</h2>
               <p className="text-muted-foreground mt-2">Gestiona tu equipo, proyectos y operaciones.</p>
               <div className="flex justify-center mt-8">
@@ -26,7 +26,7 @@ export default function PortalSelectionPage() {
                   </Button>
               </div>
           </Card>
-          <Card className="p-8 text-center hover:shadow-xl transition-shadow duration-300">
+          <Card className="p-8 text-center hover:shadow-xl transition-shadow duration-300 bg-gradient-accent-to-card">
               <h2 className="text-2xl font-bold text-card-foreground">Portal del Empleado</h2>
               <p className="text-muted-foreground mt-2">Consulta tu información y gestiona tus solicitudes.</p>
               <div className="flex justify-center mt-8">

@@ -140,7 +140,7 @@ export default function ProjectDetailsPage() {
                         Volver a Proyectos
                     </Link>
                 </Button>
-                <Card>
+                <Card className="bg-gradient-accent-to-card">
                     <CardHeader>
                         <div className="flex items-start justify-between">
                             <div>
@@ -169,7 +169,7 @@ export default function ProjectDetailsPage() {
                     <TabsTrigger value="profitability">Rentabilidad</TabsTrigger>
                 </TabsList>
                 <TabsContent value="tasks" className="space-y-4">
-                    <Card>
+                    <Card className="bg-gradient-accent-to-card">
                         <CardHeader className="flex flex-row items-center justify-between">
                            <div>
                              <CardTitle>Lista de Tareas</CardTitle>
@@ -259,7 +259,7 @@ export default function ProjectDetailsPage() {
                     </Card>
                 </TabsContent>
                 <TabsContent value="members">
-                    <Card>
+                    <Card className="bg-gradient-accent-to-card">
                         <CardHeader className="flex flex-row items-center justify-between">
                            <div>
                              <CardTitle>Miembros del Proyecto</CardTitle>
@@ -271,7 +271,7 @@ export default function ProjectDetailsPage() {
                             {project.members.map(memberKey => {
                                 const member = membersData[memberKey];
                                 return (
-                                <Card key={memberKey}>
+                                <Card key={memberKey} className="bg-gradient-accent-to-card">
                                     <CardContent className="pt-6 flex items-center gap-4">
                                         <Avatar>
                                             <AvatarImage src={`https://placehold.co/40x40.png`} data-ai-hint="people avatar" alt={member.name} />
@@ -288,7 +288,7 @@ export default function ProjectDetailsPage() {
                     </Card>
                 </TabsContent>
                 <TabsContent value="profitability">
-                    <Card>
+                    <Card className="bg-gradient-accent-to-card">
                          <CardHeader>
                              <CardTitle>Informe de Rentabilidad</CardTitle>
                              <CardDescription>Análisis de costos y rentabilidad del proyecto.</CardDescription>

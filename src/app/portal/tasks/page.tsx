@@ -83,7 +83,7 @@ export default function EmployeeTasksPage() {
                 </Dialog>
             </div>
 
-            <Card>
+            <Card className="bg-gradient-accent-to-card">
                 <CardHeader>
                     <CardTitle>Historial de Tareas Imputadas</CardTitle>
                 </CardHeader>

@@ -211,7 +211,7 @@ export default function EmployeeAbsencesPage() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {balances.map(balance => (
-            <Card key={balance.type}>
+            <Card key={balance.type} className="bg-gradient-accent-to-card">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-lg">{balance.type}</CardTitle>
                 </CardHeader>
@@ -224,7 +224,7 @@ export default function EmployeeAbsencesPage() {
 
       <div className="grid gap-8 lg:grid-cols-5">
         <div className="lg:col-span-3">
-            <Card>
+            <Card className="bg-gradient-accent-to-card">
                 <CardHeader>
                     <CardTitle>Mis Solicitudes</CardTitle>
                     <CardDescription>Historial de tus solicitudes de ausencia.</CardDescription>
@@ -261,7 +261,7 @@ export default function EmployeeAbsencesPage() {
             </Card>
         </div>
         <div className="lg:col-span-2">
-            <Card>
+            <Card className="bg-gradient-accent-to-card">
                  <CardHeader>
                     <CardTitle>Mi Calendario</CardTitle>
                     <CardDescription>Tus ausencias y festivos de un vistazo.</CardDescription>

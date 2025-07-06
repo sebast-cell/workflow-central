@@ -167,7 +167,7 @@ export default function EmployeeAttendancePage() {
                 
                 <TabsContent value="day" className="mt-4">
                     <div className="grid grid-cols-1 gap-8">
-                        <Card>
+                        <Card className="bg-gradient-accent-to-card">
                             <CardHeader>
                                 <div className="flex items-center justify-between">
                                     <CardTitle>
@@ -258,7 +258,7 @@ export default function EmployeeAttendancePage() {
                 </TabsContent>
                 
                 <TabsContent value="week" className="mt-4">
-                     <Card>
+                     <Card className="bg-gradient-accent-to-card">
                         <CardHeader>
                              <div className="flex items-center justify-between">
                                 <CardTitle>
@@ -298,7 +298,7 @@ export default function EmployeeAttendancePage() {
                 </TabsContent>
                 
                 <TabsContent value="month" className="mt-4">
-                     <Card>
+                     <Card className="bg-gradient-accent-to-card">
                         <CardHeader>
                            <CardTitle>Resumen Mensual</CardTitle>
                             <CardDescription>Tu actividad de fichajes durante el mes. Selecciona un día para ver los detalles.</CardDescription>

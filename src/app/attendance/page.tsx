@@ -107,7 +107,7 @@ export default function AttendancePage() {
       <div>
         <h2 className="text-2xl font-semibold tracking-tight mb-4">Husin (Quién está dentro)</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-            <Card>
+            <Card className="bg-gradient-accent-to-card">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">En Oficina</CardTitle>
                 <Home className="h-4 w-4 text-muted-foreground" />
@@ -116,7 +116,7 @@ export default function AttendancePage() {
                 <div className="text-2xl font-bold">28</div>
             </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-gradient-accent-to-card">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Trabajo Remoto</CardTitle>
                 <Globe className="h-4 w-4 text-muted-foreground" />
@@ -125,7 +125,7 @@ export default function AttendancePage() {
                 <div className="text-2xl font-bold">14</div>
             </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-gradient-accent-to-card">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">En Descanso</CardTitle>
                 <Coffee className="h-4 w-4 text-muted-foreground" />
@@ -134,7 +134,7 @@ export default function AttendancePage() {
                 <div className="text-2xl font-bold">5</div>
             </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-gradient-accent-to-card">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">De Vacaciones</CardTitle>
                 <Briefcase className="h-4 w-4 text-muted-foreground" />
@@ -143,7 +143,7 @@ export default function AttendancePage() {
                 <div className="text-2xl font-bold">3</div>
             </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-gradient-accent-to-card">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Ausente</CardTitle>
                 <UserX className="h-4 w-4 text-muted-foreground" />
@@ -155,7 +155,7 @@ export default function AttendancePage() {
         </div>
       </div>
       
-      <Card>
+      <Card className="bg-gradient-accent-to-card">
         <CardHeader>
           <CardTitle>Timeline de Fichajes</CardTitle>
           <CardDescription>Un registro en tiempo real de los eventos de entrada del día seleccionado.</CardDescription>

@@ -219,7 +219,7 @@ export default function EmployeesPage() {
         <h1 className="text-3xl font-bold tracking-tight">Gestión de Empleados</h1>
         <p className="text-muted-foreground">Ver, gestionar y exportar datos de empleados.</p>
       </div>
-      <Card>
+      <Card className="bg-gradient-accent-to-card">
         <CardHeader>
           <div className="flex flex-col sm:flex-row items-center gap-4">
             <div className="relative flex-1 w-full">

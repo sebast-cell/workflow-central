@@ -197,7 +197,7 @@ export default function ProjectsPage() {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {projects.map((project) => (
-          <Card key={project.id}>
+          <Card key={project.id} className="bg-gradient-accent-to-card">
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div>

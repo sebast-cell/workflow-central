@@ -23,7 +23,7 @@ export default function EmployeePerformancePage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                 <Card>
+                 <Card className="bg-gradient-accent-to-card">
                     <CardHeader className="flex flex-row items-center justify-between">
                         <div>
                             <CardTitle>Mis Objetivos</CardTitle>
@@ -48,7 +48,7 @@ export default function EmployeePerformancePage() {
                         ))}
                     </CardContent>
                 </Card>
-                 <Card>
+                 <Card className="bg-gradient-accent-to-card">
                     <CardHeader>
                         <CardTitle>Mis Evaluaciones de Desempeño</CardTitle>
                         <CardDescription>Historial de tus ciclos de evaluación.</CardDescription>

@@ -33,7 +33,7 @@ export default function EmployeeDocumentsPage() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {folders.map((folder, index) => (
-            <Card key={index} className="hover:bg-muted/50 cursor-pointer transition-colors">
+            <Card key={index} className="hover:bg-muted/50 cursor-pointer transition-colors bg-gradient-accent-to-card">
                 <CardContent className="pt-6">
                     <div className="flex items-center justify-between">
                         <Folder className="h-8 w-8 text-primary"/>
@@ -45,7 +45,7 @@ export default function EmployeeDocumentsPage() {
         ))}
       </div>
 
-      <Card>
+      <Card className="bg-gradient-accent-to-card">
         <CardHeader>
             <CardTitle className="font-bold">Archivos Recientes</CardTitle>
             <CardDescription>Tus documentos subidos o compartidos más recientemente.</CardDescription>

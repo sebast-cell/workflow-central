@@ -44,7 +44,7 @@ export default function PerformancePage() {
                     <TabsTrigger value="feedback">Feedback Continuo</TabsTrigger>
                 </TabsList>
                 <TabsContent value="reviews">
-                    <Card>
+                    <Card className="bg-gradient-accent-to-card">
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div>
                                 <CardTitle>Ciclos de Evaluación</CardTitle>
@@ -125,7 +125,7 @@ export default function PerformancePage() {
                     </Card>
                 </TabsContent>
                 <TabsContent value="goals">
-                     <Card>
+                     <Card className="bg-gradient-accent-to-card">
                         <CardHeader>
                             <CardTitle>Seguimiento de Objetivos</CardTitle>
                             <CardDescription>Visualiza y gestiona los objetivos de la empresa y los equipos.</CardDescription>
@@ -139,7 +139,7 @@ export default function PerformancePage() {
                     </Card>
                 </TabsContent>
                 <TabsContent value="feedback">
-                     <Card>
+                     <Card className="bg-gradient-accent-to-card">
                         <CardHeader>
                             <CardTitle>Registro de Feedback Continuo</CardTitle>
                             <CardDescription>Un lugar central para el feedback constructivo fuera de los ciclos formales.</CardDescription>

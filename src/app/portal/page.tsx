@@ -58,7 +58,7 @@ export default function EmployeeDashboard() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card className="bg-gradient-accent-to-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Estado Actual</CardTitle>
             {isClockedIn ? <Check className="h-4 w-4 text-accent" /> : <XCircle className="h-4 w-4 text-destructive" />}
@@ -68,7 +68,7 @@ export default function EmployeeDashboard() {
             <p className="text-xs text-muted-foreground">{statusTime}</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gradient-accent-to-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Horario de Hoy</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
@@ -78,7 +78,7 @@ export default function EmployeeDashboard() {
             <p className="text-xs text-muted-foreground">Turno estándar</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gradient-accent-to-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Próximas Ausencias</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -88,7 +88,7 @@ export default function EmployeeDashboard() {
             <p className="text-xs text-muted-foreground">Vacaciones (5 días)</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gradient-accent-to-card">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Documentos</CardTitle>
                 <FileText className="h-4 w-4 text-muted-foreground" />
@@ -101,7 +101,7 @@ export default function EmployeeDashboard() {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <Card>
+        <Card className="bg-gradient-accent-to-card">
             <CardHeader>
                 <CardTitle>Acciones Rápidas</CardTitle>
             </CardHeader>
@@ -116,7 +116,7 @@ export default function EmployeeDashboard() {
                 </Button>
             </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gradient-accent-to-card">
             <CardHeader>
                 <CardTitle>Mi Perfil</CardTitle>
                 <CardDescription>Mantén tu información actualizada.</CardDescription>

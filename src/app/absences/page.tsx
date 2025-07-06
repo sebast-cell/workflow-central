@@ -45,7 +45,7 @@ export default function AbsencesPage() {
 
       <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <Card>
+          <Card className="bg-gradient-accent-to-card">
             <CardHeader>
               <CardTitle>Calendario de Ausencias del Equipo</CardTitle>
               <CardDescription>Vista mensual de todas las ausencias del equipo.</CardDescription>
@@ -60,7 +60,7 @@ export default function AbsencesPage() {
           </Card>
         </div>
         <div className="lg:col-span-1 space-y-8">
-          <Card>
+          <Card className="bg-gradient-accent-to-card">
             <CardHeader>
               <CardTitle>Filtros</CardTitle>
             </CardHeader>
@@ -79,7 +79,7 @@ export default function AbsencesPage() {
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-gradient-accent-to-card">
             <CardHeader>
                 <CardTitle>Acciones</CardTitle>
             </CardHeader>
@@ -178,7 +178,7 @@ export default function AbsencesPage() {
           </Card>
         </div>
       </div>
-       <Card>
+       <Card className="bg-gradient-accent-to-card">
         <CardHeader>
           <CardTitle>Solicitudes Pendientes y Recientes</CardTitle>
           <CardDescription>Revisa y gestiona las solicitudes de ausencia.</CardDescription>

@@ -27,7 +27,7 @@ export default function ReportGenerator({ formAction }: { formAction: (prevState
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <Card className="lg:col-span-1 h-fit">
+      <Card className="lg:col-span-1 h-fit bg-gradient-accent-to-card">
         <form action={action}>
           <CardHeader>
             <CardTitle>Nuevo Informe</CardTitle>
@@ -81,7 +81,7 @@ export default function ReportGenerator({ formAction }: { formAction: (prevState
       
       <div className="lg:col-span-2">
         {state.success && state.report && (
-            <Card>
+            <Card className="bg-gradient-accent-to-card">
                 <CardHeader>
                     <CardTitle>Informe Generado</CardTitle>
                     <CardDescription>Aquí está el informe generado según tus criterios.</CardDescription>

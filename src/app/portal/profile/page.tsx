@@ -13,7 +13,7 @@ export default function EmployeeProfilePage() {
         <p className="text-muted-foreground">Consulta y actualiza tu información personal y de contacto.</p>
       </div>
 
-      <Card>
+      <Card className="bg-gradient-accent-to-card">
         <CardHeader>
             <div className="flex items-center gap-4">
                 <Avatar className="h-16 w-16">

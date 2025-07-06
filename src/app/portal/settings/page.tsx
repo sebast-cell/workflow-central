@@ -13,7 +13,7 @@ export default function EmployeeSettingsPage() {
       </div>
 
       <div className="grid gap-8 md:grid-cols-1 lg:grid-cols-2">
-        <Card>
+        <Card className="bg-gradient-accent-to-card">
           <CardHeader>
             <CardTitle>Preferencias de Notificaciones</CardTitle>
             <CardDescription>Elige cómo quieres que te notifiquemos.</CardDescription>
@@ -43,7 +43,7 @@ export default function EmployeeSettingsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-accent-to-card">
           <CardHeader>
             <CardTitle>Seguridad de la Cuenta</CardTitle>
             <CardDescription>Actualiza tu contraseña para mantener tu cuenta segura.</CardDescription>

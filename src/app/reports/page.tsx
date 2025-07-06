@@ -46,7 +46,7 @@ export default function ReportsPage() {
             
             <ReportGenerator formAction={generateReportAction} />
 
-            <Card>
+            <Card className="bg-gradient-accent-to-card">
                 <CardHeader>
                     <CardTitle>Últimos Informes</CardTitle>
                     <CardDescription>Un historial de informes exportados recientemente para una descarga fácil.</CardDescription>

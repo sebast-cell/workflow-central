@@ -489,7 +489,7 @@ const CentersTabContent = () => {
                     </AlertDescription>
                 </Alert>
             )}
-            <Card>
+            <Card className="bg-gradient-accent-to-card">
                 <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                     <CardTitle>Centros de Trabajo</CardTitle>
@@ -576,7 +576,7 @@ const SettingsTabs = () => {
     const [isFixedScheduleDialogOpen, setIsFixedScheduleDialogOpen] = useState(false);
     const [dialogFixedScheduleMode, setDialogFixedScheduleMode] = useState<'add' | 'edit'>('add');
     const [selectedFixedSchedule, setSelectedFixedSchedule] = useState<FixedSchedule | null>(null);
-    const [fixedScheduleFormData, setFixedScheduleFormData] = useState<Omit<FixedSchedule, 'id'>>({ name: "", workDays: [], ranges: [{id: Date.now().toString(), start: "09:00", end: "17:00"}], isNightShift: false });
+    const [fixedScheduleFormData, setFixedScheduleFormData] = useState<Omit<FixedSchedule, 'id'>>({ name: "", workDays: [], ranges: [{ id: Date.now().toString(), start: "09:00", end: "17:00" }], isNightShift: false });
     
     const [isAbsenceTypeDialogOpen, setIsAbsenceTypeDialogOpen] = useState(false);
     const [dialogAbsenceTypeMode, setDialogAbsenceTypeMode] = useState<'add' | 'edit'>('add');
@@ -1018,7 +1018,7 @@ const SettingsTabs = () => {
             
             <div className="flex-1">
                 <TabsContent value="general" className="space-y-4 m-0">
-                    <Card>
+                    <Card className="bg-gradient-accent-to-card">
                         <CardHeader>
                             <CardTitle>Detalles de la Empresa</CardTitle>
                             <CardDescription>Actualiza la información de tu organización.</CardDescription>
@@ -1037,7 +1037,7 @@ const SettingsTabs = () => {
                 </TabsContent>
 
                 <TabsContent value="roles" className="space-y-4 m-0">
-                    <Card>
+                    <Card className="bg-gradient-accent-to-card">
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div>
                                 <CardTitle>Roles de Usuario</CardTitle>
@@ -1123,7 +1123,7 @@ const SettingsTabs = () => {
                 
                 <TabsContent value="centers" className="space-y-4 m-0">
                     <CentersTabContent />
-                    <Card>
+                    <Card className="bg-gradient-accent-to-card">
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div>
                                 <CardTitle>Departamentos</CardTitle>
@@ -1162,7 +1162,7 @@ const SettingsTabs = () => {
                 </TabsContent>
 
                 <TabsContent value="schedules" className="space-y-4 m-0">
-                    <Card>
+                    <Card className="bg-gradient-accent-to-card">
                         <CardHeader className="flex flex-row items-center justify-between">
                             <CardTitle>Horarios Flexibles</CardTitle>
                             <Button onClick={openAddFlexibleScheduleDialog}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Horario Flexible</Button>
@@ -1184,7 +1184,7 @@ const SettingsTabs = () => {
                             ))}
                         </CardContent>
                     </Card>
-                    <Card>
+                    <Card className="bg-gradient-accent-to-card">
                         <CardHeader className="flex flex-row items-center justify-between">
                             <CardTitle>Horarios Fijos</CardTitle>
                             <Button onClick={openAddFixedScheduleDialog}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Horario Fijo</Button>
@@ -1206,7 +1206,7 @@ const SettingsTabs = () => {
                             ))}
                         </CardContent>
                     </Card>
-                    <Card>
+                    <Card className="bg-gradient-accent-to-card">
                         <CardHeader className="flex flex-row items-center justify-between">
                             <CardTitle>Turnos de Trabajo</CardTitle>
                             <Button onClick={openAddShiftDialog}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Turno</Button>
@@ -1340,7 +1340,7 @@ const SettingsTabs = () => {
                 </Dialog>
 
                 <TabsContent value="breaks" className="space-y-4 m-0">
-                    <Card>
+                    <Card className="bg-gradient-accent-to-card">
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div>
                                 <CardTitle>Gestión de Descansos</CardTitle>
@@ -1472,7 +1472,7 @@ const SettingsTabs = () => {
                 </TabsContent>
                 
                 <TabsContent value="checkin-types" className="space-y-4 m-0">
-                    <Card>
+                    <Card className="bg-gradient-accent-to-card">
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div>
                                 <CardTitle>Tipos de Fichaje</CardTitle>
@@ -1585,7 +1585,7 @@ const SettingsTabs = () => {
 
                 <TabsContent value="calendars" className="space-y-4 m-0">
                     {!selectedCalendarId ? (
-                        <Card>
+                        <Card className="bg-gradient-accent-to-card">
                             <CardHeader className="flex flex-row items-center justify-between">
                                 <div>
                                     <CardTitle>Calendarios de Festivos</CardTitle>
@@ -1623,7 +1623,7 @@ const SettingsTabs = () => {
                     ) : (
                         <>
                             <Button variant="ghost" onClick={handleBackToCalendars}><ArrowLeft className="mr-2 h-4 w-4"/> Volver a Calendarios</Button>
-                            <Card>
+                            <Card className="bg-gradient-accent-to-card">
                                 <CardHeader className="flex flex-row items-center justify-between">
                                     <div>
                                         <CardTitle>{selectedCalendar?.name}</CardTitle>
@@ -1703,7 +1703,7 @@ const SettingsTabs = () => {
                 </TabsContent>
 
                 <TabsContent value="vacations" className="space-y-4 m-0">
-                    <Card>
+                    <Card className="bg-gradient-accent-to-card">
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div>
                                 <CardTitle>Políticas de Vacaciones</CardTitle>
@@ -1906,7 +1906,7 @@ const SettingsTabs = () => {
                 </TabsContent>
                 
                 <TabsContent value="absences" className="space-y-4 m-0">
-                    <Card>
+                    <Card className="bg-gradient-accent-to-card">
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div>
                                 <CardTitle>Tipos de Ausencia</CardTitle>
@@ -2131,7 +2131,7 @@ const SettingsTabs = () => {
                 </TabsContent>
                 
                 <TabsContent value="automations" className="space-y-4 m-0">
-                    <Card>
+                    <Card className="bg-gradient-accent-to-card">
                         <CardHeader>
                             <CardTitle>Automatizaciones de Jornada</CardTitle>
                             <CardDescription>Configura acciones automáticas para los fichajes de los empleados.</CardDescription>
@@ -2195,7 +2195,7 @@ const SettingsTabs = () => {
                 </TabsContent>
                 
                 <TabsContent value="permissions" className="space-y-4 m-0">
-                    <Card>
+                    <Card className="bg-gradient-accent-to-card">
                         <CardHeader>
                             <CardTitle>Permisos de Empleado</CardTitle>
                             <CardDescription>Restringe la visibilidad de ciertas secciones para los empleados.</CardDescription>
@@ -2218,7 +2218,7 @@ const SettingsTabs = () => {
                 </TabsContent>
 
                 <TabsContent value="security" className="space-y-4 m-0">
-                    <Card>
+                    <Card className="bg-gradient-accent-to-card">
                         <CardHeader>
                             <CardTitle>Autenticación</CardTitle>
                             <CardDescription>Gestiona la configuración de seguridad de tu cuenta.</CardDescription>
@@ -2237,21 +2237,21 @@ const SettingsTabs = () => {
                 </TabsContent>
 
                 <TabsContent value="integrations" className="space-y-4 m-0">
-                    <Card>
+                    <Card className="bg-gradient-accent-to-card">
                         <CardHeader>
                             <CardTitle>Integraciones de Aplicaciones</CardTitle>
                             <CardDescription>Conecta WorkFlow Central con tus herramientas favoritas.</CardDescription>
                         </CardHeader>
                         <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            <Card>
+                            <Card className="bg-gradient-accent-to-card">
                                 <CardHeader><CardTitle className="text-lg">Slack</CardTitle></CardHeader>
                                 <CardContent><p className="text-sm text-muted-foreground mb-4">Recibe notificaciones en Slack.</p><Button className="w-full">Conectar</Button></CardContent>
                             </Card>
-                            <Card>
+                            <Card className="bg-gradient-accent-to-card">
                                 <CardHeader><CardTitle className="text-lg">Google Calendar</CardTitle></CardHeader>
                                 <CardContent><p className="text-sm text-muted-foreground mb-4">Sincroniza ausencias y horarios.</p><Button className="w-full">Conectar</Button></CardContent>
                             </Card>
-                            <Card>
+                            <Card className="bg-gradient-accent-to-card">
                                 <CardHeader><CardTitle className="text-lg">QuickBooks</CardTitle></CardHeader>
                                 <CardContent><p className="text-sm text-muted-foreground mb-4">Sincroniza datos de nómina.</p><Button className="w-full" variant="secondary" disabled>Conectado</Button></CardContent>
                             </Card>
@@ -2260,7 +2260,7 @@ const SettingsTabs = () => {
                 </TabsContent>
                 
                 <TabsContent value="notifications" className="space-y-4 m-0">
-                    <Card>
+                    <Card className="bg-gradient-accent-to-card">
                         <CardHeader>
                             <CardTitle>Preferencias de Notificaciones</CardTitle>
                             <CardDescription>Gestiona cómo recibes las notificaciones como administrador.</CardDescription>
