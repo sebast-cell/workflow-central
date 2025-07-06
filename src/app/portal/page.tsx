@@ -106,8 +106,8 @@ export default function EmployeeDashboard() {
                 <CardTitle>Acciones Rápidas</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-4">
-                <Button onClick={handleClockInOut}>{isClockedIn ? 'Marcar Salida' : 'Marcar Entrada'}</Button>
-                <Button variant="outline">Empezar Descanso</Button>
+                <Button onClick={handleClockInOut} variant={isClockedIn ? "destructive" : "active"}>{isClockedIn ? 'Marcar Salida' : 'Marcar Entrada'}</Button>
+                <Button variant="warning">Empezar Descanso</Button>
                 <Button asChild variant="secondary">
                     <Link href="/portal/absences">Solicitar Ausencia</Link>
                 </Button>
