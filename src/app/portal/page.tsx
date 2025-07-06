@@ -207,7 +207,7 @@ export default function EmployeeDashboard() {
         </Card>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="bg-gradient-accent-to-card">
             <CardHeader>
                 <CardTitle>Acciones Rápidas</CardTitle>
