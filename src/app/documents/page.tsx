@@ -106,7 +106,7 @@ export default function DocumentsPage() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {folders.map((folder, index) => (
-            <Card key={index} className="hover:bg-muted/50 cursor-pointer transition-colors">
+            <Card key={index} className="bg-gradient-accent-to-card cursor-pointer transition-colors">
                 <CardContent className="pt-6">
                     <div className="flex items-center justify-between">
                         <Folder className="h-8 w-8 text-primary"/>
