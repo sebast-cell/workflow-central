@@ -1,8 +1,8 @@
 'use client';
 import axios from 'axios';
+import { v4 as uuidv4 } from 'uuid';
 
 const apiClient = axios.create({
-    baseURL: 'http://localhost:8000',
     headers: {
         'Content-Type': 'application/json',
     }
@@ -173,54 +173,54 @@ export type VacationPolicy = {
 
 // -- Incentives --
 export const listIncentives = async (): Promise<Incentive[]> => {
-    const response = await apiClient.get('/incentives/');
+    const response = await apiClient.get('/api/incentives');
     return response.data;
 };
 
-export const createIncentive = async (incentive: Incentive): Promise<Incentive> => {
-    const response = await apiClient.post('/incentives/', incentive);
+export const createIncentive = async (incentive: Omit<Incentive, 'id' | 'company_id'>): Promise<Incentive> => {
+    const response = await apiClient.post('/api/incentives', incentive);
     return response.data;
 };
 
 // -- Objectives --
 export const listObjectives = async (): Promise<Objective[]> => {
-    const response = await apiClient.get('/objectives/');
+    const response = await apiClient.get('/api/objectives');
     return response.data;
 };
 
 export const createObjective = async (objective: Omit<Objective, 'id'>): Promise<Objective> => {
-    const response = await apiClient.post('/objectives/', objective);
+    const response = await apiClient.post('/api/objectives', objective);
     return response.data;
 };
 
 export const calculateIncentiveForObjective = async (objectiveId: string): Promise<{ result: string | number; message: string; }> => {
-    const response = await apiClient.get(`/objectives/${objectiveId}/incentive`);
+    const response = await apiClient.get(`/api/objectives/${objectiveId}/incentive`);
     return response.data;
 };
 
 // -- Tasks --
 export const listTasks = async (): Promise<Task[]> => {
-    const response = await apiClient.get('/tasks/');
+    const response = await apiClient.get('/api/tasks');
     return response.data;
 };
 
 export const getTasksByObjective = async (objectiveId: string): Promise<Task[]> => {
-    const response = await apiClient.get(`/objectives/${objectiveId}/tasks`);
+    const response = await apiClient.get(`/api/objectives/${objectiveId}/tasks`);
     return response.data;
 };
 
 export const createTask = async (task: Omit<Task, 'id'>): Promise<Task> => {
-    const response = await apiClient.post('/tasks/', task);
+    const response = await apiClient.post('/api/tasks', task);
     return response.data;
 };
 
 // -- Projects --
 export const listProjects = async (): Promise<Project[]> => {
-    const response = await apiClient.get('/projects/');
+    const response = await apiClient.get('/api/projects');
     return response.data;
 };
 
 export const createProject = async (project: Omit<Project, 'id'>): Promise<Project> => {
-    const response = await apiClient.post('/projects/', project);
+    const response = await apiClient.post('/api/projects', project);
     return response.data;
 };
