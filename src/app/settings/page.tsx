@@ -220,7 +220,10 @@ const initialCalendars: CalendarData[] = [
 const initialVacationPolicies: VacationPolicy[] = [
     { id: 'default', name: 'General', unit: 'days', amount: 22, countBy: 'workdays', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [], assignment: 'all', assignedTo: [] }
 ];
-const initialIncentives: Incentive[] = [];
+const initialIncentives: Incentive[] = [
+    { id: 'inc-1', name: 'Bono Trimestral por Lanzamiento', type: 'económico', value: '1000€', period: 'trimestral', active: true, condition_expression: '' },
+    { id: 'inc-2', name: 'Días Libres Extra', type: 'días_libres', value: '2', period: 'anual', active: true, condition_expression: '' },
+];
 
 const CENTERS_STORAGE_KEY = 'workflow-central-centers';
 const DEPARTMENTS_STORAGE_KEY = 'workflow-central-departments';

@@ -5,13 +5,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, Edit, PlusCircle } from "lucide-react";
+import { ArrowLeft, Edit, PlusCircle, Gift } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
+import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+
 
 type Project = {
     id: string;
@@ -26,17 +29,39 @@ type Objective = {
   type: 'individual' | 'equipo' | 'empresa';
   assigned_to: string;
   project_id: string;
+  is_incentivized: boolean;
+  incentive_id?: string;
   weight?: number;
 };
 
+type Task = {
+  id: string;
+  title: string;
+  objective_id: string;
+  completed: boolean;
+};
+
+type Incentive = {
+  id: string;
+  name: string;
+  type: string;
+  value: string | number;
+};
+
+
 const PROJECTS_STORAGE_KEY = 'workflow-central-projects';
 const OBJECTIVES_STORAGE_KEY = 'workflow-central-objectives';
+const TASKS_STORAGE_KEY = 'workflow-central-tasks';
+const INCENTIVES_STORAGE_KEY = 'workflow-central-incentives';
 
 export default function ProjectDetailsPage() {
     const params = useParams();
     const projectId = params.projectId as string;
     const [projects, setProjects] = useState<Project[]>([]);
     const [objectives, setObjectives] = useState<Objective[]>([]);
+    const [tasks, setTasks] = useState<Task[]>([]);
+    const [incentives, setIncentives] = useState<Incentive[]>([]);
+
     const [isClient, setIsClient] = useState(false);
     const [isObjectiveDialogOpen, setIsObjectiveDialogOpen] = useState(false);
 
@@ -53,6 +78,13 @@ export default function ProjectDetailsPage() {
                 const storedObjectives = localStorage.getItem(OBJECTIVES_STORAGE_KEY);
                 if (storedObjectives) setObjectives(JSON.parse(storedObjectives));
 
+                const storedTasks = localStorage.getItem(TASKS_STORAGE_KEY);
+                if (storedTasks) setTasks(JSON.parse(storedTasks));
+                
+                const storedIncentives = localStorage.getItem(INCENTIVES_STORAGE_KEY);
+                if (storedIncentives) setIncentives(JSON.parse(storedIncentives));
+
+
             } catch (error) {
                 console.error("Failed to load data from localStorage", error);
             }
@@ -67,6 +99,15 @@ export default function ProjectDetailsPage() {
         // Logic to add a new objective would go here
         setIsObjectiveDialogOpen(false);
     }
+
+    const getObjectiveProgress = (objectiveId: string) => {
+        const relevantTasks = tasks.filter(t => t.objective_id === objectiveId);
+        if (relevantTasks.length === 0) return { progress: 0, completed: 0, total: 0 };
+
+        const completedTasks = relevantTasks.filter(t => t.completed);
+        const progress = (completedTasks.length / relevantTasks.length) * 100;
+        return { progress, completed: completedTasks.length, total: relevantTasks.length };
+    };
     
     if (!isClient) {
         return <div className="p-8">Cargando proyecto...</div>;
@@ -131,24 +172,48 @@ export default function ProjectDetailsPage() {
                     </Dialog>
                 </CardHeader>
                 <CardContent>
+                    <TooltipProvider>
                     <Table>
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Objetivo</TableHead>
-                                <TableHead>Tipo</TableHead>
                                 <TableHead>Asignado a</TableHead>
+                                <TableHead>Progreso</TableHead>
                                 <TableHead className="text-right">Peso</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {projectObjectives.map(obj => (
+                            {projectObjectives.map(obj => {
+                                const { progress, completed, total } = getObjectiveProgress(obj.id);
+                                const incentive = incentives.find(i => i.id === obj.incentive_id);
+                                return (
                                 <TableRow key={obj.id}>
-                                    <TableCell className="font-medium">{obj.title}</TableCell>
-                                    <TableCell><Badge variant="outline">{obj.type}</Badge></TableCell>
-                                    <TableCell>{obj.assigned_to}</TableCell>
+                                    <TableCell className="font-medium">
+                                        <div className="flex items-center gap-2">
+                                            {obj.title}
+                                            {obj.is_incentivized && incentive && (
+                                                <Tooltip>
+                                                    <TooltipTrigger>
+                                                        <Gift className="h-4 w-4 text-primary" />
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p className="font-semibold">{incentive.name}</p>
+                                                        <p>{incentive.type}: {incentive.value.toString()}</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            )}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell><Badge variant="outline">{obj.assigned_to}</Badge></TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center gap-2">
+                                            <Progress value={progress} className="w-24" />
+                                            <span className="text-muted-foreground text-xs">{completed}/{total}</span>
+                                        </div>
+                                    </TableCell>
                                     <TableCell className="text-right">{obj.weight ? `${obj.weight}%` : '-'}</TableCell>
                                 </TableRow>
-                            ))}
+                            )})}
                             {projectObjectives.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">No hay objetivos para este proyecto.</TableCell>
@@ -156,6 +221,7 @@ export default function ProjectDetailsPage() {
                             )}
                         </TableBody>
                     </Table>
+                    </TooltipProvider>
                 </CardContent>
             </Card>
         </div>

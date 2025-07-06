@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Gift, Goal, PlusCircle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Progress } from "@/components/ui/progress";
 
 type Objective = {
   id: string; // UUID
@@ -21,19 +22,30 @@ type Objective = {
   end_date?: string; // date
 };
 
+type Task = {
+  id: string;
+  title: string;
+  objective_id: string;
+  completed: boolean;
+  is_incentivized: boolean;
+  incentive_id?: string;
+};
+
 type Incentive = {
   id: string;
   name: string;
-  type: 'Económico' | 'Días libres' | 'Formación' | 'Personalizado';
+  type: 'económico' | 'días_libres' | 'formación' | 'otro';
   value: string | number;
   period: 'mensual' | 'trimestral' | 'anual';
 };
 
 const OBJECTIVES_STORAGE_KEY = 'workflow-central-objectives';
+const TASKS_STORAGE_KEY = 'workflow-central-tasks';
 const INCENTIVES_STORAGE_KEY = 'workflow-central-incentives';
 
 export default function EmployeePerformancePage() {
     const [myObjectives, setMyObjectives] = useState<Objective[]>([]);
+    const [tasks, setTasks] = useState<Task[]>([]);
     const [incentives, setIncentives] = useState<Incentive[]>([]);
 
     useEffect(() => {
@@ -45,6 +57,11 @@ export default function EmployeePerformancePage() {
                 setMyObjectives(allObjectives.filter(g => g.assigned_to === "Olivia Martin"));
             }
 
+            const storedTasks = localStorage.getItem(TASKS_STORAGE_KEY);
+            if (storedTasks) {
+                setTasks(JSON.parse(storedTasks));
+            }
+
             const storedIncentives = localStorage.getItem(INCENTIVES_STORAGE_KEY);
             if (storedIncentives) {
                 setIncentives(JSON.parse(storedIncentives));
@@ -54,6 +71,14 @@ export default function EmployeePerformancePage() {
         }
     }, []);
     
+    const getObjectiveProgress = (objectiveId: string) => {
+        const relevantTasks = tasks.filter(t => t.objective_id === objectiveId);
+        if (relevantTasks.length === 0) return { progress: 0, completed: 0, total: 0 };
+
+        const completedTasks = relevantTasks.filter(t => t.completed);
+        const progress = (completedTasks.length / relevantTasks.length) * 100;
+        return { progress, completed: completedTasks.length, total: relevantTasks.length };
+    };
 
     return (
         <div className="space-y-8">
@@ -75,6 +100,7 @@ export default function EmployeePerformancePage() {
                         <TooltipProvider>
                         {myObjectives.map((objective, index) => {
                             const incentive = incentives.find(i => i.id === objective.incentive_id);
+                            const { progress, completed, total } = getObjectiveProgress(objective.id);
                             return (
                                 <div key={index}>
                                     <div className="flex items-center justify-between mb-2">
@@ -92,7 +118,9 @@ export default function EmployeePerformancePage() {
                                               </Tooltip>
                                           )}
                                         </div>
+                                         <span className="text-sm text-muted-foreground">{completed}/{total}</span>
                                     </div>
+                                    <Progress value={progress} className="h-2" />
                                     <p className="text-sm text-muted-foreground mt-1">
                                         {objective.description}
                                     </p>

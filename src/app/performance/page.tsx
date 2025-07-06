@@ -15,6 +15,7 @@ import { MoreHorizontal, PlusCircle, Gift, Trash2 } from "lucide-react"
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Progress } from "@/components/ui/progress";
 
 const reviewCycles = [
   { name: "Revisión Anual 2024", status: "Completado", period: "01 Ene - 31 Dic, 2024", participants: 48 },
@@ -33,7 +34,7 @@ type Objective = {
   title: string;
   description: string;
   type: 'individual' | 'equipo' | 'empresa';
-  assigned_to: string; // UserID or TeamID
+  assigned_to: string; // UserID, TeamID or 'company'
   project_id?: string; // UUID (nullable)
   is_incentivized: boolean;
   incentive_id?: string; // UUID (nullable)
@@ -42,11 +43,21 @@ type Objective = {
   end_date?: string; // date
 };
 
+type Task = {
+  id: string;
+  title: string;
+  objective_id: string;
+  completed: boolean;
+  is_incentivized: boolean;
+  incentive_id?: string;
+};
+
 type Incentive = {
   id: string;
   name: string;
-  type: 'Económico' | 'Días libres' | 'Formación' | 'Personalizado';
-  details: string; 
+  type: 'económico' | 'días_libres' | 'formación' | 'otro';
+  value: string | number;
+  period: 'mensual' | 'trimestral' | 'anual';
 };
 
 type Project = {
@@ -55,16 +66,41 @@ type Project = {
     description: string;
 }
 
+type Department = {
+    name: string;
+};
+
 const EMPLOYEES_STORAGE_KEY = 'workflow-central-employees';
 const OBJECTIVES_STORAGE_KEY = 'workflow-central-objectives';
+const TASKS_STORAGE_KEY = 'workflow-central-tasks';
 const INCENTIVES_STORAGE_KEY = 'workflow-central-incentives';
 const PROJECTS_STORAGE_KEY = 'workflow-central-projects';
+const DEPARTMENTS_STORAGE_KEY = 'workflow-central-departments';
+
+
+const initialObjectives: Objective[] = [
+  { id: "obj-1", title: "Lanzar el rediseño de la web", description: "Completar y lanzar el nuevo diseño del sitio web.", type: 'equipo', assigned_to: 'Ingeniería', project_id: '1', is_incentivized: true, incentive_id: 'inc-1', weight: 50, start_date: '2024-08-01', end_date: '2024-10-31' },
+  { id: "obj-2", title: "Aumentar el engagement en redes sociales un 15%", description: "Incrementar la interacción en las principales plataformas sociales.", type: 'individual', assigned_to: 'Isabella Nguyen', project_id: '3', is_incentivized: false, weight: 30, start_date: '2024-09-01', end_date: '2024-12-31' },
+  { id: "obj-3", title: "Desarrollar la pantalla de perfil de usuario", description: "Implementar la vista de perfil en la app móvil.", type: 'individual', assigned_to: 'Olivia Martin', project_id: '2', is_incentivized: true, incentive_id: 'inc-2', weight: 20, start_date: '2024-09-01', end_date: '2024-09-30' },
+];
+
+const initialTasks: Task[] = [
+    { id: "task-1", title: "Definir arquitectura de componentes", objective_id: "obj-1", completed: true, is_incentivized: false },
+    { id: "task-2", title: "Crear mockups de alta fidelidad", objective_id: "obj-1", completed: true, is_incentivized: false },
+    { id: "task-3", title: "Desarrollar landing page", objective_id: "obj-1", completed: false, is_incentivized: false },
+    { id: "task-4", title: "Crear API de perfil", objective_id: "obj-3", completed: true, is_incentivized: false },
+    { id: "task-5", title: "Implementar UI de perfil", objective_id: "obj-3", completed: false, is_incentivized: false },
+    { id: "task-6", title: "Tests de integración de perfil", objective_id: "obj-3", completed: false, is_incentivized: false },
+];
+
 
 export default function PerformancePage() {
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [objectives, setObjectives] = useState<Objective[]>([]);
+    const [tasks, setTasks] = useState<Task[]>([]);
     const [incentives, setIncentives] = useState<Incentive[]>([]);
     const [projects, setProjects] = useState<Project[]>([]);
+    const [departments, setDepartments] = useState<Department[]>([]);
 
 
     const [isObjectiveDialogOpen, setIsObjectiveDialogOpen] = useState(false);
@@ -90,13 +126,29 @@ export default function PerformancePage() {
             if (storedEmployees) setEmployees(JSON.parse(storedEmployees));
 
             const storedObjectives = localStorage.getItem(OBJECTIVES_STORAGE_KEY);
-            if (storedObjectives) setObjectives(JSON.parse(storedObjectives));
+            if (storedObjectives) {
+                 setObjectives(JSON.parse(storedObjectives));
+            } else {
+                setObjectives(initialObjectives);
+                localStorage.setItem(OBJECTIVES_STORAGE_KEY, JSON.stringify(initialObjectives));
+            }
+
+            const storedTasks = localStorage.getItem(TASKS_STORAGE_KEY);
+            if (storedTasks) {
+                setTasks(JSON.parse(storedTasks));
+            } else {
+                setTasks(initialTasks);
+                localStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(initialTasks));
+            }
 
             const storedIncentives = localStorage.getItem(INCENTIVES_STORAGE_KEY);
             if (storedIncentives) setIncentives(JSON.parse(storedIncentives));
             
             const storedProjects = localStorage.getItem(PROJECTS_STORAGE_KEY);
             if(storedProjects) setProjects(JSON.parse(storedProjects));
+
+            const storedDepartments = localStorage.getItem(DEPARTMENTS_STORAGE_KEY);
+            if(storedDepartments) setDepartments(JSON.parse(storedDepartments));
 
         } catch (error) {
             console.error("Failed to load data from localStorage", error);
@@ -151,22 +203,37 @@ export default function PerformancePage() {
 
     const handleObjectiveFormSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!objectiveFormData.title || !objectiveFormData.assigned_to) return;
+        
+        const dataToSave = {...objectiveFormData};
+        if (dataToSave.type === 'empresa') {
+            dataToSave.assigned_to = 'Toda la empresa';
+        }
+        
+        if (!dataToSave.title || !dataToSave.assigned_to) return;
         
         if (dialogObjectiveMode === 'add') {
             const newObjective: Objective = {
                 id: Date.now().toString(),
-                ...objectiveFormData,
+                ...dataToSave,
             };
             setObjectives(prev => [...prev, newObjective]);
         } else if (selectedObjective) {
-            setObjectives(prev => prev.map(g => g.id === selectedObjective.id ? { ...g, ...objectiveFormData } : g));
+            setObjectives(prev => prev.map(g => g.id === selectedObjective.id ? { ...g, ...dataToSave } : g));
         }
         setIsObjectiveDialogOpen(false);
     };
 
     const handleDeleteObjective = (objectiveId: string) => {
         setObjectives(prev => prev.filter(g => g.id !== objectiveId));
+    };
+
+    const getObjectiveProgress = (objectiveId: string) => {
+        const relevantTasks = tasks.filter(t => t.objective_id === objectiveId);
+        if (relevantTasks.length === 0) return { progress: 0, completed: 0, total: 0 };
+
+        const completedTasks = relevantTasks.filter(t => t.completed);
+        const progress = (completedTasks.length / relevantTasks.length) * 100;
+        return { progress, completed: completedTasks.length, total: relevantTasks.length };
     };
 
     return (
@@ -176,10 +243,10 @@ export default function PerformancePage() {
                 <p className="text-muted-foreground">Lanza evaluaciones, establece objetivos y fomenta el feedback continuo.</p>
             </div>
 
-            <Tabs defaultValue="goals">
+            <Tabs defaultValue="objectives">
                 <TabsList>
                     <TabsTrigger value="reviews">Evaluaciones</TabsTrigger>
-                    <TabsTrigger value="goals">Objetivos</TabsTrigger>
+                    <TabsTrigger value="objectives">Objetivos</TabsTrigger>
                     <TabsTrigger value="feedback">Feedback Continuo</TabsTrigger>
                 </TabsList>
                 <TabsContent value="reviews">
@@ -263,7 +330,7 @@ export default function PerformancePage() {
                         </CardContent>
                     </Card>
                 </TabsContent>
-                <TabsContent value="goals">
+                <TabsContent value="objectives">
                      <Card className="bg-gradient-accent-to-card">
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div>
@@ -279,15 +346,14 @@ export default function PerformancePage() {
                                     <TableRow>
                                         <TableHead className="w-2/5">Título del Objetivo</TableHead>
                                         <TableHead>Asignado a</TableHead>
-                                        <TableHead>Proyecto</TableHead>
-                                        <TableHead>Peso</TableHead>
+                                        <TableHead>Progreso</TableHead>
                                         <TableHead><span className="sr-only">Acciones</span></TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {objectives.map(objective => {
                                         const incentive = incentives.find(i => i.id === objective.incentive_id);
-                                        const project = projects.find(p => p.id === objective.project_id);
+                                        const { progress, completed, total } = getObjectiveProgress(objective.id);
                                         return (
                                             <TableRow key={objective.id}>
                                                 <TableCell className="font-medium">
@@ -300,15 +366,20 @@ export default function PerformancePage() {
                                                                 </TooltipTrigger>
                                                                 <TooltipContent>
                                                                     <p className="font-semibold">{incentive.name}</p>
-                                                                    <p>{incentive.type}: {incentive.details}</p>
+                                                                    <p>{incentive.type}: {incentive.value.toString()}</p>
                                                                 </TooltipContent>
                                                             </Tooltip>
                                                         )}
                                                     </div>
+                                                     <p className="text-sm text-muted-foreground">{projects.find(p => p.id === objective.project_id)?.name || ''}</p>
                                                 </TableCell>
                                                 <TableCell>{objective.assigned_to}</TableCell>
-                                                <TableCell>{project?.name || '-'}</TableCell>
-                                                <TableCell>{objective.weight || '-'}</TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-2">
+                                                        <Progress value={progress} className="w-24" />
+                                                        <span className="text-muted-foreground text-xs">{completed}/{total}</span>
+                                                    </div>
+                                                </TableCell>
                                                 <TableCell className="text-right">
                                                      <DropdownMenu>
                                                         <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4"/></Button></DropdownMenuTrigger>
@@ -363,17 +434,8 @@ export default function PerformancePage() {
                             </div>
                              <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="objective-assignee">Asignar a</Label>
-                                    <Select value={objectiveFormData.assigned_to} onValueChange={(value) => setObjectiveFormData({...objectiveFormData, assigned_to: value})}>
-                                        <SelectTrigger id="objective-assignee"><SelectValue placeholder="Seleccionar empleado"/></SelectTrigger>
-                                        <SelectContent>
-                                            {employees.map(e => <SelectItem key={e.id} value={e.name}>{e.name}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-2">
                                     <Label htmlFor="objective-type">Tipo</Label>
-                                    <Select value={objectiveFormData.type} onValueChange={(value: any) => setObjectiveFormData({...objectiveFormData, type: value})}>
+                                    <Select value={objectiveFormData.type} onValueChange={(value: any) => setObjectiveFormData({...objectiveFormData, type: value, assigned_to: ''})}>
                                         <SelectTrigger id="objective-type"><SelectValue/></SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="individual">Individual</SelectItem>
@@ -382,6 +444,28 @@ export default function PerformancePage() {
                                         </SelectContent>
                                     </Select>
                                 </div>
+                                 <div className="space-y-2">
+                                    <Label htmlFor="objective-assignee">Asignar a</Label>
+                                    {objectiveFormData.type === 'individual' && (
+                                        <Select value={objectiveFormData.assigned_to} onValueChange={(value) => setObjectiveFormData({...objectiveFormData, assigned_to: value})}>
+                                            <SelectTrigger id="objective-assignee"><SelectValue placeholder="Seleccionar empleado"/></SelectTrigger>
+                                            <SelectContent>
+                                                {employees.map(e => <SelectItem key={e.id} value={e.name}>{e.name}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                    )}
+                                    {objectiveFormData.type === 'equipo' && (
+                                        <Select value={objectiveFormData.assigned_to} onValueChange={(value) => setObjectiveFormData({...objectiveFormData, assigned_to: value})}>
+                                            <SelectTrigger id="objective-assignee"><SelectValue placeholder="Seleccionar depto."/></SelectTrigger>
+                                            <SelectContent>
+                                                {departments.map(d => <SelectItem key={d.name} value={d.name}>{d.name}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                    )}
+                                    {objectiveFormData.type === 'empresa' && (
+                                        <Input id="objective-assignee" value="Toda la empresa" disabled/>
+                                    )}
+                                </div>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
@@ -389,6 +473,7 @@ export default function PerformancePage() {
                                     <Select value={objectiveFormData.project_id} onValueChange={(value) => setObjectiveFormData({...objectiveFormData, project_id: value})}>
                                         <SelectTrigger id="objective-project"><SelectValue placeholder="Vincular a proyecto"/></SelectTrigger>
                                         <SelectContent>
+                                            <SelectItem value="">Sin proyecto</SelectItem>
                                             {projects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                                         </SelectContent>
                                     </Select>
