@@ -2,36 +2,65 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Check, Clock, User, ClipboardList, XCircle } from "lucide-react";
+import { Calendar, Check, Clock, User, ClipboardList, XCircle, Coffee } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 
 export default function EmployeeDashboard() {
   const { toast } = useToast();
+  // Main status
   const [isClockedIn, setIsClockedIn] = useState(true);
   const [clockInTime, setClockInTime] = useState<Date | null>(new Date(new Date().getTime() - (91 * 60 * 1000))); // Mock: clocked in 91 mins ago
+  
+  // Break status
+  const [isOnBreak, setIsOnBreak] = useState(false);
+  const [breakStartTime, setBreakStartTime] = useState<Date | null>(null);
+
+  // Display state
   const [duration, setDuration] = useState("1h 31m");
   const [statusText, setStatusText] = useState("Entrada Marcada");
   const [statusTime, setStatusTime] = useState(`a las 09:01 AM`);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (isClockedIn && clockInTime) {
-      const updateDuration = () => {
-        const now = new Date();
-        const diffMs = now.getTime() - clockInTime.getTime();
-        const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
-        const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-        setDuration(`${diffHrs}h ${diffMins}m`);
-      };
 
-      updateDuration(); // Initial call
-      interval = setInterval(updateDuration, 60000); // Update every minute
+    const updateDuration = () => {
+        let startTime: Date | null = null;
+        if (isOnBreak && breakStartTime) {
+            startTime = breakStartTime;
+        } else if (isClockedIn && clockInTime) {
+            startTime = clockInTime;
+        }
+
+        if (startTime) {
+            const now = new Date();
+            const diffMs = now.getTime() - startTime.getTime();
+            const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+            setDuration(`${diffHrs}h ${diffMins}m`);
+        }
+    };
+
+    if (isClockedIn) {
+      updateDuration();
+      interval = setInterval(updateDuration, 60000);
+    } else {
+      setDuration('');
     }
+
     return () => clearInterval(interval);
-  }, [isClockedIn, clockInTime]);
+  }, [isClockedIn, clockInTime, isOnBreak, breakStartTime]);
 
   const handleClockInOut = () => {
+    if (isOnBreak) {
+        toast({
+            variant: "destructive",
+            title: "Acción no permitida",
+            description: "Debes finalizar tu descanso antes de marcar la salida.",
+        });
+        return;
+    }
+    
     if (!navigator.geolocation) {
       toast({
         variant: "destructive",
@@ -53,13 +82,6 @@ export default function EmployeeDashboard() {
             setClockInTime(newClockInTime);
             setStatusText("Entrada Marcada");
             setStatusTime(`a las ${time}`);
-
-            const now = new Date();
-            const diffMs = now.getTime() - newClockInTime.getTime();
-            const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
-            const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-            setDuration(`${diffHrs}h ${diffMins}m`);
-
             toast({
               title: "Fichaje Exitoso",
               description: `Se ha registrado tu entrada.`,
@@ -67,7 +89,6 @@ export default function EmployeeDashboard() {
         } else {
             // Clocking OUT
             setClockInTime(null);
-            setDuration('');
             setStatusText("Salida Marcada");
             setStatusTime(`a las ${time}`);
             toast({
@@ -89,6 +110,41 @@ export default function EmployeeDashboard() {
       }
     );
   };
+  
+  const handleBreakToggle = () => {
+    if (!isClockedIn) {
+      toast({
+        variant: 'destructive',
+        title: 'Acción no permitida',
+        description: 'Debes marcar tu entrada antes de tomar un descanso.',
+      });
+      return;
+    }
+    
+    const newOnBreakState = !isOnBreak;
+    setIsOnBreak(newOnBreakState);
+
+    if (newOnBreakState) {
+      // Starting break
+      setBreakStartTime(new Date());
+      setStatusText('En Descanso');
+      setStatusTime(`a las ${new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: true })}`);
+      toast({
+        title: 'Descanso iniciado',
+        description: 'Se ha registrado el inicio de tu descanso.',
+      });
+    } else {
+      // Ending break
+      setBreakStartTime(null);
+      setStatusText('Entrada Marcada');
+      setStatusTime(`a las ${clockInTime?.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: true }) || ''}`);
+      toast({
+        title: 'Descanso finalizado',
+        description: '¡De vuelta al trabajo!',
+      });
+    }
+  };
+
 
   return (
     <div className="space-y-8">
@@ -101,11 +157,15 @@ export default function EmployeeDashboard() {
         <Card className="bg-gradient-accent-to-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Estado Actual</CardTitle>
-            {isClockedIn ? <Check className="h-4 w-4 text-accent" /> : <XCircle className="h-4 w-4 text-destructive" />}
+            {
+              isOnBreak ? <Coffee className="h-4 w-4 text-warning" /> :
+              isClockedIn ? <Check className="h-4 w-4 text-accent" /> : 
+              <XCircle className="h-4 w-4 text-destructive" />
+            }
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${isClockedIn ? 'text-accent' : 'text-destructive'}`}>{statusText}</div>
-            <p className="text-xs text-muted-foreground">{isClockedIn ? `Llevas ${duration}` : statusTime}</p>
+            <div className={`text-2xl font-bold ${isOnBreak ? 'text-warning' : isClockedIn ? 'text-accent' : 'text-destructive'}`}>{statusText}</div>
+            <p className="text-xs text-muted-foreground">{isClockedIn ? `${isOnBreak ? 'Desde hace' : 'Llevas'} ${duration}` : statusTime}</p>
           </CardContent>
         </Card>
         <Card className="bg-gradient-accent-to-card hover:bg-muted/50 transition-colors">
@@ -148,8 +208,12 @@ export default function EmployeeDashboard() {
                 <CardTitle>Acciones Rápidas</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-4">
-                <Button onClick={handleClockInOut} variant={isClockedIn ? "destructive" : "active"}>{isClockedIn ? 'Marcar Salida' : 'Marcar Entrada'}</Button>
-                <Button variant="warning">Empezar Descanso</Button>
+                <Button onClick={handleClockInOut} variant={isClockedIn ? "destructive" : "active"} disabled={isOnBreak}>
+                  {isClockedIn ? 'Marcar Salida' : 'Marcar Entrada'}
+                </Button>
+                <Button onClick={handleBreakToggle} variant="warning" disabled={!isClockedIn}>
+                  {isOnBreak ? 'Finalizar Descanso' : 'Empezar Descanso'}
+                </Button>
                 <Button asChild variant="secondary">
                     <Link href="/portal/absences">Solicitar Ausencia</Link>
                 </Button>
