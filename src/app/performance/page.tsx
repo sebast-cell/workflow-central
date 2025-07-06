@@ -237,7 +237,7 @@ export default function PerformancePage() {
                         <CardContent className="flex-grow space-y-4">
                             <div className="text-sm text-muted-foreground">
                                 <p><strong>Asignado a:</strong> {getAssignedToName(obj)}</p>
-                                <p><strong>Tipo:</strong> <Badge variant="outline">{obj.type}</Badge></p>
+                                <div><strong>Tipo:</strong> <Badge variant="outline">{obj.type}</Badge></div>
                             </div>
                             <div>
                                 <Label>Progreso</Label>
