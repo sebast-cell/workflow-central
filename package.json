@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev:frontend": "next dev --turbopack",
-    "dev:backend": "python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload",
+    "dev:backend": "python3 -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload",
     "dev": "concurrently \"npm:dev:*\"",
     "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
     "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts",
