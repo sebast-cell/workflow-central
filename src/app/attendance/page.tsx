@@ -10,7 +10,7 @@ import { Briefcase, Coffee, Globe, Home, UserX, Calendar as CalendarIcon, Filter
 import { AttendanceReportDialog } from "./_components/attendance-report-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { format, parse } from 'date-fns';
+import { format, parse, isWithinInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { DateRange } from 'react-day-picker';
@@ -43,6 +43,25 @@ const attendanceLog = [
   { date: new Date(2024, 7, 24), time: "04:50 PM", employee: "Liam Garcia", status: "Salida Marcada", location: "Remoto", department: "RRHH" },
 ];
 
+const absencesData = [
+  { employee: "William Kim", type: "De Vacaciones", from: new Date(2024, 7, 26), to: new Date(2024, 7, 30) },
+  { employee: "Liam Garcia", type: "De Vacaciones", from: new Date(2024, 7, 23), to: new Date(2024, 7, 24) },
+];
+
+
+function parseAMPM(timeStr: string) {
+    const [time, modifier] = timeStr.split(' ');
+    let [hours, minutes] = time.split(':');
+    if (hours === '12') {
+        hours = '00';
+    }
+    if (modifier.toUpperCase() === 'PM') {
+        hours = String(parseInt(hours, 10) + 12);
+    }
+    return new Date(1970, 0, 1, Number(hours), Number(minutes));
+}
+
+
 export default function AttendancePage() {
     const [dateRange, setDateRange] = useState<DateRange | undefined>({
       from: new Date(2024, 7, 24),
@@ -64,6 +83,64 @@ export default function AttendancePage() {
             setSelectedEmployee('all');
         }
     }, [availableEmployees, selectedEmployee]);
+
+    const husinStats = useMemo(() => {
+        // For this mock data, "today" is the latest date in the log.
+        const today = new Date(2024, 7, 26);
+        const todayNormalized = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+        const stats = {
+            inOffice: 0,
+            remote: 0,
+            onBreak: 0,
+            onVacation: 0,
+            absent: 0,
+        };
+
+        const employeesOnLeaveToday = new Set<string>();
+        absencesData.forEach(absence => {
+            if (isWithinInterval(today, { start: absence.from, end: absence.to })) {
+                if (absence.type === "De Vacaciones") {
+                    stats.onVacation++;
+                }
+                employeesOnLeaveToday.add(absence.employee);
+            }
+        });
+
+        const todaysLog = attendanceLog.filter(log => {
+            const logDate = new Date(log.date.getFullYear(), log.date.getMonth(), log.date.getDate());
+            return logDate.getTime() === todayNormalized.getTime();
+        });
+
+        const latestLogs: { [key: string]: any } = {};
+        todaysLog.forEach(log => {
+            if (!employeesOnLeaveToday.has(log.employee)) {
+                if (!latestLogs[log.employee] || parseAMPM(log.time) > parseAMPM(latestLogs[log.employee].time)) {
+                    latestLogs[log.employee] = log;
+                }
+            }
+        });
+
+        Object.values(latestLogs).forEach(log => {
+            switch (log.status) {
+                case "Entrada Marcada":
+                    if (log.location === "Oficina") {
+                        stats.inOffice++;
+                    } else {
+                        stats.remote++;
+                    }
+                    break;
+                case "En Descanso":
+                    stats.onBreak++;
+                    break;
+            }
+        });
+
+        const totalEmployees = employees.length;
+        stats.absent = totalEmployees - (stats.inOffice + stats.remote + stats.onBreak + stats.onVacation);
+
+        return stats;
+    }, []);
 
     const filteredLog = useMemo(() => {
         return attendanceLog.filter(log => {
@@ -113,7 +190,7 @@ export default function AttendancePage() {
                 <Home className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold">28</div>
+                <div className="text-2xl font-bold">{husinStats.inOffice}</div>
             </CardContent>
             </Card>
             <Card className="bg-gradient-accent-to-card">
@@ -122,7 +199,7 @@ export default function AttendancePage() {
                 <Globe className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold">14</div>
+                <div className="text-2xl font-bold">{husinStats.remote}</div>
             </CardContent>
             </Card>
             <Card className="bg-gradient-accent-to-card">
@@ -131,7 +208,7 @@ export default function AttendancePage() {
                 <Coffee className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold">5</div>
+                <div className="text-2xl font-bold">{husinStats.onBreak}</div>
             </CardContent>
             </Card>
             <Card className="bg-gradient-accent-to-card">
@@ -140,7 +217,7 @@ export default function AttendancePage() {
                 <Briefcase className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold">3</div>
+                <div className="text-2xl font-bold">{husinStats.onVacation}</div>
             </CardContent>
             </Card>
             <Card className="bg-gradient-accent-to-card">
@@ -149,7 +226,7 @@ export default function AttendancePage() {
                 <UserX className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold">1</div>
+                <div className="text-2xl font-bold">{husinStats.absent}</div>
             </CardContent>
             </Card>
         </div>
