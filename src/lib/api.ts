@@ -3,7 +3,7 @@ import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 
 const apiClient = axios.create({
-    baseURL: 'http://localhost:8000',
+    baseURL: '/', // Use relative paths for Next.js API Routes
     headers: {
         'Content-Type': 'application/json',
     }
