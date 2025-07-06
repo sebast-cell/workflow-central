@@ -12,8 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MoreHorizontal, PlusCircle, Gift, Trash2 } from "lucide-react"
-import { cn } from "@/lib/utils";
-import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -29,17 +28,18 @@ type Employee = {
     email: string;
 };
 
-type Goal = {
-  id: number;
-  name: string;
+type Objective = {
+  id: string; // UUID
+  title: string;
   description: string;
-  assignee: string; // Employee Name
-  type: 'Individual' | 'Equipo' | 'Empresa';
-  metricType: 'Porcentaje' | 'Numérico';
-  targetValue: number;
-  currentValue: number;
-  status: 'Pendiente' | 'En Progreso' | 'Completado';
-  incentiveId?: string;
+  type: 'individual' | 'equipo' | 'empresa';
+  assigned_to: string; // UserID or TeamID
+  project_id?: string; // UUID (nullable)
+  is_incentivized: boolean;
+  incentive_id?: string; // UUID (nullable)
+  weight?: number; // decimal
+  start_date?: string; // date
+  end_date?: string; // date
 };
 
 type Incentive = {
@@ -49,27 +49,38 @@ type Incentive = {
   details: string; 
 };
 
+type Project = {
+    id: string;
+    name: string;
+    description: string;
+}
 
 const EMPLOYEES_STORAGE_KEY = 'workflow-central-employees';
-const GOALS_STORAGE_KEY = 'workflow-central-goals';
+const OBJECTIVES_STORAGE_KEY = 'workflow-central-objectives';
 const INCENTIVES_STORAGE_KEY = 'workflow-central-incentives';
+const PROJECTS_STORAGE_KEY = 'workflow-central-projects';
 
 export default function PerformancePage() {
     const [employees, setEmployees] = useState<Employee[]>([]);
-    const [goals, setGoals] = useState<Goal[]>([]);
+    const [objectives, setObjectives] = useState<Objective[]>([]);
     const [incentives, setIncentives] = useState<Incentive[]>([]);
+    const [projects, setProjects] = useState<Project[]>([]);
 
-    const [isGoalDialogOpen, setIsGoalDialogOpen] = useState(false);
-    const [dialogGoalMode, setDialogGoalMode] = useState<'add' | 'edit'>('add');
-    const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
-    const [goalFormData, setGoalFormData] = useState<Omit<Goal, 'id' | 'status' | 'currentValue'>>({
-        name: "",
+
+    const [isObjectiveDialogOpen, setIsObjectiveDialogOpen] = useState(false);
+    const [dialogObjectiveMode, setDialogObjectiveMode] = useState<'add' | 'edit'>('add');
+    const [selectedObjective, setSelectedObjective] = useState<Objective | null>(null);
+    const [objectiveFormData, setObjectiveFormData] = useState<Omit<Objective, 'id'>>({
+        title: "",
         description: "",
-        assignee: "",
-        type: "Individual",
-        metricType: "Porcentaje",
-        targetValue: 100,
-        incentiveId: undefined,
+        assigned_to: "",
+        type: "individual",
+        project_id: undefined,
+        is_incentivized: false,
+        incentive_id: undefined,
+        weight: 0,
+        start_date: "",
+        end_date: "",
     });
 
 
@@ -78,11 +89,14 @@ export default function PerformancePage() {
             const storedEmployees = localStorage.getItem(EMPLOYEES_STORAGE_KEY);
             if (storedEmployees) setEmployees(JSON.parse(storedEmployees));
 
-            const storedGoals = localStorage.getItem(GOALS_STORAGE_KEY);
-            if (storedGoals) setGoals(JSON.parse(storedGoals));
+            const storedObjectives = localStorage.getItem(OBJECTIVES_STORAGE_KEY);
+            if (storedObjectives) setObjectives(JSON.parse(storedObjectives));
 
             const storedIncentives = localStorage.getItem(INCENTIVES_STORAGE_KEY);
             if (storedIncentives) setIncentives(JSON.parse(storedIncentives));
+            
+            const storedProjects = localStorage.getItem(PROJECTS_STORAGE_KEY);
+            if(storedProjects) setProjects(JSON.parse(storedProjects));
 
         } catch (error) {
             console.error("Failed to load data from localStorage", error);
@@ -91,11 +105,11 @@ export default function PerformancePage() {
 
     useEffect(() => {
         try {
-            localStorage.setItem(GOALS_STORAGE_KEY, JSON.stringify(goals));
+            localStorage.setItem(OBJECTIVES_STORAGE_KEY, JSON.stringify(objectives));
         } catch (error) {
-            console.error("Failed to save goals to localStorage", error);
+            console.error("Failed to save objectives to localStorage", error);
         }
-    }, [goals]);
+    }, [objectives]);
 
 
     const getStatusVariant = (status: string) => {
@@ -108,63 +122,51 @@ export default function PerformancePage() {
       }
     };
     
-    const getGoalStatus = (current: number, target: number): Goal['status'] => {
-        if (target > 0 && current >= target) return "Completado";
-        if (current > 0) return "En Progreso";
-        return "Pendiente";
-    }
-
-    const calculateProgress = (current: number, target: number) => {
-        if (target === 0) return 0;
-        return (current / target) * 100;
-    }
-
-    const handleOpenAddGoalDialog = () => {
-        setDialogGoalMode('add');
-        setSelectedGoal(null);
-        setGoalFormData({
-            name: "", description: "", assignee: "", type: "Individual", metricType: "Porcentaje", targetValue: 100, incentiveId: undefined,
+    const handleOpenAddObjectiveDialog = () => {
+        setDialogObjectiveMode('add');
+        setSelectedObjective(null);
+        setObjectiveFormData({
+            title: "", description: "", assigned_to: "", type: "individual", project_id: undefined, is_incentivized: false, incentive_id: undefined, weight: 0, start_date: "", end_date: "",
         });
-        setIsGoalDialogOpen(true);
+        setIsObjectiveDialogOpen(true);
     }
     
-    const handleOpenEditGoalDialog = (goal: Goal) => {
-        setDialogGoalMode('edit');
-        setSelectedGoal(goal);
-        setGoalFormData({
-            name: goal.name,
-            description: goal.description,
-            assignee: goal.assignee,
-            type: goal.type,
-            metricType: goal.metricType,
-            targetValue: goal.targetValue,
-            incentiveId: goal.incentiveId,
+    const handleOpenEditObjectiveDialog = (objective: Objective) => {
+        setDialogObjectiveMode('edit');
+        setSelectedObjective(objective);
+        setObjectiveFormData({
+            title: objective.title,
+            description: objective.description,
+            assigned_to: objective.assigned_to,
+            type: objective.type,
+            project_id: objective.project_id,
+            is_incentivized: objective.is_incentivized,
+            incentive_id: objective.incentive_id,
+            weight: objective.weight,
+            start_date: objective.start_date,
+            end_date: objective.end_date,
         });
-        setIsGoalDialogOpen(true);
+        setIsObjectiveDialogOpen(true);
     };
 
-    const handleGoalFormSubmit = (e: React.FormEvent) => {
+    const handleObjectiveFormSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const targetValue = Number(goalFormData.targetValue);
-        if (!goalFormData.name || !goalFormData.assignee || isNaN(targetValue)) return;
+        if (!objectiveFormData.title || !objectiveFormData.assigned_to) return;
         
-        if (dialogGoalMode === 'add') {
-            const newGoal: Goal = {
-                id: Date.now(),
-                ...goalFormData,
-                targetValue,
-                currentValue: 0,
-                status: "Pendiente",
+        if (dialogObjectiveMode === 'add') {
+            const newObjective: Objective = {
+                id: Date.now().toString(),
+                ...objectiveFormData,
             };
-            setGoals(prev => [...prev, newGoal]);
-        } else if (selectedGoal) {
-            setGoals(prev => prev.map(g => g.id === selectedGoal.id ? { ...g, ...goalFormData, targetValue, status: getGoalStatus(g.currentValue, targetValue) } : g));
+            setObjectives(prev => [...prev, newObjective]);
+        } else if (selectedObjective) {
+            setObjectives(prev => prev.map(g => g.id === selectedObjective.id ? { ...g, ...objectiveFormData } : g));
         }
-        setIsGoalDialogOpen(false);
+        setIsObjectiveDialogOpen(false);
     };
 
-    const handleDeleteGoal = (goalId: number) => {
-        setGoals(prev => prev.filter(g => g.id !== goalId));
+    const handleDeleteObjective = (objectiveId: string) => {
+        setObjectives(prev => prev.filter(g => g.id !== objectiveId));
     };
 
     return (
@@ -268,31 +270,30 @@ export default function PerformancePage() {
                                 <CardTitle>Seguimiento de Objetivos</CardTitle>
                                 <CardDescription>Visualiza y gestiona los objetivos de la empresa y los equipos.</CardDescription>
                             </div>
-                            <Button onClick={handleOpenAddGoalDialog}><PlusCircle className="mr-2 h-4 w-4"/> Crear Objetivo</Button>
+                            <Button onClick={handleOpenAddObjectiveDialog}><PlusCircle className="mr-2 h-4 w-4"/> Crear Objetivo</Button>
                         </CardHeader>
                         <CardContent>
                            <TooltipProvider>
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead className="w-2/5">Nombre del Objetivo</TableHead>
+                                        <TableHead className="w-2/5">Título del Objetivo</TableHead>
                                         <TableHead>Asignado a</TableHead>
-                                        <TableHead>Progreso</TableHead>
-                                        <TableHead>Estado</TableHead>
+                                        <TableHead>Proyecto</TableHead>
+                                        <TableHead>Peso</TableHead>
                                         <TableHead><span className="sr-only">Acciones</span></TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {goals.map(goal => {
-                                        const progress = calculateProgress(goal.currentValue, goal.targetValue);
-                                        const status = getGoalStatus(goal.currentValue, goal.targetValue);
-                                        const incentive = incentives.find(i => i.id === goal.incentiveId);
+                                    {objectives.map(objective => {
+                                        const incentive = incentives.find(i => i.id === objective.incentive_id);
+                                        const project = projects.find(p => p.id === objective.project_id);
                                         return (
-                                            <TableRow key={goal.id}>
+                                            <TableRow key={objective.id}>
                                                 <TableCell className="font-medium">
                                                     <div className="flex items-center gap-2">
-                                                        <span>{goal.name}</span>
-                                                        {incentive && (
+                                                        <span>{objective.title}</span>
+                                                        {objective.is_incentivized && incentive && (
                                                             <Tooltip>
                                                                 <TooltipTrigger>
                                                                     <Gift className="h-4 w-4 text-primary" />
@@ -305,20 +306,15 @@ export default function PerformancePage() {
                                                         )}
                                                     </div>
                                                 </TableCell>
-                                                <TableCell>{goal.assignee}</TableCell>
-                                                <TableCell>
-                                                    <div className="flex items-center gap-2">
-                                                        <Progress value={progress} className="w-full" />
-                                                        <span className="text-xs text-muted-foreground">{Math.round(progress)}%</span>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell><Badge variant={getStatusVariant(status)}>{status}</Badge></TableCell>
+                                                <TableCell>{objective.assigned_to}</TableCell>
+                                                <TableCell>{project?.name || '-'}</TableCell>
+                                                <TableCell>{objective.weight || '-'}</TableCell>
                                                 <TableCell className="text-right">
                                                      <DropdownMenu>
                                                         <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4"/></Button></DropdownMenuTrigger>
                                                         <DropdownMenuContent>
-                                                            <DropdownMenuItem onClick={() => handleOpenEditGoalDialog(goal)}>Editar</DropdownMenuItem>
-                                                            <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteGoal(goal.id)}>Eliminar</DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => handleOpenEditObjectiveDialog(objective)}>Editar</DropdownMenuItem>
+                                                            <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteObjective(objective.id)}>Eliminar</DropdownMenuItem>
                                                         </DropdownMenuContent>
                                                     </DropdownMenu>
                                                 </TableCell>
@@ -328,7 +324,7 @@ export default function PerformancePage() {
                                 </TableBody>
                             </Table>
                            </TooltipProvider>
-                             {goals.length === 0 && (
+                             {objectives.length === 0 && (
                                 <div className="text-center text-muted-foreground py-12">
                                     <p>No hay objetivos definidos. Empieza por crear uno.</p>
                                 </div>
@@ -350,69 +346,84 @@ export default function PerformancePage() {
                     </Card>
                 </TabsContent>
             </Tabs>
-            <Dialog open={isGoalDialogOpen} onOpenChange={setIsGoalDialogOpen}>
+            <Dialog open={isObjectiveDialogOpen} onOpenChange={setIsObjectiveDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>{dialogGoalMode === 'add' ? 'Crear Nuevo Objetivo' : 'Editar Objetivo'}</DialogTitle>
+                        <DialogTitle>{dialogObjectiveMode === 'add' ? 'Crear Nuevo Objetivo' : 'Editar Objetivo'}</DialogTitle>
                     </DialogHeader>
-                    <form onSubmit={handleGoalFormSubmit}>
+                    <form onSubmit={handleObjectiveFormSubmit}>
                         <div className="grid gap-4 py-4">
                             <div className="space-y-2">
-                                <Label htmlFor="goal-name">Nombre del Objetivo</Label>
-                                <Input id="goal-name" value={goalFormData.name} onChange={(e) => setGoalFormData({...goalFormData, name: e.target.value})} required/>
+                                <Label htmlFor="objective-title">Título del Objetivo</Label>
+                                <Input id="objective-title" value={objectiveFormData.title} onChange={(e) => setObjectiveFormData({...objectiveFormData, title: e.target.value})} required/>
                             </div>
                              <div className="space-y-2">
-                                <Label htmlFor="goal-description">Descripción</Label>
-                                <Textarea id="goal-description" value={goalFormData.description} onChange={(e) => setGoalFormData({...goalFormData, description: e.target.value})} />
+                                <Label htmlFor="objective-description">Descripción</Label>
+                                <Textarea id="objective-description" value={objectiveFormData.description} onChange={(e) => setObjectiveFormData({...objectiveFormData, description: e.target.value})} />
                             </div>
                              <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="goal-assignee">Asignar a</Label>
-                                    <Select value={goalFormData.assignee} onValueChange={(value) => setGoalFormData({...goalFormData, assignee: value})}>
-                                        <SelectTrigger id="goal-assignee"><SelectValue placeholder="Seleccionar empleado"/></SelectTrigger>
+                                    <Label htmlFor="objective-assignee">Asignar a</Label>
+                                    <Select value={objectiveFormData.assigned_to} onValueChange={(value) => setObjectiveFormData({...objectiveFormData, assigned_to: value})}>
+                                        <SelectTrigger id="objective-assignee"><SelectValue placeholder="Seleccionar empleado"/></SelectTrigger>
                                         <SelectContent>
                                             {employees.map(e => <SelectItem key={e.id} value={e.name}>{e.name}</SelectItem>)}
                                         </SelectContent>
                                     </Select>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="goal-type">Tipo</Label>
-                                    <Select value={goalFormData.type} onValueChange={(value: any) => setGoalFormData({...goalFormData, type: value})}>
-                                        <SelectTrigger id="goal-type"><SelectValue/></SelectTrigger>
+                                    <Label htmlFor="objective-type">Tipo</Label>
+                                    <Select value={objectiveFormData.type} onValueChange={(value: any) => setObjectiveFormData({...objectiveFormData, type: value})}>
+                                        <SelectTrigger id="objective-type"><SelectValue/></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="Individual">Individual</SelectItem>
-                                            <SelectItem value="Equipo">Equipo</SelectItem>
-                                            <SelectItem value="Empresa">Empresa</SelectItem>
+                                            <SelectItem value="individual">Individual</SelectItem>
+                                            <SelectItem value="equipo">Equipo</SelectItem>
+                                            <SelectItem value="empresa">Empresa</SelectItem>
                                         </SelectContent>
                                     </Select>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="objective-project">Proyecto (Opcional)</Label>
+                                    <Select value={objectiveFormData.project_id} onValueChange={(value) => setObjectiveFormData({...objectiveFormData, project_id: value})}>
+                                        <SelectTrigger id="objective-project"><SelectValue placeholder="Vincular a proyecto"/></SelectTrigger>
+                                        <SelectContent>
+                                            {projects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="objective-weight">Peso (%)</Label>
+                                    <Input id="objective-weight" type="number" value={objectiveFormData.weight} onChange={(e) => setObjectiveFormData({...objectiveFormData, weight: Number(e.target.value)})} />
                                 </div>
                             </div>
                              <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="goal-metric">Métrica</Label>
-                                    <Select value={goalFormData.metricType} onValueChange={(value: any) => setGoalFormData({...goalFormData, metricType: value})}>
-                                        <SelectTrigger id="goal-metric"><SelectValue/></SelectTrigger>
+                                    <Label htmlFor="objective-start">Fecha de Inicio</Label>
+                                    <Input id="objective-start" type="date" value={objectiveFormData.start_date} onChange={(e) => setObjectiveFormData({...objectiveFormData, start_date: e.target.value})} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="objective-end">Fecha de Fin</Label>
+                                    <Input id="objective-end" type="date" value={objectiveFormData.end_date} onChange={(e) => setObjectiveFormData({...objectiveFormData, end_date: e.target.value})} />
+                                </div>
+                            </div>
+                            <div className="flex items-center space-x-2 pt-2">
+                                <Switch id="is_incentivized" checked={objectiveFormData.is_incentivized} onCheckedChange={(checked) => setObjectiveFormData({...objectiveFormData, is_incentivized: checked, incentive_id: undefined})} />
+                                <Label htmlFor="is_incentivized">Este objetivo está incentivado</Label>
+                            </div>
+                            {objectiveFormData.is_incentivized && (
+                                <div className="space-y-2">
+                                    <Label htmlFor="objective-incentive">Incentivo</Label>
+                                    <Select value={objectiveFormData.incentive_id} onValueChange={(value) => setObjectiveFormData({...objectiveFormData, incentive_id: value === 'none' ? undefined : value})}>
+                                        <SelectTrigger id="objective-incentive"><SelectValue placeholder="Seleccionar incentivo"/></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="Porcentaje">Porcentaje</SelectItem>
-                                            <SelectItem value="Numérico">Numérico</SelectItem>
+                                            <SelectItem value="none">Sin incentivo</SelectItem>
+                                            {incentives.map(i => <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>)}
                                         </SelectContent>
                                     </Select>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="goal-target">Valor Objetivo</Label>
-                                    <Input id="goal-target" type="number" value={goalFormData.targetValue} onChange={(e) => setGoalFormData({...goalFormData, targetValue: Number(e.target.value)})} />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="goal-incentive">Incentivo (Opcional)</Label>
-                                <Select value={goalFormData.incentiveId} onValueChange={(value) => setGoalFormData({...goalFormData, incentiveId: value === 'none' ? undefined : value})}>
-                                    <SelectTrigger id="goal-incentive"><SelectValue placeholder="Sin incentivo"/></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none">Sin incentivo</SelectItem>
-                                        {incentives.map(i => <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                            )}
                         </div>
                         <DialogFooter>
                             <Button type="submit">Guardar</Button>

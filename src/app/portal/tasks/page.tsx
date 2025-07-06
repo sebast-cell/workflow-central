@@ -1,6 +1,5 @@
 'use client'
-import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -8,72 +7,75 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PlusCircle, Tag } from "lucide-react";
+import { PlusCircle } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
-type LoggedTask = {
-    id: number;
-    project: string;
-    task: string;
-    tags: string[];
-    hours: number;
-    date: string;
+type Task = {
+    id: string; // UUID
+    title: string;
+    objective_id: string; // UUID
+    completed: boolean;
 }
 
-const initialTasks: LoggedTask[] = [
-    { id: 1, project: "Rediseño del Sitio Web", task: "Desarrollo de Componentes UI", tags: ["frontend", "react"], hours: 4, date: "2024-08-15" },
-    { id: 2, project: "Rediseño del Sitio Web", task: "Investigación y Análisis", tags: ["ux", "research"], hours: 2, date: "2024-08-14" },
-    { id: 3, project: "Campaña de Marketing", task: "Creación de contenido para redes", tags: ["social media"], hours: 3, date: "2024-08-14" },
+type Objective = {
+  id: string; // UUID
+  title: string;
+};
+
+const initialTasks: Task[] = [
+    { id: "1", title: "Desarrollo de Componentes UI", objective_id: "1", completed: true },
+    { id: "2", title: "Investigación y Análisis", objective_id: "1", completed: true },
+    { id: "3", title: "Creación de contenido para redes", objective_id: "2", completed: false },
 ];
+
+const mockObjectives: Objective[] = [
+    { id: "1", title: "Lanzar el rediseño de la web" },
+    { id: "2", title: "Aumentar el engagement en redes sociales un 15%" },
+];
+
 
 export default function EmployeeTasksPage() {
     const [tasks, setTasks] = useState(initialTasks);
+    const [objectives, setObjectives] = useState(mockObjectives);
     
     return (
         <div className="space-y-8">
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Mis Tareas</h1>
-                    <p className="text-muted-foreground">Imputa las horas dedicadas a cada tarea y proyecto.</p>
+                    <p className="text-muted-foreground">Gestiona las tareas asociadas a tus objetivos.</p>
                 </div>
                 <Dialog>
                     <DialogTrigger asChild>
                         <Button>
                             <PlusCircle className="mr-2 h-4 w-4" />
-                            Imputar Tarea
+                            Crear Tarea
                         </Button>
                     </DialogTrigger>
                     <DialogContent>
                         <DialogHeader>
-                            <DialogTitle>Imputar Nueva Tarea</DialogTitle>
+                            <DialogTitle>Crear Nueva Tarea</DialogTitle>
                             <DialogDescription>
-                                Registra el tiempo que has dedicado a una tarea específica.
+                                Añade una nueva tarea a uno de tus objetivos.
                             </DialogDescription>
                         </DialogHeader>
                         <div className="grid gap-4 py-4">
                             <div className="space-y-2">
-                                <Label htmlFor="project">Proyecto</Label>
+                                <Label htmlFor="objective">Objetivo</Label>
                                 <Select>
-                                    <SelectTrigger id="project">
-                                        <SelectValue placeholder="Seleccionar proyecto" />
+                                    <SelectTrigger id="objective">
+                                        <SelectValue placeholder="Seleccionar objetivo" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="website-redesign">Rediseño del Sitio Web</SelectItem>
-                                        <SelectItem value="mobile-app">Desarrollo de App Móvil</SelectItem>
-                                        <SelectItem value="marketing-campaign">Campaña de Marketing</SelectItem>
+                                        {objectives.map(obj => (
+                                            <SelectItem key={obj.id} value={obj.id}>{obj.title}</SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="task-description">Descripción de la Tarea</Label>
-                                <Input id="task-description" placeholder="Ej., Reunión de planificación con el equipo" />
-                            </div>
-                             <div className="space-y-2">
-                                <Label htmlFor="hours">Horas Dedicadas</Label>
-                                <Input id="hours" type="number" placeholder="Ej., 2.5" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="tags">Etiquetas</Label>
-                                <Input id="tags" placeholder="Añade etiquetas separadas por comas (ej. frontend, bugfix)" />
+                                <Label htmlFor="task-title">Título de la Tarea</Label>
+                                <Input id="task-title" placeholder="Ej., Diseñar la nueva landing page" />
                             </div>
                         </div>
                         <DialogFooter>
@@ -85,29 +87,25 @@ export default function EmployeeTasksPage() {
 
             <Card className="bg-gradient-accent-to-card">
                 <CardHeader>
-                    <CardTitle>Historial de Tareas Imputadas</CardTitle>
+                    <CardTitle>Lista de Tareas</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Proyecto</TableHead>
                                 <TableHead>Tarea</TableHead>
-                                <TableHead>Etiquetas</TableHead>
-                                <TableHead className="text-right">Horas</TableHead>
+                                <TableHead>Objetivo</TableHead>
+                                <TableHead className="text-right">Completado</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {tasks.map(task => (
                                 <TableRow key={task.id}>
-                                    <TableCell className="font-medium">{task.project}</TableCell>
-                                    <TableCell>{task.task}</TableCell>
-                                    <TableCell>
-                                        <div className="flex gap-1">
-                                            {task.tags.map(tag => <Badge key={tag} variant="outline">{tag}</Badge>)}
-                                        </div>
+                                    <TableCell className="font-medium">{task.title}</TableCell>
+                                    <TableCell>{objectives.find(o => o.id === task.objective_id)?.title || '-'}</TableCell>
+                                    <TableCell className="text-right">
+                                        <Checkbox checked={task.completed} />
                                     </TableCell>
-                                    <TableCell className="text-right font-mono">{task.hours}h</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>

@@ -6,50 +6,22 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
 import { PlusCircle } from "lucide-react";
 import Link from "next/link";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Switch } from "@/components/ui/switch";
-
-type Task = {
-    id: number;
-    name: string;
-    assignee: string;
-    status: "Completado" | "En Progreso" | "Pendiente";
-    hours: number;
-};
+import { Textarea } from "@/components/ui/textarea";
 
 type Project = {
-    id: number;
+    id: string;
     name: string;
-    client: string;
-    progress: number;
-    color: string;
-    members: string[];
-    tasks: Task[];
+    description: string;
 };
 
 const initialProjects: Project[] = [
-  { id: 1, name: "Rediseño del Sitio Web", client: "Innovate Inc.", progress: 75, color: "bg-blue-500", members: ["OM", "JL", "IN"], tasks: [
-    {id: 1, name: "Investigación y Análisis", assignee: "Olivia Martin", status: "Completado", hours: 20},
-    {id: 2, name: "Diseño de Wireframes", assignee: "Jackson Lee", status: "En Progreso", hours: 15},
-    {id: 3, name: "Desarrollo de Componentes UI", assignee: "Olivia Martin", status: "En Progreso", hours: 25},
-    {id: 4, name: "Pruebas de Usuario", assignee: "Isabella Nguyen", status: "Pendiente", hours: 10},
-  ] },
-  { id: 2, name: "Desarrollo de App Móvil", client: "Tech Solutions", progress: 40, color: "bg-purple-500", members: ["WK", "SD"], tasks: [] },
-  { id: 3, name: "Campaña de Marketing", client: "Growth Co.", progress: 90, color: "bg-green-500", members: ["IN", "LG"], tasks: [] },
-  { id: 4, name: "Integración de API", client: "Connective", progress: 25, color: "bg-orange-500", members: ["WK"], tasks: [] },
-  { id: 5, name: "Análisis de Informe T3", client: "Interno", progress: 100, color: "bg-gray-500", members: ["LG"], tasks: [] },
-];
-
-const projectColors = [
-    { value: 'bg-blue-500', label: 'Azul' },
-    { value: 'bg-purple-500', label: 'Morado' },
-    { value: 'bg-green-500', label: 'Verde' },
-    { value: 'bg-orange-500', label: 'Naranja' },
-    { value: 'bg-red-500', label: 'Rojo' },
-    { value: 'bg-gray-500', label: 'Gris' },
+  { id: "1", name: "Rediseño del Sitio Web", description: "Modernizar la interfaz de usuario y la experiencia del sitio web corporativo." },
+  { id: "2", name: "Desarrollo de App Móvil", description: "Crear una aplicación móvil nativa para iOS y Android." },
+  { id: "3", name: "Campaña de Marketing", description: "Campaña de marketing digital para el lanzamiento del nuevo producto en el T4." },
+  { id: "4", name: "Integración de API", description: "Integrar un nuevo sistema de pagos de terceros." },
+  { id: "5", name: "Análisis de Informe T3", description: "Proyecto interno para analizar los resultados del tercer trimestre." },
 ];
 
 const PROJECTS_STORAGE_KEY = 'workflow-central-projects';
@@ -61,10 +33,7 @@ export default function ProjectsPage() {
   
   const [newProjectData, setNewProjectData] = useState({
     name: "",
-    client: "",
-    currency: "USD",
-    color: "bg-blue-500",
-    isPrivate: false,
+    description: "",
   });
 
   useEffect(() => {
@@ -92,17 +61,9 @@ export default function ProjectsPage() {
     }
   }, [projects, isClient]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
     setNewProjectData(prev => ({ ...prev, [id]: value }));
-  };
-
-  const handleColorChange = (value: string) => {
-    setNewProjectData(prev => ({ ...prev, color: value }));
-  };
-
-  const handleSwitchChange = (checked: boolean) => {
-    setNewProjectData(prev => ({ ...prev, isPrivate: checked }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -110,23 +71,16 @@ export default function ProjectsPage() {
     if (!newProjectData.name) return;
 
     const newProject: Project = {
-      id: projects.length > 0 ? Math.max(...projects.map(p => p.id)) + 1 : 1,
+      id: Date.now().toString(),
       name: newProjectData.name,
-      client: newProjectData.client || "Interno",
-      progress: 0,
-      color: newProjectData.color,
-      members: [],
-      tasks: [],
+      description: newProjectData.description,
     };
 
     setProjects(prev => [...prev, newProject]);
     setIsDialogOpen(false);
     setNewProjectData({
       name: "",
-      client: "",
-      currency: "USD",
-      color: "bg-blue-500",
-      isPrivate: false,
+      description: "",
     });
   };
 
@@ -152,7 +106,7 @@ export default function ProjectsPage() {
             <DialogHeader>
               <DialogTitle>Crear Nuevo Proyecto</DialogTitle>
               <DialogDescription>
-                Completa los detalles a continuación. Más información conduce a mejores informes.
+                Completa los detalles a continuación.
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit}>
@@ -162,29 +116,8 @@ export default function ProjectsPage() {
                   <Input id="name" value={newProjectData.name} onChange={handleInputChange} placeholder="Ej., Campaña de Marketing T4" required />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="client">Cliente</Label>
-                  <Input id="client" value={newProjectData.client} onChange={handleInputChange} placeholder="Opcional" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="currency">Moneda</Label>
-                  <Input id="currency" value={newProjectData.currency} onChange={handleInputChange} placeholder="Ej., USD" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Color del Proyecto</Label>
-                  <RadioGroup value={newProjectData.color} onValueChange={handleColorChange} className="flex flex-wrap gap-4 pt-2">
-                    {projectColors.map(color => (
-                      <div key={color.value} className="flex items-center space-x-2">
-                          <RadioGroupItem value={color.value} id={color.value} className="h-6 w-6 border-0 p-0 data-[state=checked]:ring-2 ring-offset-background ring-ring">
-                              <div className={`h-full w-full rounded-full ${color.value}`}></div>
-                          </RadioGroupItem>
-                          <Label htmlFor={color.value} className="cursor-pointer">{color.label}</Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch id="private-project" checked={newProjectData.isPrivate} onCheckedChange={handleSwitchChange} />
-                  <Label htmlFor="private-project">Privatizar proyecto</Label>
+                  <Label htmlFor="description">Descripción</Label>
+                  <Textarea id="description" value={newProjectData.description} onChange={handleInputChange} placeholder="Describe brevemente el proyecto." />
                 </div>
               </div>
               <DialogFooter>
@@ -197,21 +130,12 @@ export default function ProjectsPage() {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {projects.map((project) => (
-          <Card key={project.id} className="bg-gradient-accent-to-card">
+          <Card key={project.id} className="bg-gradient-accent-to-card flex flex-col">
             <CardHeader>
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle>{project.name}</CardTitle>
-                  <CardDescription>{project.client}</CardDescription>
-                </div>
-                <div className={`w-4 h-4 rounded-full ${project.color}`}></div>
-              </div>
+              <CardTitle>{project.name}</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Progress value={project.progress} />
-                <p className="text-sm text-muted-foreground">{project.progress}% completado</p>
-              </div>
+            <CardContent className="flex-grow">
+              <CardDescription>{project.description}</CardDescription>
             </CardContent>
             <CardFooter>
               <Button asChild variant="secondary" className="w-full">

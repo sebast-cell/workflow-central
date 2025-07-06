@@ -31,7 +31,7 @@ const allPermissions = [
     { id: 'manage_employees', label: 'Gestionar Empleados (Ver, Crear, Editar)' },
     { id: 'manage_attendance', label: 'Gestionar Asistencia y Fichajes' },
     { id: 'manage_absences', label: 'Gestionar Ausencias y Aprobaciones' },
-    { id: 'manage_projects', label: 'Gestionar Proyectos y Tareas' },
+    { id: 'manage_projects', label: 'Gestionar Proyectos y Objetivos' },
     { id: 'manage_performance', label: 'Gestionar Evaluaciones de Desempeño' },
     { id: 'manage_documents', label: 'Gestionar Documentos de la Empresa' },
     { id: 'manage_reports', label: 'Generar Informes de Empresa' },
@@ -168,10 +168,13 @@ type VacationPolicy = {
 };
 
 type Incentive = {
-  id: string;
+  id: string; // UUID
   name: string;
-  type: 'Económico' | 'Días libres' | 'Formación' | 'Personalizado';
-  details: string; 
+  type: 'económico' | 'días_libres' | 'formación' | 'otro';
+  value: string | number;
+  period: 'mensual' | 'trimestral' | 'anual';
+  active: boolean;
+  condition_expression?: string; // JSON logical expression
 };
 
 
@@ -611,7 +614,7 @@ const SettingsTabs = () => {
     const [isIncentiveDialogOpen, setIsIncentiveDialogOpen] = useState(false);
     const [dialogIncentiveMode, setDialogIncentiveMode] = useState<'add' | 'edit'>('add');
     const [selectedIncentive, setSelectedIncentive] = useState<Incentive | null>(null);
-    const [incentiveFormData, setIncentiveFormData] = useState<Omit<Incentive, 'id'>>({ name: "", type: "Económico", details: "" });
+    const [incentiveFormData, setIncentiveFormData] = useState<Omit<Incentive, 'id'>>({ name: "", type: "económico", value: "", period: "anual", active: true, condition_expression: ""});
 
 
     const allSchedules = ['Horario Fijo', 'Horario Flexible', ...shifts.map(s => s.name)];
@@ -640,6 +643,8 @@ const SettingsTabs = () => {
         const clockInMigration = (data: any[]) => data.map((t: any) => ({ ...t, assignment: t.assignment || 'all', assignedTo: Array.isArray(t.assignedTo) ? t.assignedTo : []}));
         const vacationPolicyMigration = (data: any[]) => data.map((p: any) => ({ ...p, blockedPeriods: Array.isArray(p.blockedPeriods) ? p.blockedPeriods : [], requestLimit: p.requestLimit || 0, assignment: p.assignment || 'all', assignedTo: p.assignedTo || [] }));
         const absenceTypeMigration = (data: any[]) => data.map((p: any) => ({ ...p, color: p.color || 'bg-blue-500', requiresApproval: p.requiresApproval ?? true, allowAttachment: p.allowAttachment ?? false, isDisabled: p.isDisabled ?? false, assignment: p.assignment || 'all', assignedTo: p.assignedTo || [], limitRequests: p.limitRequests || false, requestLimit: p.requestLimit || 0, blockPeriods: p.blockPeriods || false, blockedPeriods: Array.isArray(p.blockedPeriods) ? p.blockedPeriods : [] }));
+        const incentiveMigration = (data: any[]) => data.map((i: any) => ({...i, details: undefined, value: i.details || i.value, period: i.period || 'anual', active: i.active ?? true, condition_expression: i.condition_expression || ''}));
+
 
         loadFromStorage(DEPARTMENTS_STORAGE_KEY, setDepartments, initialDepartments);
         loadFromStorage(ROLES_STORAGE_KEY, setRoles, initialRoles);
@@ -651,7 +656,7 @@ const SettingsTabs = () => {
         loadFromStorage(ABSENCE_TYPES_STORAGE_KEY, setAbsenceTypes, initialAbsenceTypes, absenceTypeMigration);
         loadFromStorage(CALENDARS_STORAGE_KEY, setCalendars, initialCalendars);
         loadFromStorage(VACATION_POLICIES_STORAGE_KEY, setVacationPolicies, initialVacationPolicies);
-        loadFromStorage(INCENTIVES_STORAGE_KEY, setIncentives, initialIncentives);
+        loadFromStorage(INCENTIVES_STORAGE_KEY, setIncentives, initialIncentives, incentiveMigration);
 
         const storedEmployees = localStorage.getItem(EMPLOYEES_STORAGE_KEY);
         if (storedEmployees) setEmployees(JSON.parse(storedEmployees));
@@ -1012,15 +1017,14 @@ const SettingsTabs = () => {
     const openAddIncentiveDialog = () => {
         setDialogIncentiveMode('add');
         setSelectedIncentive(null);
-        setIncentiveFormData({ name: "", type: "Económico", details: "" });
+        setIncentiveFormData({ name: "", type: "económico", value: "", period: "anual", active: true, condition_expression: "" });
         setIsIncentiveDialogOpen(true);
     };
 
     const openEditIncentiveDialog = (incentive: Incentive) => {
         setDialogIncentiveMode('edit');
         setSelectedIncentive(incentive);
-        setIncentiveFormData({ name: incentive.name, type: incentive.type, details: incentive.details });
-        setIsIncentiveDialogOpen(true);
+        setIncentiveFormData(incentive);
     };
 
     const handleIncentiveFormSubmit = (e: React.FormEvent) => {
@@ -2198,7 +2202,9 @@ const SettingsTabs = () => {
                                     <TableRow>
                                         <TableHead>Nombre</TableHead>
                                         <TableHead>Tipo</TableHead>
-                                        <TableHead>Detalles</TableHead>
+                                        <TableHead>Valor</TableHead>
+                                        <TableHead>Periodo</TableHead>
+                                        <TableHead>Estado</TableHead>
                                         <TableHead><span className="sr-only">Acciones</span></TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -2206,8 +2212,14 @@ const SettingsTabs = () => {
                                     {incentives.map(incentive => (
                                         <TableRow key={incentive.id}>
                                             <TableCell className="font-medium">{incentive.name}</TableCell>
-                                            <TableCell>{incentive.type}</TableCell>
-                                            <TableCell>{incentive.details}</TableCell>
+                                            <TableCell className="capitalize">{incentive.type}</TableCell>
+                                            <TableCell>{incentive.value}</TableCell>
+                                            <TableCell className="capitalize">{incentive.period}</TableCell>
+                                            <TableCell>
+                                                <Badge variant={incentive.active ? "active" : "secondary"}>
+                                                    {incentive.active ? "Activo" : "Inactivo"}
+                                                </Badge>
+                                            </TableCell>
                                             <TableCell className="text-right">
                                                 <Button variant="ghost" size="sm" onClick={() => openEditIncentiveDialog(incentive)}>Editar</Button>
                                                 <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDeleteIncentive(incentive.id)}>
@@ -2218,7 +2230,7 @@ const SettingsTabs = () => {
                                     ))}
                                     {incentives.length === 0 && (
                                         <TableRow>
-                                            <TableCell colSpan={4} className="h-24 text-center">No se han creado incentivos.</TableCell>
+                                            <TableCell colSpan={6} className="h-24 text-center">No se han creado incentivos.</TableCell>
                                         </TableRow>
                                     )}
                                 </TableBody>
@@ -2235,21 +2247,46 @@ const SettingsTabs = () => {
                                     <Label htmlFor="incentive-name">Nombre del Incentivo</Label>
                                     <Input id="incentive-name" value={incentiveFormData.name} onChange={e => setIncentiveFormData({...incentiveFormData, name: e.target.value})} required/>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="incentive-type">Tipo</Label>
-                                    <Select value={incentiveFormData.type} onValueChange={(value: Incentive['type']) => setIncentiveFormData({...incentiveFormData, type: value})}>
-                                        <SelectTrigger id="incentive-type"><SelectValue/></SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="Económico">Económico</SelectItem>
-                                            <SelectItem value="Días libres">Días libres</SelectItem>
-                                            <SelectItem value="Formación">Formación</SelectItem>
-                                            <SelectItem value="Personalizado">Personalizado</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="incentive-type">Tipo</Label>
+                                        <Select value={incentiveFormData.type} onValueChange={(value: Incentive['type']) => setIncentiveFormData({...incentiveFormData, type: value})}>
+                                            <SelectTrigger id="incentive-type"><SelectValue/></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="económico">Económico</SelectItem>
+                                                <SelectItem value="días_libres">Días libres</SelectItem>
+                                                <SelectItem value="formación">Formación</SelectItem>
+                                                <SelectItem value="otro">Otro</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="incentive-value">Valor</Label>
+                                        <Input id="incentive-value" value={incentiveFormData.value} onChange={e => setIncentiveFormData({...incentiveFormData, value: e.target.value})} placeholder="Ej. 500€ o 2 días" required/>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                     <div className="space-y-2">
+                                        <Label htmlFor="incentive-period">Periodo</Label>
+                                        <Select value={incentiveFormData.period} onValueChange={(value: Incentive['period']) => setIncentiveFormData({...incentiveFormData, period: value})}>
+                                            <SelectTrigger id="incentive-period"><SelectValue/></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="mensual">Mensual</SelectItem>
+                                                <SelectItem value="trimestral">Trimestral</SelectItem>
+                                                <SelectItem value="anual">Anual</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="flex items-end pb-2">
+                                        <div className="flex items-center space-x-2">
+                                            <Switch id="incentive-active" checked={incentiveFormData.active} onCheckedChange={(checked) => setIncentiveFormData({...incentiveFormData, active: checked})} />
+                                            <Label htmlFor="incentive-active">Activo</Label>
+                                        </div>
+                                    </div>
                                 </div>
                                  <div className="space-y-2">
-                                    <Label htmlFor="incentive-details">Detalles</Label>
-                                    <Input id="incentive-details" value={incentiveFormData.details} onChange={e => setIncentiveFormData({...incentiveFormData, details: e.target.value})} placeholder="Ej. 500€, 2 días, Curso de React..." required/>
+                                    <Label htmlFor="incentive-condition">Condiciones (Opcional)</Label>
+                                    <Textarea id="incentive-condition" value={incentiveFormData.condition_expression} onChange={e => setIncentiveFormData({...incentiveFormData, condition_expression: e.target.value})} placeholder='Ej. {"operator": "AND", "conditions": [{"metric": "sales", "operator": ">=", "value": 10000}]}'/>
                                 </div>
                                 <DialogFooter><Button type="submit">Guardar</Button></DialogFooter>
                             </form>

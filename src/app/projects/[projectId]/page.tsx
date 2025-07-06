@@ -1,57 +1,44 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Edit, PlusCircle, Trash2 } from "lucide-react";
+import { ArrowLeft, Edit, PlusCircle } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
-
-type Task = {
-    id: number;
-    name: string;
-    assignee: string;
-    status: "Completado" | "En Progreso" | "Pendiente";
-    hours: number;
-};
+import { Textarea } from "@/components/ui/textarea";
 
 type Project = {
-    id: number;
+    id: string;
     name: string;
-    client: string;
-    progress: number;
-    color: string;
-    members: string[];
-    tasks: Task[];
+    description: string;
 };
 
-const membersData: {[key: string]: { name: string, role: string, avatar: string }} = {
-    "OM": { name: "Olivia Martin", role: "Desarrollador Frontend", avatar: "OM"},
-    "JL": { name: "Jackson Lee", role: "Diseñador UI/UX", avatar: "JL" },
-    "IN": { name: "Isabella Nguyen", role: "Estratega de Contenido", avatar: "IN" },
-    "WK": { name: "William Kim", role: "Desarrollador Backend", avatar: "WK" },
-    "SD": { name: "Sophia Davis", role: "Ejecutivo de Cuentas", avatar: "SD" },
-    "LG": { name: "Liam Garcia", role: "Generalista de RRHH", avatar: "LG" },
-}
+type Objective = {
+  id: string;
+  title: string;
+  description: string;
+  type: 'individual' | 'equipo' | 'empresa';
+  assigned_to: string;
+  project_id: string;
+  weight?: number;
+};
 
 const PROJECTS_STORAGE_KEY = 'workflow-central-projects';
+const OBJECTIVES_STORAGE_KEY = 'workflow-central-objectives';
 
 export default function ProjectDetailsPage() {
     const params = useParams();
-    const projectId = params.projectId;
+    const projectId = params.projectId as string;
     const [projects, setProjects] = useState<Project[]>([]);
+    const [objectives, setObjectives] = useState<Objective[]>([]);
     const [isClient, setIsClient] = useState(false);
-    const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
+    const [isObjectiveDialogOpen, setIsObjectiveDialogOpen] = useState(false);
 
     useEffect(() => {
         setIsClient(true);
@@ -61,66 +48,24 @@ export default function ProjectDetailsPage() {
         if (isClient) {
             try {
                 const storedProjects = localStorage.getItem(PROJECTS_STORAGE_KEY);
-                if (storedProjects) {
-                    setProjects(JSON.parse(storedProjects));
-                }
+                if (storedProjects) setProjects(JSON.parse(storedProjects));
+
+                const storedObjectives = localStorage.getItem(OBJECTIVES_STORAGE_KEY);
+                if (storedObjectives) setObjectives(JSON.parse(storedObjectives));
+
             } catch (error) {
-                console.error("Failed to load projects from localStorage", error);
+                console.error("Failed to load data from localStorage", error);
             }
         }
     }, [isClient]);
-
-    useEffect(() => {
-        if (isClient) {
-            localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(projects));
-        }
-    }, [projects, isClient]);
-
-    const project = projects.find(p => p.id.toString() === projectId);
-
-    const handleAddTask = (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        const formData = new FormData(e.currentTarget);
-        const name = formData.get('taskName') as string;
-        const assigneeKey = formData.get('assignee') as string;
-        const status = formData.get('status') as "Completado" | "En Progreso" | "Pendiente";
-        
-        if (!name || !assigneeKey || !status) return;
-
-        const newTask: Task = {
-            id: Date.now(),
-            name,
-            assignee: membersData[assigneeKey].name,
-            status,
-            hours: 0,
-        }
-        
-        setProjects(prevProjects => 
-            prevProjects.map(p => 
-                p.id.toString() === projectId ? { ...p, tasks: [...p.tasks, newTask] } : p
-            )
-        );
-        setIsTaskDialogOpen(false);
-    }
     
-    const handleDeleteTask = (taskId: number) => {
-        setProjects(prevProjects => 
-            prevProjects.map(p => {
-                if (p.id.toString() === projectId) {
-                    return { ...p, tasks: p.tasks.filter(t => t.id !== taskId) };
-                }
-                return p;
-            })
-        );
-    };
+    const project = projects.find(p => p.id.toString() === projectId);
+    const projectObjectives = objectives.filter(o => o.project_id === projectId);
 
-    const getStatusVariant = (status: string) => {
-        switch(status) {
-            case "Completado": return "active";
-            case "En Progreso": return "warning";
-            case "Pendiente": return "secondary";
-            default: return "default";
-        }
+    const handleAddObjective = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        // Logic to add a new objective would go here
+        setIsObjectiveDialogOpen(false);
     }
     
     if (!isClient) {
@@ -145,162 +90,74 @@ export default function ProjectDetailsPage() {
                         <div className="flex items-start justify-between">
                             <div>
                                 <CardTitle className="text-3xl">{project.name}</CardTitle>
-                                <CardDescription className="text-lg">{project.client}</CardDescription>
+                                <CardDescription className="text-lg mt-2">{project.description}</CardDescription>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <div className={`w-6 h-6 rounded-full ${project.color}`}></div>
-                                <Button variant="outline" size="sm"><Edit className="mr-2 h-4 w-4"/> Editar</Button>
-                            </div>
+                            <Button variant="outline" size="sm"><Edit className="mr-2 h-4 w-4"/> Editar Proyecto</Button>
                         </div>
                     </CardHeader>
-                    <CardContent>
-                        <div className="space-y-2">
-                            <Progress value={project.progress} />
-                            <p className="text-sm text-muted-foreground">{project.progress}% completado</p>
-                        </div>
-                    </CardContent>
                 </Card>
             </div>
             
-            <Tabs defaultValue="tasks">
-                <TabsList>
-                    <TabsTrigger value="tasks">Tareas</TabsTrigger>
-                    <TabsTrigger value="members">Miembros</TabsTrigger>
-                    <TabsTrigger value="profitability">Rentabilidad</TabsTrigger>
-                </TabsList>
-                <TabsContent value="tasks" className="space-y-4">
-                    <Card className="bg-gradient-accent-to-card">
-                        <CardHeader className="flex flex-row items-center justify-between">
-                           <div>
-                             <CardTitle>Lista de Tareas</CardTitle>
-                             <CardDescription>Seguimiento de todas las tareas asociadas al proyecto.</CardDescription>
-                           </div>
-                           <Dialog open={isTaskDialogOpen} onOpenChange={setIsTaskDialogOpen}>
-                               <DialogTrigger asChild>
-                                    <Button><PlusCircle className="mr-2 h-4 w-4"/> Nueva Tarea</Button>
-                               </DialogTrigger>
-                               <DialogContent>
-                                   <DialogHeader>
-                                       <DialogTitle>Añadir Nueva Tarea</DialogTitle>
-                                   </DialogHeader>
-                                   <form onSubmit={handleAddTask}>
-                                        <div className="grid gap-4 py-4">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="taskName">Nombre de la Tarea</Label>
-                                                <Input id="taskName" name="taskName" placeholder="Ej. Diseño de Wireframes"/>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="assignee">Asignar a</Label>
-                                                <Select name="assignee">
-                                                    <SelectTrigger id="assignee">
-                                                        <SelectValue placeholder="Seleccionar miembro"/>
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {project.members.map(m => (
-                                                            <SelectItem key={m} value={m}>{membersData[m].name}</SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="status">Estado</Label>
-                                                <Select name="status" defaultValue="Pendiente">
-                                                    <SelectTrigger id="status">
-                                                        <SelectValue placeholder="Seleccionar estado"/>
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="Pendiente">Pendiente</SelectItem>
-                                                        <SelectItem value="En Progreso">En Progreso</SelectItem>
-                                                        <SelectItem value="Completado">Completado</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                        </div>
-                                        <DialogFooter>
-                                            <Button type="submit">Añadir Tarea</Button>
-                                        </DialogFooter>
-                                   </form>
-                               </DialogContent>
-                           </Dialog>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Tarea</TableHead>
-                                        <TableHead>Asignado a</TableHead>
-                                        <TableHead>Estado</TableHead>
-                                        <TableHead className="text-right">Horas Imputadas</TableHead>
-                                        <TableHead><span className="sr-only">Acciones</span></TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {project.tasks.map(task => (
-                                        <TableRow key={task.id}>
-                                            <TableCell className="font-medium">{task.name}</TableCell>
-                                            <TableCell>{task.assignee}</TableCell>
-                                            <TableCell><Badge variant={getStatusVariant(task.status)}>{task.status}</Badge></TableCell>
-                                            <TableCell className="text-right">{task.hours}h</TableCell>
-                                            <TableCell className="text-right">
-                                                <Button variant="ghost" size="icon" onClick={() => handleDeleteTask(task.id)}>
-                                                    <Trash2 className="h-4 w-4 text-destructive"/>
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                    {project.tasks.length === 0 && (
-                                        <TableRow>
-                                            <TableCell colSpan={5} className="text-center text-muted-foreground">No hay tareas para este proyecto.</TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-                <TabsContent value="members">
-                    <Card className="bg-gradient-accent-to-card">
-                        <CardHeader className="flex flex-row items-center justify-between">
-                           <div>
-                             <CardTitle>Miembros del Proyecto</CardTitle>
-                             <CardDescription>Empleados asignados a este proyecto.</CardDescription>
-                           </div>
-                           <Button><PlusCircle className="mr-2 h-4 w-4"/> Asignar Miembros</Button>
-                        </CardHeader>
-                        <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                            {project.members.map(memberKey => {
-                                const member = membersData[memberKey];
-                                return (
-                                <Card key={memberKey} className="bg-gradient-accent-to-card">
-                                    <CardContent className="pt-6 flex items-center gap-4">
-                                        <Avatar>
-                                            <AvatarImage src={`https://placehold.co/40x40.png`} data-ai-hint="people avatar" alt={member.name} />
-                                            <AvatarFallback>{member.avatar}</AvatarFallback>
-                                        </Avatar>
-                                        <div>
-                                            <p className="font-semibold">{member.name}</p>
-                                            <p className="text-sm text-muted-foreground">{member.role}</p>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            )})}
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-                <TabsContent value="profitability">
-                    <Card className="bg-gradient-accent-to-card">
-                         <CardHeader>
-                             <CardTitle>Informe de Rentabilidad</CardTitle>
-                             <CardDescription>Análisis de costos y rentabilidad del proyecto.</CardDescription>
-                         </CardHeader>
-                         <CardContent>
-                            <div className="text-center text-muted-foreground py-12">
-                                <p>Los informes de rentabilidad aparecerán aquí.</p>
-                            </div>
-                         </CardContent>
-                    </Card>
-                </TabsContent>
-            </Tabs>
+             <Card className="bg-gradient-accent-to-card">
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                    <CardTitle>Objetivos del Proyecto</CardTitle>
+                    <CardDescription>Seguimiento de todos los objetivos asociados al proyecto.</CardDescription>
+                    </div>
+                    <Dialog open={isObjectiveDialogOpen} onOpenChange={setIsObjectiveDialogOpen}>
+                        <DialogTrigger asChild>
+                            <Button><PlusCircle className="mr-2 h-4 w-4"/> Nuevo Objetivo</Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Añadir Nuevo Objetivo al Proyecto</DialogTitle>
+                            </DialogHeader>
+                            <form onSubmit={handleAddObjective}>
+                                <div className="grid gap-4 py-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="objectiveName">Título del Objetivo</Label>
+                                        <Input id="objectiveName" name="objectiveName" placeholder="Ej. Aumentar conversión un 10%"/>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="objectiveDescription">Descripción</Label>
+                                        <Textarea id="objectiveDescription" name="objectiveDescription" placeholder="Describe el objetivo..."/>
+                                    </div>
+                                </div>
+                                <DialogFooter>
+                                    <Button type="submit">Añadir Objetivo</Button>
+                                </DialogFooter>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Objetivo</TableHead>
+                                <TableHead>Tipo</TableHead>
+                                <TableHead>Asignado a</TableHead>
+                                <TableHead className="text-right">Peso</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {projectObjectives.map(obj => (
+                                <TableRow key={obj.id}>
+                                    <TableCell className="font-medium">{obj.title}</TableCell>
+                                    <TableCell><Badge variant="outline">{obj.type}</Badge></TableCell>
+                                    <TableCell>{obj.assigned_to}</TableCell>
+                                    <TableCell className="text-right">{obj.weight ? `${obj.weight}%` : '-'}</TableCell>
+                                </TableRow>
+                            ))}
+                            {projectObjectives.length === 0 && (
+                                <TableRow>
+                                    <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">No hay objetivos para este proyecto.</TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
         </div>
     )
 }

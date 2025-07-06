@@ -2,48 +2,47 @@
 
 import { useState, useEffect } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { CheckCircle, Gift, Goal, PlusCircle, TrendingUp } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Gift, Goal, PlusCircle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-type Goal = {
-  id: number;
-  name: string;
+type Objective = {
+  id: string; // UUID
+  title: string;
   description: string;
-  assignee: string;
-  type: 'Individual' | 'Equipo' | 'Empresa';
-  metricType: 'Porcentaje' | 'Numérico';
-  targetValue: number;
-  currentValue: number;
-  status: 'Pendiente' | 'En Progreso' | 'Completado';
-  incentiveId?: string;
+  type: 'individual' | 'equipo' | 'empresa';
+  assigned_to: string; // UserID or TeamID
+  project_id?: string; // UUID (nullable)
+  is_incentivized: boolean;
+  incentive_id?: string; // UUID (nullable)
+  weight?: number; // decimal
+  start_date?: string; // date
+  end_date?: string; // date
 };
 
 type Incentive = {
   id: string;
   name: string;
   type: 'Económico' | 'Días libres' | 'Formación' | 'Personalizado';
-  details: string; 
+  value: string | number;
+  period: 'mensual' | 'trimestral' | 'anual';
 };
 
-const GOALS_STORAGE_KEY = 'workflow-central-goals';
+const OBJECTIVES_STORAGE_KEY = 'workflow-central-objectives';
 const INCENTIVES_STORAGE_KEY = 'workflow-central-incentives';
 
 export default function EmployeePerformancePage() {
-    const [myGoals, setMyGoals] = useState<Goal[]>([]);
+    const [myObjectives, setMyObjectives] = useState<Objective[]>([]);
     const [incentives, setIncentives] = useState<Incentive[]>([]);
 
     useEffect(() => {
         try {
-            const storedGoals = localStorage.getItem(GOALS_STORAGE_KEY);
-            if (storedGoals) {
-                const allGoals: Goal[] = JSON.parse(storedGoals);
+            const storedObjectives = localStorage.getItem(OBJECTIVES_STORAGE_KEY);
+            if (storedObjectives) {
+                const allObjectives: Objective[] = JSON.parse(storedObjectives);
                 // Assuming Olivia Martin is the logged-in user
-                setMyGoals(allGoals.filter(g => g.assignee === "Olivia Martin"));
+                setMyObjectives(allObjectives.filter(g => g.assigned_to === "Olivia Martin"));
             }
 
             const storedIncentives = localStorage.getItem(INCENTIVES_STORAGE_KEY);
@@ -55,18 +54,6 @@ export default function EmployeePerformancePage() {
         }
     }, []);
     
-    const getStatusVariant = (status: string) => {
-        switch (status) {
-            case 'Completado': return 'active';
-            case 'En Progreso': return 'warning';
-            default: return 'secondary';
-        }
-    };
-    
-    const calculateProgress = (current: number, target: number) => {
-        if (target === 0) return 0;
-        return (current / target) * 100;
-    }
 
     return (
         <div className="space-y-8">
@@ -86,41 +73,34 @@ export default function EmployeePerformancePage() {
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <TooltipProvider>
-                        {myGoals.map((goal, index) => {
-                            const progress = calculateProgress(goal.currentValue, goal.targetValue);
-                            const incentive = incentives.find(i => i.id === goal.incentiveId);
+                        {myObjectives.map((objective, index) => {
+                            const incentive = incentives.find(i => i.id === objective.incentive_id);
                             return (
                                 <div key={index}>
                                     <div className="flex items-center justify-between mb-2">
                                         <div className="flex items-center gap-2 font-medium">
-                                          <span>{goal.name}</span>
-                                          {incentive && (
+                                          <span>{objective.title}</span>
+                                          {objective.is_incentivized && incentive && (
                                               <Tooltip>
                                                   <TooltipTrigger>
                                                       <Gift className="h-4 w-4 text-primary" />
                                                   </TooltipTrigger>
                                                   <TooltipContent>
                                                       <p className="font-semibold">{incentive.name}</p>
-                                                      <p>{incentive.type}: {incentive.details}</p>
+                                                      <p>{incentive.type}: {incentive.value.toString()}</p>
                                                   </TooltipContent>
                                               </Tooltip>
                                           )}
                                         </div>
-                                        <Badge variant={getStatusVariant(goal.status)}>
-                                            {goal.status}
-                                        </Badge>
                                     </div>
-                                    <Progress value={progress} />
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                        {goal.metricType === 'Numérico' 
-                                            ? `${goal.currentValue} / ${goal.targetValue}` 
-                                            : `${Math.round(progress)}%`}
+                                    <p className="text-sm text-muted-foreground mt-1">
+                                        {objective.description}
                                     </p>
                                 </div>
                             )
                         })}
                         </TooltipProvider>
-                        {myGoals.length === 0 && (
+                        {myObjectives.length === 0 && (
                             <div className="text-center text-muted-foreground py-8">
                                 <Goal className="mx-auto h-8 w-8 mb-2" />
                                 <p>No tienes objetivos asignados actualmente.</p>
