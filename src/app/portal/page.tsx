@@ -107,6 +107,11 @@ export default function EmployeeDashboard() {
           title: "Error de Ubicación",
           description: description,
         });
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
       }
     );
   };
