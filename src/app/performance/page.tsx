@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
 import { format, addMonths } from "date-fns";
 
 
-const initialEmployees: Employee[] = [
+const initialEmployees: (Employee & { id: string })[] = [
   { id: "a1b2c3d4-e5f6-7890-1234-567890abcdef", name: "Olivia Martin", email: "olivia.martin@example.com" },
   { id: "b2c3d4e5-f6a7-8901-2345-67890abcdef1", name: "Jackson Lee", email: "jackson.lee@example.com" },
   { id: "c3d4e5f6-a7b8-9012-3456-7890abcdef2", name: "Isabella Nguyen", email: "isabella.nguyen@example.com" },
@@ -41,7 +41,7 @@ const initialDepartments: (Department & { id: string })[] = [
 
 export default function PerformancePage() {
     const { toast } = useToast();
-    const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
+    const [employees, setEmployees] = useState<(Employee & { id: string })[]>(initialEmployees);
     const [departments, setDepartments] = useState<(Department & { id: string })[]>(initialDepartments);
     const [objectives, setObjectives] = useState<Objective[]>([]);
     const [incentives, setIncentives] = useState<Incentive[]>([]);
@@ -86,6 +86,10 @@ export default function PerformancePage() {
         fetchData();
     }, []);
 
+    const getTasksByObjective = (objectiveId: string) => {
+        return tasks.filter(task => task.objective_id === objectiveId);
+    };
+
     const handleSelectObjective = async (objective: Objective) => {
         if (selectedObjective?.id === objective.id) {
             setSelectedObjective(null);
@@ -94,8 +98,7 @@ export default function PerformancePage() {
         setIsLoadingDetails(true);
         setSelectedObjective(objective);
         try {
-            // Filter local tasks instead of making a new API call
-            const tasksData = tasks.filter(t => t.objective_id === objective.id);
+            const tasksData = getTasksByObjective(objective.id);
             const incentiveData = objective.is_incentivized
                 ? await calculateIncentiveForObjective(objective.id)
                 : null;
