@@ -33,6 +33,12 @@ const employees: Employee[] = [
   { id: 4, name: "William Kim", department: "Ingeniería" },
   { id: 5, name: "Sophia Davis", department: "Ventas" },
   { id: 6, name: "Liam Garcia", department: "RRHH" },
+  { id: 7, name: "Lucas Brown", department: "Ingeniería" },
+  { id: 8, name: "Mia Miller", department: "Diseño" },
+  { id: 9, name: "Benjamin Wilson", department: "Marketing" },
+  { id: 10, name: "Charlotte Moore", department: "Ventas" },
+  { id: 11, name: "Henry Taylor", department: "RRHH" },
+  { id: 12, name: "Amelia Anderson", department: "Ingeniería" },
 ];
 
 const allDepartments = ["Ingeniería", "Diseño", "Marketing", "Ventas", "RRHH"];
@@ -245,7 +251,7 @@ export default function AttendancePage() {
 
       <div>
         <h2 className="text-2xl font-semibold tracking-tight mb-4">Husin (Quién está dentro)</h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 items-start">
             <div className="relative">
                 <Collapsible>
                     <CollapsibleTrigger className="w-full text-left">
