@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ShieldCheck, CalendarClock, Briefcase, UserPlus, SlidersHorizontal, Sun, Moon, Coffee, Timer, CalendarDays, Plane, Bell, Bot, Lock, Puzzle, List, PlusCircle, Trash2, ArrowLeft, Calendar as CalendarIcon, Terminal, Globe, CircleDot } from "lucide-react";
+import { ShieldCheck, CalendarClock, Briefcase, UserPlus, SlidersHorizontal, Sun, Moon, Coffee, Timer, CalendarDays, Plane, Bell, Bot, Lock, Puzzle, List, PlusCircle, Trash2, ArrowLeft, Calendar as CalendarIcon, Terminal, Globe, CircleDot, Gift } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
@@ -167,6 +167,14 @@ type VacationPolicy = {
     assignedTo: string[];
 };
 
+type Incentive = {
+  id: string;
+  name: string;
+  type: 'Económico' | 'Días libres' | 'Formación' | 'Personalizado';
+  details: string; 
+};
+
+
 const defaultMapCenter = { lat: 40.416775, lng: -3.703790 };
 
 const initialCenters: Center[] = [
@@ -209,6 +217,7 @@ const initialCalendars: CalendarData[] = [
 const initialVacationPolicies: VacationPolicy[] = [
     { id: 'default', name: 'General', unit: 'days', amount: 22, countBy: 'workdays', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [], assignment: 'all', assignedTo: [] }
 ];
+const initialIncentives: Incentive[] = [];
 
 const CENTERS_STORAGE_KEY = 'workflow-central-centers';
 const DEPARTMENTS_STORAGE_KEY = 'workflow-central-departments';
@@ -221,6 +230,7 @@ const FIXED_SCHEDULES_STORAGE_KEY = 'workflow-central-fixed-schedules';
 const ABSENCE_TYPES_STORAGE_KEY = 'workflow-central-absence-types';
 const CALENDARS_STORAGE_KEY = 'workflow-central-calendars';
 const VACATION_POLICIES_STORAGE_KEY = 'workflow-central-vacation-policies';
+const INCENTIVES_STORAGE_KEY = 'workflow-central-incentives';
 
 
 const projectColors = [
@@ -542,6 +552,7 @@ const SettingsTabs = () => {
     const [absenceTypes, setAbsenceTypes] = useState<AbsenceType[]>(initialAbsenceTypes);
     const [calendars, setCalendars] = useState<CalendarData[]>(initialCalendars);
     const [vacationPolicies, setVacationPolicies] = useState<VacationPolicy[]>(initialVacationPolicies);
+    const [incentives, setIncentives] = useState<Incentive[]>(initialIncentives);
     
     const [isDeptDialogOpen, setIsDeptDialogOpen] = useState(false);
     const [dialogDeptMode, setDialogDeptMode] = useState<'add' | 'edit'>('add');
@@ -596,6 +607,12 @@ const SettingsTabs = () => {
     const [selectedVacationPolicy, setSelectedVacationPolicy] = useState<VacationPolicy | null>(null);
     const [vacationPolicyFormData, setVacationPolicyFormData] = useState<Omit<VacationPolicy, 'id'>>({ name: '', unit: 'days', amount: 22, countBy: 'workdays', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [], assignment: 'all', assignedTo: [] });
     const [newBlockedPeriod, setNewBlockedPeriod] = useState<DateRange | undefined>(undefined);
+    
+    const [isIncentiveDialogOpen, setIsIncentiveDialogOpen] = useState(false);
+    const [dialogIncentiveMode, setDialogIncentiveMode] = useState<'add' | 'edit'>('add');
+    const [selectedIncentive, setSelectedIncentive] = useState<Incentive | null>(null);
+    const [incentiveFormData, setIncentiveFormData] = useState<Omit<Incentive, 'id'>>({ name: "", type: "Económico", details: "" });
+
 
     const allSchedules = ['Horario Fijo', 'Horario Flexible', ...shifts.map(s => s.name)];
     
@@ -634,6 +651,7 @@ const SettingsTabs = () => {
         loadFromStorage(ABSENCE_TYPES_STORAGE_KEY, setAbsenceTypes, initialAbsenceTypes, absenceTypeMigration);
         loadFromStorage(CALENDARS_STORAGE_KEY, setCalendars, initialCalendars);
         loadFromStorage(VACATION_POLICIES_STORAGE_KEY, setVacationPolicies, initialVacationPolicies);
+        loadFromStorage(INCENTIVES_STORAGE_KEY, setIncentives, initialIncentives);
 
         const storedEmployees = localStorage.getItem(EMPLOYEES_STORAGE_KEY);
         if (storedEmployees) setEmployees(JSON.parse(storedEmployees));
@@ -651,7 +669,8 @@ const SettingsTabs = () => {
         localStorage.setItem(ABSENCE_TYPES_STORAGE_KEY, JSON.stringify(absenceTypes));
         localStorage.setItem(CALENDARS_STORAGE_KEY, JSON.stringify(calendars));
         localStorage.setItem(VACATION_POLICIES_STORAGE_KEY, JSON.stringify(vacationPolicies));
-    }, [departments, roles, breaks, clockInTypes, shifts, flexibleSchedules, fixedSchedules, absenceTypes, calendars, vacationPolicies]);
+        localStorage.setItem(INCENTIVES_STORAGE_KEY, JSON.stringify(incentives));
+    }, [departments, roles, breaks, clockInTypes, shifts, flexibleSchedules, fixedSchedules, absenceTypes, calendars, vacationPolicies, incentives]);
 
 
     const openAddRoleDialog = () => {
@@ -990,6 +1009,37 @@ const SettingsTabs = () => {
         setVacationPolicies(prev => prev.filter(p => p.id !== id));
     };
 
+    const openAddIncentiveDialog = () => {
+        setDialogIncentiveMode('add');
+        setSelectedIncentive(null);
+        setIncentiveFormData({ name: "", type: "Económico", details: "" });
+        setIsIncentiveDialogOpen(true);
+    };
+
+    const openEditIncentiveDialog = (incentive: Incentive) => {
+        setDialogIncentiveMode('edit');
+        setSelectedIncentive(incentive);
+        setIncentiveFormData({ name: incentive.name, type: incentive.type, details: incentive.details });
+        setIsIncentiveDialogOpen(true);
+    };
+
+    const handleIncentiveFormSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!incentiveFormData.name) return;
+
+        if (dialogIncentiveMode === 'add') {
+            setIncentives(prev => [...prev, { id: Date.now().toString(), ...incentiveFormData }]);
+        } else if (selectedIncentive) {
+            setIncentives(prev => prev.map(i => i.id === selectedIncentive.id ? { ...i, ...incentiveFormData } : i));
+        }
+        setIsIncentiveDialogOpen(false);
+    };
+    
+    const handleDeleteIncentive = (id: string) => {
+        setIncentives(prev => prev.filter(i => i.id !== id));
+    };
+
+
     const selectedCalendar = calendars.find(c => c.id === selectedCalendarId);
     const holidayDates = selectedCalendar?.holidays.map(h => new Date(h.date)) || [];
 
@@ -1007,6 +1057,9 @@ const SettingsTabs = () => {
                 <TabsTrigger value="calendars" className="w-full justify-start"><CalendarDays className="mr-2 h-4 w-4"/>Calendarios</TabsTrigger>
                 <TabsTrigger value="vacations" className="w-full justify-start"><Plane className="mr-2 h-4 w-4"/>Vacaciones</TabsTrigger>
                 <TabsTrigger value="absences" className="w-full justify-start"><Plane className="mr-2 h-4 w-4"/>Ausencias</TabsTrigger>
+                 <Separator className="my-2"/>
+                <p className="px-3 py-2 text-xs font-semibold text-muted-foreground">COMPENSACIÓN</p>
+                <TabsTrigger value="incentives" className="w-full justify-start"><Gift className="mr-2 h-4 w-4"/>Incentivos</TabsTrigger>
                 <Separator className="my-2"/>
                 <p className="px-3 py-2 text-xs font-semibold text-muted-foreground">CUENTA</p>
                 <TabsTrigger value="automations" className="w-full justify-start"><Bot className="mr-2 h-4 w-4"/>Automatizaciones</TabsTrigger>
@@ -2130,6 +2183,80 @@ const SettingsTabs = () => {
                     </Dialog>
                 </TabsContent>
                 
+                 <TabsContent value="incentives" className="space-y-4 m-0">
+                    <Card className="bg-gradient-accent-to-card">
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div>
+                                <CardTitle>Gestión de Incentivos</CardTitle>
+                                <CardDescription>Crea y gestiona los planes de incentivos de tu empresa.</CardDescription>
+                            </div>
+                             <Button onClick={openAddIncentiveDialog}><PlusCircle className="mr-2 h-4 w-4"/> Crear Incentivo</Button>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Nombre</TableHead>
+                                        <TableHead>Tipo</TableHead>
+                                        <TableHead>Detalles</TableHead>
+                                        <TableHead><span className="sr-only">Acciones</span></TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {incentives.map(incentive => (
+                                        <TableRow key={incentive.id}>
+                                            <TableCell className="font-medium">{incentive.name}</TableCell>
+                                            <TableCell>{incentive.type}</TableCell>
+                                            <TableCell>{incentive.details}</TableCell>
+                                            <TableCell className="text-right">
+                                                <Button variant="ghost" size="sm" onClick={() => openEditIncentiveDialog(incentive)}>Editar</Button>
+                                                <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDeleteIncentive(incentive.id)}>
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                    {incentives.length === 0 && (
+                                        <TableRow>
+                                            <TableCell colSpan={4} className="h-24 text-center">No se han creado incentivos.</TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                    <Dialog open={isIncentiveDialogOpen} onOpenChange={setIsIncentiveDialogOpen}>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>{dialogIncentiveMode === 'add' ? 'Crear Nuevo Incentivo' : 'Editar Incentivo'}</DialogTitle>
+                            </DialogHeader>
+                            <form onSubmit={handleIncentiveFormSubmit} className="space-y-4 py-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="incentive-name">Nombre del Incentivo</Label>
+                                    <Input id="incentive-name" value={incentiveFormData.name} onChange={e => setIncentiveFormData({...incentiveFormData, name: e.target.value})} required/>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="incentive-type">Tipo</Label>
+                                    <Select value={incentiveFormData.type} onValueChange={(value: Incentive['type']) => setIncentiveFormData({...incentiveFormData, type: value})}>
+                                        <SelectTrigger id="incentive-type"><SelectValue/></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Económico">Económico</SelectItem>
+                                            <SelectItem value="Días libres">Días libres</SelectItem>
+                                            <SelectItem value="Formación">Formación</SelectItem>
+                                            <SelectItem value="Personalizado">Personalizado</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                 <div className="space-y-2">
+                                    <Label htmlFor="incentive-details">Detalles</Label>
+                                    <Input id="incentive-details" value={incentiveFormData.details} onChange={e => setIncentiveFormData({...incentiveFormData, details: e.target.value})} placeholder="Ej. 500€, 2 días, Curso de React..." required/>
+                                </div>
+                                <DialogFooter><Button type="submit">Guardar</Button></DialogFooter>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
+                </TabsContent>
+
                 <TabsContent value="automations" className="space-y-4 m-0">
                     <Card className="bg-gradient-accent-to-card">
                         <CardHeader>

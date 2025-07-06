@@ -11,10 +11,11 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { MoreHorizontal, PlusCircle, Trash2 } from "lucide-react"
+import { MoreHorizontal, PlusCircle, Gift, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const reviewCycles = [
   { name: "Revisión Anual 2024", status: "Completado", period: "01 Ene - 31 Dic, 2024", participants: 48 },
@@ -38,14 +39,26 @@ type Goal = {
   targetValue: number;
   currentValue: number;
   status: 'Pendiente' | 'En Progreso' | 'Completado';
+  incentiveId?: string;
 };
+
+type Incentive = {
+  id: string;
+  name: string;
+  type: 'Económico' | 'Días libres' | 'Formación' | 'Personalizado';
+  details: string; 
+};
+
 
 const EMPLOYEES_STORAGE_KEY = 'workflow-central-employees';
 const GOALS_STORAGE_KEY = 'workflow-central-goals';
+const INCENTIVES_STORAGE_KEY = 'workflow-central-incentives';
 
 export default function PerformancePage() {
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [goals, setGoals] = useState<Goal[]>([]);
+    const [incentives, setIncentives] = useState<Incentive[]>([]);
+
     const [isGoalDialogOpen, setIsGoalDialogOpen] = useState(false);
     const [dialogGoalMode, setDialogGoalMode] = useState<'add' | 'edit'>('add');
     const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
@@ -56,6 +69,7 @@ export default function PerformancePage() {
         type: "Individual",
         metricType: "Porcentaje",
         targetValue: 100,
+        incentiveId: undefined,
     });
 
 
@@ -66,6 +80,10 @@ export default function PerformancePage() {
 
             const storedGoals = localStorage.getItem(GOALS_STORAGE_KEY);
             if (storedGoals) setGoals(JSON.parse(storedGoals));
+
+            const storedIncentives = localStorage.getItem(INCENTIVES_STORAGE_KEY);
+            if (storedIncentives) setIncentives(JSON.parse(storedIncentives));
+
         } catch (error) {
             console.error("Failed to load data from localStorage", error);
         }
@@ -85,12 +103,13 @@ export default function PerformancePage() {
         case "Completado": return "active";
         case "En Progreso": return "warning";
         case "Programado": return "secondary";
+        case "Pendiente": return "secondary";
         default: return "default";
       }
     };
     
     const getGoalStatus = (current: number, target: number): Goal['status'] => {
-        if (current >= target) return "Completado";
+        if (target > 0 && current >= target) return "Completado";
         if (current > 0) return "En Progreso";
         return "Pendiente";
     }
@@ -104,7 +123,7 @@ export default function PerformancePage() {
         setDialogGoalMode('add');
         setSelectedGoal(null);
         setGoalFormData({
-            name: "", description: "", assignee: "", type: "Individual", metricType: "Porcentaje", targetValue: 100,
+            name: "", description: "", assignee: "", type: "Individual", metricType: "Porcentaje", targetValue: 100, incentiveId: undefined,
         });
         setIsGoalDialogOpen(true);
     }
@@ -119,6 +138,7 @@ export default function PerformancePage() {
             type: goal.type,
             metricType: goal.metricType,
             targetValue: goal.targetValue,
+            incentiveId: goal.incentiveId,
         });
         setIsGoalDialogOpen(true);
     };
@@ -251,6 +271,7 @@ export default function PerformancePage() {
                             <Button onClick={handleOpenAddGoalDialog}><PlusCircle className="mr-2 h-4 w-4"/> Crear Objetivo</Button>
                         </CardHeader>
                         <CardContent>
+                           <TooltipProvider>
                             <Table>
                                 <TableHeader>
                                     <TableRow>
@@ -265,9 +286,25 @@ export default function PerformancePage() {
                                     {goals.map(goal => {
                                         const progress = calculateProgress(goal.currentValue, goal.targetValue);
                                         const status = getGoalStatus(goal.currentValue, goal.targetValue);
+                                        const incentive = incentives.find(i => i.id === goal.incentiveId);
                                         return (
                                             <TableRow key={goal.id}>
-                                                <TableCell className="font-medium">{goal.name}</TableCell>
+                                                <TableCell className="font-medium">
+                                                    <div className="flex items-center gap-2">
+                                                        <span>{goal.name}</span>
+                                                        {incentive && (
+                                                            <Tooltip>
+                                                                <TooltipTrigger>
+                                                                    <Gift className="h-4 w-4 text-primary" />
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>
+                                                                    <p className="font-semibold">{incentive.name}</p>
+                                                                    <p>{incentive.type}: {incentive.details}</p>
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
                                                 <TableCell>{goal.assignee}</TableCell>
                                                 <TableCell>
                                                     <div className="flex items-center gap-2">
@@ -290,6 +327,7 @@ export default function PerformancePage() {
                                     })}
                                 </TableBody>
                             </Table>
+                           </TooltipProvider>
                              {goals.length === 0 && (
                                 <div className="text-center text-muted-foreground py-12">
                                     <p>No hay objetivos definidos. Empieza por crear uno.</p>
@@ -364,6 +402,16 @@ export default function PerformancePage() {
                                     <Label htmlFor="goal-target">Valor Objetivo</Label>
                                     <Input id="goal-target" type="number" value={goalFormData.targetValue} onChange={(e) => setGoalFormData({...goalFormData, targetValue: Number(e.target.value)})} />
                                 </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="goal-incentive">Incentivo (Opcional)</Label>
+                                <Select value={goalFormData.incentiveId} onValueChange={(value) => setGoalFormData({...goalFormData, incentiveId: value === 'none' ? undefined : value})}>
+                                    <SelectTrigger id="goal-incentive"><SelectValue placeholder="Sin incentivo"/></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">Sin incentivo</SelectItem>
+                                        {incentives.map(i => <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
                         <DialogFooter>

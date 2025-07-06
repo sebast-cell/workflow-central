@@ -6,8 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle, Goal, PlusCircle, TrendingUp } from "lucide-react";
+import { CheckCircle, Gift, Goal, PlusCircle, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 type Goal = {
   id: number;
@@ -19,12 +20,22 @@ type Goal = {
   targetValue: number;
   currentValue: number;
   status: 'Pendiente' | 'En Progreso' | 'Completado';
+  incentiveId?: string;
+};
+
+type Incentive = {
+  id: string;
+  name: string;
+  type: 'Económico' | 'Días libres' | 'Formación' | 'Personalizado';
+  details: string; 
 };
 
 const GOALS_STORAGE_KEY = 'workflow-central-goals';
+const INCENTIVES_STORAGE_KEY = 'workflow-central-incentives';
 
 export default function EmployeePerformancePage() {
     const [myGoals, setMyGoals] = useState<Goal[]>([]);
+    const [incentives, setIncentives] = useState<Incentive[]>([]);
 
     useEffect(() => {
         try {
@@ -34,8 +45,13 @@ export default function EmployeePerformancePage() {
                 // Assuming Olivia Martin is the logged-in user
                 setMyGoals(allGoals.filter(g => g.assignee === "Olivia Martin"));
             }
+
+            const storedIncentives = localStorage.getItem(INCENTIVES_STORAGE_KEY);
+            if (storedIncentives) {
+                setIncentives(JSON.parse(storedIncentives));
+            }
         } catch (error) {
-            console.error("Failed to load goals from localStorage", error);
+            console.error("Failed to load data from localStorage", error);
         }
     }, []);
     
@@ -69,12 +85,27 @@ export default function EmployeePerformancePage() {
                         <Button variant="outline" size="sm"><PlusCircle className="mr-2 h-4 w-4"/> Sugerir Objetivo</Button>
                     </CardHeader>
                     <CardContent className="space-y-6">
+                        <TooltipProvider>
                         {myGoals.map((goal, index) => {
                             const progress = calculateProgress(goal.currentValue, goal.targetValue);
+                            const incentive = incentives.find(i => i.id === goal.incentiveId);
                             return (
                                 <div key={index}>
                                     <div className="flex items-center justify-between mb-2">
-                                        <p className="font-medium">{goal.name}</p>
+                                        <div className="flex items-center gap-2 font-medium">
+                                          <span>{goal.name}</span>
+                                          {incentive && (
+                                              <Tooltip>
+                                                  <TooltipTrigger>
+                                                      <Gift className="h-4 w-4 text-primary" />
+                                                  </TooltipTrigger>
+                                                  <TooltipContent>
+                                                      <p className="font-semibold">{incentive.name}</p>
+                                                      <p>{incentive.type}: {incentive.details}</p>
+                                                  </TooltipContent>
+                                              </Tooltip>
+                                          )}
+                                        </div>
                                         <Badge variant={getStatusVariant(goal.status)}>
                                             {goal.status}
                                         </Badge>
@@ -88,6 +119,7 @@ export default function EmployeePerformancePage() {
                                 </div>
                             )
                         })}
+                        </TooltipProvider>
                         {myGoals.length === 0 && (
                             <div className="text-center text-muted-foreground py-8">
                                 <Goal className="mx-auto h-8 w-8 mb-2" />
