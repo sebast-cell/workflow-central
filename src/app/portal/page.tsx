@@ -212,7 +212,7 @@ export default function EmployeeDashboard() {
             <CardHeader>
                 <CardTitle>Acciones Rápidas</CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-4">
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Button onClick={handleClockInOut} variant={isClockedIn ? "destructive" : "active"} disabled={isOnBreak}>
                   {isClockedIn ? 'Marcar Salida' : 'Marcar Entrada'}
                 </Button>
