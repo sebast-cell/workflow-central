@@ -202,6 +202,11 @@ export const createObjective = async (objective: Objective): Promise<Objective> 
     return handleResponse<Objective>(response);
 };
 
+export const calculateIncentiveForObjective = async (objectiveId: string): Promise<{ result: string | number; message: string; }> => {
+    const response = await fetch(`${API_BASE_URL}/objectives/${objectiveId}/incentive`);
+    return handleResponse<{ result: string | number; message: string; }>(response);
+};
+
 // -- Tasks --
 export const listTasks = async (): Promise<Task[]> => {
     const response = await fetch(`${API_BASE_URL}/tasks/`);
