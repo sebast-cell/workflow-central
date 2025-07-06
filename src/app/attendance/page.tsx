@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -195,7 +196,7 @@ export default function AttendancePage() {
     };
 
   const HusinCardContent = ({ employees }: { employees: Employee[] }) => (
-    <div className="rounded-lg border bg-card text-card-foreground shadow-sm mt-2">
+    <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
       <div className="p-3 space-y-2 max-h-48 overflow-y-auto">
         {employees.length > 0 ? (
           employees.map((emp) => (
@@ -229,91 +230,101 @@ export default function AttendancePage() {
 
       <div>
         <h2 className="text-2xl font-semibold tracking-tight mb-4">Husin (Quién está dentro)</h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 items-start">
-            <Collapsible>
-                <CollapsibleTrigger className="w-full text-left">
-                    <Card className="bg-gradient-accent-to-card">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">En Oficina</CardTitle>
-                            <Home className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{husinStats.inOffice.count}</div>
-                        </CardContent>
-                    </Card>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                    <HusinCardContent employees={husinStats.inOffice.list} />
-                </CollapsibleContent>
-            </Collapsible>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+            <div className="relative">
+                <Collapsible>
+                    <CollapsibleTrigger className="w-full text-left">
+                        <Card className="bg-gradient-accent-to-card">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">En Oficina</CardTitle>
+                                <Home className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{husinStats.inOffice.count}</div>
+                            </CardContent>
+                        </Card>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="absolute z-10 w-full">
+                        <HusinCardContent employees={husinStats.inOffice.list} />
+                    </CollapsibleContent>
+                </Collapsible>
+            </div>
             
-            <Collapsible>
-                <CollapsibleTrigger className="w-full text-left">
-                    <Card className="bg-gradient-accent-to-card">
+            <div className="relative">
+                <Collapsible>
+                    <CollapsibleTrigger className="w-full text-left">
+                        <Card className="bg-gradient-accent-to-card">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Trabajo Remoto</CardTitle>
+                                <Globe className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{husinStats.remote.count}</div>
+                            </CardContent>
+                        </Card>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="absolute z-10 w-full">
+                        <HusinCardContent employees={husinStats.remote.list} />
+                    </CollapsibleContent>
+                </Collapsible>
+            </div>
+
+            <div className="relative">
+                <Collapsible>
+                    <CollapsibleTrigger className="w-full text-left">
+                        <Card className="bg-gradient-accent-to-card">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">En Descanso</CardTitle>
+                                <Coffee className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{husinStats.onBreak.count}</div>
+                            </CardContent>
+                        </Card>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="absolute z-10 w-full">
+                        <HusinCardContent employees={husinStats.onBreak.list} />
+                    </CollapsibleContent>
+                </Collapsible>
+            </div>
+
+             <div className="relative">
+                <Collapsible>
+                    <CollapsibleTrigger className="w-full text-left">
+                        <Card className="bg-gradient-accent-to-card">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Trabajo Remoto</CardTitle>
-                            <Globe className="h-4 w-4 text-muted-foreground" />
+                            <CardTitle className="text-sm font-medium">De Vacaciones</CardTitle>
+                            <Briefcase className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{husinStats.remote.count}</div>
+                            <div className="text-2xl font-bold">{husinStats.onVacation.count}</div>
                         </CardContent>
-                    </Card>
-                </CollapsibleTrigger>
-                 <CollapsibleContent>
-                    <HusinCardContent employees={husinStats.remote.list} />
-                </CollapsibleContent>
-            </Collapsible>
+                        </Card>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="absolute z-10 w-full">
+                        <HusinCardContent employees={husinStats.onVacation.list} />
+                    </CollapsibleContent>
+                </Collapsible>
+            </div>
 
-            <Collapsible>
-                <CollapsibleTrigger className="w-full text-left">
-                    <Card className="bg-gradient-accent-to-card">
+            <div className="relative">
+                <Collapsible>
+                    <CollapsibleTrigger className="w-full text-left">
+                        <Card className="bg-gradient-accent-to-card">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">En Descanso</CardTitle>
-                            <Coffee className="h-4 w-4 text-muted-foreground" />
+                            <CardTitle className="text-sm font-medium">Ausente</CardTitle>
+                            <UserX className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{husinStats.onBreak.count}</div>
+                            <div className="text-2xl font-bold">{husinStats.absent.count}</div>
                         </CardContent>
-                    </Card>
-                </CollapsibleTrigger>
-                 <CollapsibleContent>
-                    <HusinCardContent employees={husinStats.onBreak.list} />
-                </CollapsibleContent>
-            </Collapsible>
-
-             <Collapsible>
-                <CollapsibleTrigger className="w-full text-left">
-                    <Card className="bg-gradient-accent-to-card">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">De Vacaciones</CardTitle>
-                        <Briefcase className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{husinStats.onVacation.count}</div>
-                    </CardContent>
-                    </Card>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                    <HusinCardContent employees={husinStats.onVacation.list} />
-                </CollapsibleContent>
-            </Collapsible>
-
-            <Collapsible>
-                <CollapsibleTrigger className="w-full text-left">
-                    <Card className="bg-gradient-accent-to-card">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Ausente</CardTitle>
-                        <UserX className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{husinStats.absent.count}</div>
-                    </CardContent>
-                    </Card>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                    <HusinCardContent employees={husinStats.absent.list} />
-                </CollapsibleContent>
-            </Collapsible>
+                        </Card>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="absolute z-10 w-full">
+                        <HusinCardContent employees={husinStats.absent.list} />
+                    </CollapsibleContent>
+                </Collapsible>
+            </div>
         </div>
       </div>
       
