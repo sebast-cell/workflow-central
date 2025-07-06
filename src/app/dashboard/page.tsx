@@ -113,7 +113,7 @@ export default function Dashboard() {
         </Card>
       </div>
       <div className="grid gap-8 lg:grid-cols-2">
-        <Card>
+        <Card className="bg-gradient-accent-to-card">
           <CardHeader>
             <CardTitle>Resumen de Horas del Equipo</CardTitle>
             <CardDescription>Total de horas registradas esta semana.</CardDescription>
@@ -129,7 +129,7 @@ export default function Dashboard() {
             </ResponsiveContainer>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gradient-accent-to-card">
           <CardHeader>
             <CardTitle>Actividad Reciente</CardTitle>
             <CardDescription>Lo que tu equipo ha estado haciendo.</CardDescription>
@@ -155,7 +155,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
-      <Card>
+      <Card className="bg-gradient-accent-to-card">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
