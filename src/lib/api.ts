@@ -1,7 +1,13 @@
 'use client';
-// A file for client-side API calls to the FastAPI backend.
+import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8000';
+const apiClient = axios.create({
+    baseURL: 'http://localhost:8000',
+    headers: {
+        'Content-Type': 'application/json',
+    }
+});
+
 
 // -------- TYPE DEFINITIONS -------- //
 export type Incentive = {
@@ -26,7 +32,7 @@ export type Objective = {
   title: string;
   description?: string;
   type: 'individual' | 'equipo' | 'empresa';
-  assigned_to: string; // UserID or TeamID
+  assigned_to: string; // UserID or TeamID or CompanyID
   project_id?: string; // UUID (nullable)
   is_incentivized: boolean;
   incentive_id?: string; // UUID (nullable)
@@ -52,6 +58,7 @@ export type Employee = {
 };
 
 export type Department = {
+    id: string; // UUID
     name: string;
 };
 
@@ -164,80 +171,56 @@ export type VacationPolicy = {
 
 // -------- API FUNCTIONS -------- //
 
-async function handleResponse<T>(response: Response): Promise<T> {
-    if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'API request failed');
-    }
-    return response.json();
-}
-
 // -- Incentives --
 export const listIncentives = async (): Promise<Incentive[]> => {
-    const response = await fetch(`${API_BASE_URL}/incentives/`);
-    return handleResponse<Incentive[]>(response);
+    const response = await apiClient.get('/incentives/');
+    return response.data;
 };
 
 export const createIncentive = async (incentive: Incentive): Promise<Incentive> => {
-    const response = await fetch(`${API_BASE_URL}/incentives/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(incentive),
-    });
-    return handleResponse<Incentive>(response);
+    const response = await apiClient.post('/incentives/', incentive);
+    return response.data;
 };
 
 // -- Objectives --
 export const listObjectives = async (): Promise<Objective[]> => {
-    const response = await fetch(`${API_BASE_URL}/objectives/`);
-    return handleResponse<Objective[]>(response);
+    const response = await apiClient.get('/objectives/');
+    return response.data;
 };
 
-export const createObjective = async (objective: Objective): Promise<Objective> => {
-    const response = await fetch(`${API_BASE_URL}/objectives/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(objective),
-    });
-    return handleResponse<Objective>(response);
+export const createObjective = async (objective: Omit<Objective, 'id'>): Promise<Objective> => {
+    const response = await apiClient.post('/objectives/', objective);
+    return response.data;
 };
 
 export const calculateIncentiveForObjective = async (objectiveId: string): Promise<{ result: string | number; message: string; }> => {
-    const response = await fetch(`${API_BASE_URL}/objectives/${objectiveId}/incentive`);
-    return handleResponse<{ result: string | number; message: string; }>(response);
+    const response = await apiClient.get(`/objectives/${objectiveId}/incentive`);
+    return response.data;
 };
 
 // -- Tasks --
 export const listTasks = async (): Promise<Task[]> => {
-    const response = await fetch(`${API_BASE_URL}/tasks/`);
-    return handleResponse<Task[]>(response);
+    const response = await apiClient.get('/tasks/');
+    return response.data;
 };
 
 export const getTasksByObjective = async (objectiveId: string): Promise<Task[]> => {
-    const response = await fetch(`${API_BASE_URL}/objectives/${objectiveId}/tasks`);
-    return handleResponse<Task[]>(response);
+    const response = await apiClient.get(`/objectives/${objectiveId}/tasks`);
+    return response.data;
 };
 
-export const createTask = async (task: Task): Promise<Task> => {
-    const response = await fetch(`${API_BASE_URL}/tasks/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(task),
-    });
-    return handleResponse<Task>(response);
+export const createTask = async (task: Omit<Task, 'id'>): Promise<Task> => {
+    const response = await apiClient.post('/tasks/', task);
+    return response.data;
 };
 
 // -- Projects --
 export const listProjects = async (): Promise<Project[]> => {
-    const response = await fetch(`${API_BASE_URL}/projects/`);
-    return handleResponse<Project[]>(response);
+    const response = await apiClient.get('/projects/');
+    return response.data;
 };
 
-export const createProject = async (project: Project): Promise<Project> => {
-    const response = await fetch(`${API_BASE_URL}/projects/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(project),
-    });
-    return handleResponse<Project>(response);
+export const createProject = async (project: Omit<Project, 'id'>): Promise<Project> => {
+    const response = await apiClient.post('/projects/', project);
+    return response.data;
 };
