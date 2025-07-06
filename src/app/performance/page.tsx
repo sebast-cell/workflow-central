@@ -7,7 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Gift, X, Check, Loader2, PlusCircle } from "lucide-react"
 import { Switch } from "@/components/ui/switch";
@@ -18,6 +17,7 @@ import { type Objective, type Task, type Incentive, type Project, type Departmen
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
 
 const initialEmployees: Employee[] = [
   { id: "a1b2c3d4-e5f6-7890-1234-567890abcdef", name: "Olivia Martin", email: "olivia.martin@example.com" },
@@ -25,17 +25,17 @@ const initialEmployees: Employee[] = [
   { id: "c3d4e5f6-a7b8-9012-3456-7890abcdef2", name: "Isabella Nguyen", email: "isabella.nguyen@example.com" },
 ];
 
-const initialDepartments: Department[] = [
-    { name: "Ingeniería" },
-    { name: "Diseño" },
-    { name: "Marketing" },
+const initialDepartments: (Department & { id: string })[] = [
+    { id: "de01f2b3-a4b5-c6d7-e8f9-1234567890ab", name: "Ingeniería" },
+    { id: "de01f2b3-a4b5-c6d7-e8f9-1234567890ac", name: "Diseño" },
+    { id: "de01f2b3-a4b5-c6d7-e8f9-1234567890ad", name: "Marketing" },
 ];
 
 
 export default function PerformancePage() {
     const { toast } = useToast();
     const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
-    const [departments, setDepartments] = useState<Department[]>(initialDepartments);
+    const [departments, setDepartments] = useState<(Department & { id: string })[]>(initialDepartments);
     const [objectives, setObjectives] = useState<Objective[]>([]);
     const [incentives, setIncentives] = useState<Incentive[]>([]);
     const [projects, setProjects] = useState<Project[]>([]);
@@ -105,7 +105,10 @@ export default function PerformancePage() {
         e.preventDefault();
         const dataToSave = {...newObjectiveData};
         if (dataToSave.type === 'empresa') dataToSave.assigned_to = '00000000-0000-0000-0000-000000000000'; // Placeholder UUID for 'company'
-        if (!dataToSave.title || !dataToSave.assigned_to) return;
+        if (!dataToSave.title || !dataToSave.assigned_to) {
+             toast({ variant: "destructive", title: "Error", description: "El título y el campo 'Asignar a' son obligatorios." });
+             return;
+        }
         
         const newObjective: Objective = { id: uuidv4(), ...dataToSave };
 
@@ -146,9 +149,9 @@ export default function PerformancePage() {
         }
     };
     
-    const handleToggleTask = (taskId: string) => {
+    const handleToggleTask = (taskId: string, completed: boolean) => {
         const updateTasks = (tasks: Task[]) => tasks.map(t =>
-            t.id === taskId ? { ...t, completed: !t.completed } : t
+            t.id === taskId ? { ...t, completed: completed } : t
         );
         setObjectiveTasks(updateTasks);
         setTasks(updateTasks);
@@ -157,10 +160,14 @@ export default function PerformancePage() {
     const getAssignedToName = (objective: Objective) => {
         if (objective.type === 'individual') {
             const employee = employees.find(e => e.id === objective.assigned_to);
-            return employee ? employee.name : objective.assigned_to;
+            return employee ? employee.name : "Empleado no encontrado";
+        }
+         if (objective.type === 'equipo') {
+            const department = departments.find(d => d.id === objective.assigned_to);
+            return department ? department.name : "Equipo no encontrado";
         }
         if (objective.type === 'empresa') return "Toda la empresa";
-        return objective.assigned_to; // Should resolve to department name
+        return objective.assigned_to;
     };
     
     const getObjectiveProgress = (objectiveId: string) => {
@@ -275,11 +282,21 @@ export default function PerformancePage() {
                                         {newObjectiveData.type === 'equipo' && (
                                             <Select value={newObjectiveData.assigned_to} onValueChange={(value) => setNewObjectiveData({...newObjectiveData, assigned_to: value})}>
                                                 <SelectTrigger id="objective-assignee"><SelectValue placeholder="Seleccionar depto."/></SelectTrigger>
-                                                <SelectContent>{departments.map(d => <SelectItem key={d.name} value={d.name}>{d.name}</SelectItem>)}</SelectContent>
+                                                <SelectContent>{departments.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}</SelectContent>
                                             </Select>
                                         )}
                                         {newObjectiveData.type === 'empresa' && <Input id="objective-assignee" value="Toda la empresa" disabled/>}
                                     </div>
+                                </div>
+                                 <div className="space-y-2">
+                                    <Label htmlFor="objective-project">Proyecto (Opcional)</Label>
+                                    <Select value={newObjectiveData.project_id} onValueChange={(value) => setNewObjectiveData({...newObjectiveData, project_id: value === 'none' ? undefined : value})}>
+                                        <SelectTrigger id="objective-project"><SelectValue placeholder="Asociar a un proyecto"/></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">Sin proyecto</SelectItem>
+                                            {projects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                                 <div className="flex items-center space-x-2 pt-2">
                                     <Switch id="is_incentivized" checked={newObjectiveData.is_incentivized} onCheckedChange={(checked) => setNewObjectiveData({...newObjectiveData, is_incentivized: checked, incentive_id: undefined})} />
@@ -323,7 +340,7 @@ export default function PerformancePage() {
                                     <div className="space-y-2 mb-4">
                                         {objectiveTasks.map(task => (
                                             <div key={task.id} className="flex items-center p-2 rounded-lg border bg-background">
-                                                <Checkbox id={`task-${task.id}`} checked={task.completed} onCheckedChange={() => handleToggleTask(task.id)} className="mr-2"/>
+                                                <Checkbox id={`task-${task.id}`} checked={task.completed} onCheckedChange={(checked) => handleToggleTask(task.id, Boolean(checked))} className="mr-2"/>
                                                 <label htmlFor={`task-${task.id}`} className={cn("flex-1 cursor-pointer", task.completed ? 'line-through text-muted-foreground' : '')}>{task.title}</label>
                                             </div>
                                         ))}
