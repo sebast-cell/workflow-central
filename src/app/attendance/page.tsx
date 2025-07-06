@@ -16,8 +16,16 @@ import { cn } from '@/lib/utils';
 import { DateRange } from 'react-day-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-const employees = [
+type Employee = {
+    id: number;
+    name: string;
+    department: string;
+};
+
+const employees: Employee[] = [
   { id: 1, name: "Olivia Martin", department: "Ingeniería" },
   { id: 2, name: "Jackson Lee", department: "Diseño" },
   { id: 3, name: "Isabella Nguyen", department: "Marketing" },
@@ -90,18 +98,19 @@ export default function AttendancePage() {
         const todayNormalized = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
         const stats = {
-            inOffice: 0,
-            remote: 0,
-            onBreak: 0,
-            onVacation: 0,
-            absent: 0,
+            inOffice: { count: 0, list: [] as Employee[] },
+            remote: { count: 0, list: [] as Employee[] },
+            onBreak: { count: 0, list: [] as Employee[] },
+            onVacation: { count: 0, list: [] as Employee[] },
+            absent: { count: 0, list: [] as Employee[] },
         };
 
         const employeesOnLeaveToday = new Set<string>();
         absencesData.forEach(absence => {
-            if (isWithinInterval(today, { start: absence.from, end: absence.to })) {
+            const employee = employees.find(e => e.name === absence.employee);
+            if (employee && isWithinInterval(today, { start: absence.from, end: absence.to })) {
                 if (absence.type === "De Vacaciones") {
-                    stats.onVacation++;
+                    stats.onVacation.list.push(employee);
                 }
                 employeesOnLeaveToday.add(absence.employee);
             }
@@ -121,23 +130,34 @@ export default function AttendancePage() {
             }
         });
 
+        const presentEmployees = new Set<string>();
         Object.values(latestLogs).forEach(log => {
+            const employee = employees.find(e => e.name === log.employee);
+            if (!employee) return;
+            
+            presentEmployees.add(log.employee);
+
             switch (log.status) {
                 case "Entrada Marcada":
                     if (log.location === "Oficina") {
-                        stats.inOffice++;
+                        stats.inOffice.list.push(employee);
                     } else {
-                        stats.remote++;
+                        stats.remote.list.push(employee);
                     }
                     break;
                 case "En Descanso":
-                    stats.onBreak++;
+                    stats.onBreak.list.push(employee);
                     break;
             }
         });
 
-        const totalEmployees = employees.length;
-        stats.absent = totalEmployees - (stats.inOffice + stats.remote + stats.onBreak + stats.onVacation);
+        stats.absent.list = employees.filter(emp => !presentEmployees.has(emp.name) && !employeesOnLeaveToday.has(emp.name));
+
+        stats.inOffice.count = stats.inOffice.list.length;
+        stats.remote.count = stats.remote.list.length;
+        stats.onBreak.count = stats.onBreak.list.length;
+        stats.onVacation.count = stats.onVacation.list.length;
+        stats.absent.count = stats.absent.list.length;
 
         return stats;
     }, []);
@@ -174,6 +194,32 @@ export default function AttendancePage() {
       }
     };
 
+  const HusinCardContent = ({ employees }: { employees: Employee[] }) => (
+    <div className="rounded-lg border bg-card text-card-foreground shadow-sm mt-2">
+      <div className="p-3 space-y-2 max-h-48 overflow-y-auto">
+        {employees.length > 0 ? (
+          employees.map((emp) => (
+            <div key={emp.id} className="flex items-center gap-2 text-sm">
+              <Avatar className="h-6 w-6">
+                <AvatarImage src={`https://placehold.co/40x40.png`} data-ai-hint="people avatar" alt={emp.name} />
+                <AvatarFallback className="text-xs">
+                  {emp.name
+                    .split(' ')
+                    .map((n) => n[0])
+                    .join('')
+                    .slice(0, 2)}
+                </AvatarFallback>
+              </Avatar>
+              <span>{emp.name}</span>
+            </div>
+          ))
+        ) : (
+          <p className="text-xs text-muted-foreground text-center py-2">No hay empleados.</p>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-8">
       <div>
@@ -184,51 +230,90 @@ export default function AttendancePage() {
       <div>
         <h2 className="text-2xl font-semibold tracking-tight mb-4">Husin (Quién está dentro)</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-            <Card className="bg-gradient-accent-to-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">En Oficina</CardTitle>
-                <Home className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-                <div className="text-2xl font-bold">{husinStats.inOffice}</div>
-            </CardContent>
-            </Card>
-            <Card className="bg-gradient-accent-to-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Trabajo Remoto</CardTitle>
-                <Globe className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-                <div className="text-2xl font-bold">{husinStats.remote}</div>
-            </CardContent>
-            </Card>
-            <Card className="bg-gradient-accent-to-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">En Descanso</CardTitle>
-                <Coffee className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-                <div className="text-2xl font-bold">{husinStats.onBreak}</div>
-            </CardContent>
-            </Card>
-            <Card className="bg-gradient-accent-to-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">De Vacaciones</CardTitle>
-                <Briefcase className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-                <div className="text-2xl font-bold">{husinStats.onVacation}</div>
-            </CardContent>
-            </Card>
-            <Card className="bg-gradient-accent-to-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Ausente</CardTitle>
-                <UserX className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-                <div className="text-2xl font-bold">{husinStats.absent}</div>
-            </CardContent>
-            </Card>
+            <Collapsible>
+                <CollapsibleTrigger className="w-full text-left">
+                    <Card className="bg-gradient-accent-to-card">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">En Oficina</CardTitle>
+                            <Home className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{husinStats.inOffice.count}</div>
+                        </CardContent>
+                    </Card>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                    <HusinCardContent employees={husinStats.inOffice.list} />
+                </CollapsibleContent>
+            </Collapsible>
+            
+            <Collapsible>
+                <CollapsibleTrigger className="w-full text-left">
+                    <Card className="bg-gradient-accent-to-card">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Trabajo Remoto</CardTitle>
+                            <Globe className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{husinStats.remote.count}</div>
+                        </CardContent>
+                    </Card>
+                </CollapsibleTrigger>
+                 <CollapsibleContent>
+                    <HusinCardContent employees={husinStats.remote.list} />
+                </CollapsibleContent>
+            </Collapsible>
+
+            <Collapsible>
+                <CollapsibleTrigger className="w-full text-left">
+                    <Card className="bg-gradient-accent-to-card">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">En Descanso</CardTitle>
+                            <Coffee className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{husinStats.onBreak.count}</div>
+                        </CardContent>
+                    </Card>
+                </CollapsibleTrigger>
+                 <CollapsibleContent>
+                    <HusinCardContent employees={husinStats.onBreak.list} />
+                </CollapsibleContent>
+            </Collapsible>
+
+             <Collapsible>
+                <CollapsibleTrigger className="w-full text-left">
+                    <Card className="bg-gradient-accent-to-card">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">De Vacaciones</CardTitle>
+                        <Briefcase className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{husinStats.onVacation.count}</div>
+                    </CardContent>
+                    </Card>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                    <HusinCardContent employees={husinStats.onVacation.list} />
+                </CollapsibleContent>
+            </Collapsible>
+
+            <Collapsible>
+                <CollapsibleTrigger className="w-full text-left">
+                    <Card className="bg-gradient-accent-to-card">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Ausente</CardTitle>
+                        <UserX className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{husinStats.absent.count}</div>
+                    </CardContent>
+                    </Card>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                    <HusinCardContent employees={husinStats.absent.list} />
+                </CollapsibleContent>
+            </Collapsible>
         </div>
       </div>
       
