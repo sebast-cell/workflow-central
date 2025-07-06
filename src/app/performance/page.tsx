@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useState, useEffect } from "react";
@@ -18,17 +19,23 @@ import { v4 as uuidv4 } from 'uuid';
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { format, addMonths } from "date-fns";
+
 
 const initialEmployees: Employee[] = [
   { id: "a1b2c3d4-e5f6-7890-1234-567890abcdef", name: "Olivia Martin", email: "olivia.martin@example.com" },
   { id: "b2c3d4e5-f6a7-8901-2345-67890abcdef1", name: "Jackson Lee", email: "jackson.lee@example.com" },
   { id: "c3d4e5f6-a7b8-9012-3456-7890abcdef2", name: "Isabella Nguyen", email: "isabella.nguyen@example.com" },
+  { id: "d4e5f6a7-b8c9-0123-4567-890abcdef3", name: "William Kim", email: "william.kim@example.com" },
+  { id: "e5f6a7b8-c9d0-1234-5678-90abcdef4", name: "Sophia Davis", email: "sophia.davis@example.com" },
 ];
 
 const initialDepartments: (Department & { id: string })[] = [
     { id: "de01f2b3-a4b5-c6d7-e8f9-1234567890ab", name: "Ingeniería" },
     { id: "de01f2b3-a4b5-c6d7-e8f9-1234567890ac", name: "Diseño" },
     { id: "de01f2b3-a4b5-c6d7-e8f9-1234567890ad", name: "Marketing" },
+    { id: "de01f2b3-a4b5-c6d7-e8f9-1234567890ae", name: "Ventas" },
+    { id: "de01f2b3-a4b5-c6d7-e8f9-1234567890af", name: "RRHH" },
 ];
 
 
@@ -45,13 +52,13 @@ export default function PerformancePage() {
         title: "",
         description: "",
         type: "individual",
-        assigned_to: "", // This will be a UUID
-        project_id: undefined,
+        assigned_to: "",
+        project_id: "",
         is_incentivized: false,
-        incentive_id: undefined,
+        incentive_id: "",
         weight: 0,
-        start_date: "",
-        end_date: "",
+        start_date: format(new Date(), 'yyyy-MM-dd'),
+        end_date: format(addMonths(new Date(), 1), 'yyyy-MM-dd'),
     });
 
     const [selectedObjective, setSelectedObjective] = useState<Objective | null>(null);
@@ -103,23 +110,45 @@ export default function PerformancePage() {
 
     const handleCreateObjective = async (e: React.FormEvent) => {
         e.preventDefault();
-        const dataToSave = {...newObjectiveData};
-        if (dataToSave.type === 'empresa') dataToSave.assigned_to = '00000000-0000-0000-0000-000000000000'; // Placeholder UUID for 'company'
-        if (!dataToSave.title || !dataToSave.assigned_to) {
+
+        let assignedTo = newObjectiveData.assigned_to;
+        if (newObjectiveData.type === 'empresa') {
+            assignedTo = '00000000-0000-0000-0000-000000000000';
+        }
+
+        if (!newObjectiveData.title || !assignedTo) {
              toast({ variant: "destructive", title: "Error", description: "El título y el campo 'Asignar a' son obligatorios." });
              return;
         }
         
-        const newObjective: Objective = { id: uuidv4(), ...dataToSave };
+        const newObjective: Omit<Objective, 'id'> = {
+            title: newObjectiveData.title,
+            description: newObjectiveData.description || undefined,
+            type: newObjectiveData.type,
+            assigned_to: assignedTo,
+            project_id: newObjectiveData.project_id || undefined,
+            is_incentivized: newObjectiveData.is_incentivized,
+            incentive_id: newObjectiveData.incentive_id || undefined,
+            weight: newObjectiveData.weight || undefined,
+            start_date: newObjectiveData.start_date,
+            end_date: newObjectiveData.end_date,
+        };
 
         try {
-            const savedObjective = await createObjective(newObjective);
+            const savedObjective = await createObjective({ id: uuidv4(), ...newObjective });
             setObjectives(prev => [...prev, savedObjective]);
             toast({ title: "Objetivo Creado", description: "El nuevo objetivo ha sido guardado." });
-            // Reset form
-             setNewObjectiveData({
-                title: "", description: "", type: "individual", assigned_to: "", project_id: undefined,
-                is_incentivized: false, incentive_id: undefined, weight: 0, start_date: "", end_date: "",
+            setNewObjectiveData({
+                title: "",
+                description: "",
+                type: "individual",
+                assigned_to: "",
+                project_id: "",
+                is_incentivized: false,
+                incentive_id: "",
+                weight: 0,
+                start_date: format(new Date(), 'yyyy-MM-dd'),
+                end_date: format(addMonths(new Date(), 1), 'yyyy-MM-dd'),
             });
         } catch (error) {
             console.error("Failed to create objective:", error);
@@ -150,6 +179,9 @@ export default function PerformancePage() {
     };
     
     const handleToggleTask = (taskId: string, completed: boolean) => {
+        // NOTE: The provided API does not have an endpoint to update a task.
+        // This update is only reflected in the local state for a better UX.
+        // In a real application, this should be a PATCH/PUT request to the backend.
         const updateTasks = (tasks: Task[]) => tasks.map(t =>
             t.id === taskId ? { ...t, completed: completed } : t
         );
@@ -167,7 +199,7 @@ export default function PerformancePage() {
             return department ? department.name : "Equipo no encontrado";
         }
         if (objective.type === 'empresa') return "Toda la empresa";
-        return objective.assigned_to;
+        return "Desconocido";
     };
     
     const getObjectiveProgress = (objectiveId: string) => {
@@ -288,24 +320,40 @@ export default function PerformancePage() {
                                         {newObjectiveData.type === 'empresa' && <Input id="objective-assignee" value="Toda la empresa" disabled/>}
                                     </div>
                                 </div>
-                                 <div className="space-y-2">
-                                    <Label htmlFor="objective-project">Proyecto (Opcional)</Label>
-                                    <Select value={newObjectiveData.project_id} onValueChange={(value) => setNewObjectiveData({...newObjectiveData, project_id: value === 'none' ? undefined : value})}>
-                                        <SelectTrigger id="objective-project"><SelectValue placeholder="Asociar a un proyecto"/></SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="none">Sin proyecto</SelectItem>
-                                            {projects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="objective-start-date">Fecha de Inicio</Label>
+                                        <Input id="objective-start-date" type="date" value={newObjectiveData.start_date} onChange={(e) => setNewObjectiveData({...newObjectiveData, start_date: e.target.value})} required/>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="objective-end-date">Fecha de Fin</Label>
+                                        <Input id="objective-end-date" type="date" value={newObjectiveData.end_date} onChange={(e) => setNewObjectiveData({...newObjectiveData, end_date: e.target.value})} required/>
+                                    </div>
                                 </div>
+                                 <div className="grid grid-cols-2 gap-4">
+                                     <div className="space-y-2">
+                                        <Label htmlFor="objective-project">Proyecto (Opcional)</Label>
+                                        <Select value={newObjectiveData.project_id} onValueChange={(value) => setNewObjectiveData({...newObjectiveData, project_id: value === 'none' ? '' : value})}>
+                                            <SelectTrigger id="objective-project"><SelectValue placeholder="Asociar a un proyecto"/></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="none">Sin proyecto</SelectItem>
+                                                {projects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="objective-weight">Peso del Objetivo (%)</Label>
+                                        <Input id="objective-weight" type="number" value={newObjectiveData.weight || ''} onChange={(e) => setNewObjectiveData({...newObjectiveData, weight: Number(e.target.value)})} placeholder="Ej. 20" />
+                                    </div>
+                                 </div>
                                 <div className="flex items-center space-x-2 pt-2">
-                                    <Switch id="is_incentivized" checked={newObjectiveData.is_incentivized} onCheckedChange={(checked) => setNewObjectiveData({...newObjectiveData, is_incentivized: checked, incentive_id: undefined})} />
+                                    <Switch id="is_incentivized" checked={newObjectiveData.is_incentivized} onCheckedChange={(checked) => setNewObjectiveData({...newObjectiveData, is_incentivized: checked, incentive_id: ""})} />
                                     <Label htmlFor="is_incentivized">Este objetivo está incentivado</Label>
                                 </div>
                                 {newObjectiveData.is_incentivized && (
                                     <div className="space-y-2">
                                         <Label htmlFor="objective-incentive">Incentivo</Label>
-                                        <Select value={newObjectiveData.incentive_id} onValueChange={(value) => setNewObjectiveData({...newObjectiveData, incentive_id: value === 'none' ? undefined : value})}>
+                                        <Select value={newObjectiveData.incentive_id} onValueChange={(value) => setNewObjectiveData({...newObjectiveData, incentive_id: value === 'none' ? '' : value})}>
                                             <SelectTrigger id="objective-incentive"><SelectValue placeholder="Seleccionar incentivo"/></SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="none">Sin incentivo</SelectItem>
@@ -340,7 +388,7 @@ export default function PerformancePage() {
                                     <div className="space-y-2 mb-4">
                                         {objectiveTasks.map(task => (
                                             <div key={task.id} className="flex items-center p-2 rounded-lg border bg-background">
-                                                <Checkbox id={`task-${task.id}`} checked={task.completed} onCheckedChange={(checked) => handleToggleTask(task.id, Boolean(checked))} className="mr-2"/>
+                                                <Checkbox id={`task-${task.id}`} checked={task.completed} onCheckedChange={(checked) => handleToggleTask(task.id, !!checked)} className="mr-2"/>
                                                 <label htmlFor={`task-${task.id}`} className={cn("flex-1 cursor-pointer", task.completed ? 'line-through text-muted-foreground' : '')}>{task.title}</label>
                                             </div>
                                         ))}
