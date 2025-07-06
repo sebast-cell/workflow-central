@@ -118,7 +118,7 @@ export default function DocumentsPage() {
         ))}
       </div>
 
-      <Card>
+      <Card className="bg-gradient-accent-to-card">
         <CardHeader>
             <CardTitle>Archivos Subidos Recientemente</CardTitle>
             <CardDescription>Una lista de los documentos añadidos más recientemente.</CardDescription>
