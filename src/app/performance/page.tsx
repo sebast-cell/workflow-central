@@ -93,6 +93,56 @@ const initialTasks: Task[] = [
     { id: "task-6", title: "Tests de integración de perfil", objective_id: "obj-3", completed: false, is_incentivized: false },
 ];
 
+const calculateIncentive = (objective: Objective, allTasks: Task[], allIncentives: Incentive[]) => {
+    if (!objective.is_incentivized || !objective.incentive_id) {
+        return 'N/A';
+    }
+
+    const incentive = allIncentives.find(i => i.id === objective.incentive_id);
+    if (!incentive) {
+        return 'N/A';
+    }
+    
+    const objectiveTasks = allTasks.filter(t => t.objective_id === objective.id);
+    const totalTasks = objectiveTasks.length;
+    if (totalTasks === 0) {
+        return incentive.type === 'económico' ? '€0.00' : '0 Tareas';
+    }
+
+    const completedTasks = objectiveTasks.filter(t => t.completed).length;
+    const completionRatio = completedTasks / totalTasks;
+    
+    let calculatedAmount = 0;
+    let rawIncentiveValue: number | string = incentive.value;
+
+    if (incentive.type === 'económico' || incentive.type === 'días_libres') {
+        const numericValue = parseFloat(String(incentive.value).replace(/[^0-9.-]+/g,""));
+        if (isNaN(numericValue)) return 'Valor Inválido';
+        rawIncentiveValue = numericValue;
+    }
+
+    if (typeof rawIncentiveValue === 'number') {
+        if (completionRatio >= 1) {
+            calculatedAmount = rawIncentiveValue;
+        } else if (completionRatio >= 0.75) {
+            calculatedAmount = rawIncentiveValue * 0.75;
+        }
+    }
+
+    switch (incentive.type) {
+        case 'económico':
+            return `€${calculatedAmount.toFixed(2)}`;
+        case 'días_libres':
+            if (calculatedAmount === 0) return 'No alcanzado';
+            return `${calculatedAmount} ${calculatedAmount === 1 ? 'día' : 'días'}`;
+        case 'formación':
+        case 'otro':
+             return completionRatio >= 1 ? String(incentive.value) : 'No alcanzado';
+        default:
+            return 'N/A';
+    }
+}
+
 
 export default function PerformancePage() {
     const [employees, setEmployees] = useState<Employee[]>([]);
@@ -347,6 +397,7 @@ export default function PerformancePage() {
                                         <TableHead className="w-2/5">Título del Objetivo</TableHead>
                                         <TableHead>Asignado a</TableHead>
                                         <TableHead>Progreso</TableHead>
+                                        <TableHead>Incentivo Calculado</TableHead>
                                         <TableHead><span className="sr-only">Acciones</span></TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -354,6 +405,7 @@ export default function PerformancePage() {
                                     {objectives.map(objective => {
                                         const incentive = incentives.find(i => i.id === objective.incentive_id);
                                         const { progress, completed, total } = getObjectiveProgress(objective.id);
+                                        const calculatedIncentive = calculateIncentive(objective, tasks, incentives);
                                         return (
                                             <TableRow key={objective.id}>
                                                 <TableCell className="font-medium">
@@ -380,6 +432,7 @@ export default function PerformancePage() {
                                                         <span className="text-muted-foreground text-xs">{completed}/{total}</span>
                                                     </div>
                                                 </TableCell>
+                                                <TableCell className="font-medium">{calculatedIncentive}</TableCell>
                                                 <TableCell className="text-right">
                                                      <DropdownMenu>
                                                         <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4"/></Button></DropdownMenuTrigger>

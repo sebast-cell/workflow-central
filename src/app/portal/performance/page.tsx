@@ -43,6 +43,57 @@ const OBJECTIVES_STORAGE_KEY = 'workflow-central-objectives';
 const TASKS_STORAGE_KEY = 'workflow-central-tasks';
 const INCENTIVES_STORAGE_KEY = 'workflow-central-incentives';
 
+const calculateIncentive = (objective: Objective, allTasks: Task[], allIncentives: Incentive[]) => {
+    if (!objective.is_incentivized || !objective.incentive_id) {
+        return 'N/A';
+    }
+
+    const incentive = allIncentives.find(i => i.id === objective.incentive_id);
+    if (!incentive) {
+        return 'N/A';
+    }
+    
+    const objectiveTasks = allTasks.filter(t => t.objective_id === objective.id);
+    const totalTasks = objectiveTasks.length;
+    if (totalTasks === 0) {
+        return incentive.type === 'económico' ? '€0.00' : '0 Tareas';
+    }
+
+    const completedTasks = objectiveTasks.filter(t => t.completed).length;
+    const completionRatio = completedTasks / totalTasks;
+    
+    let calculatedAmount = 0;
+    let rawIncentiveValue: number | string = incentive.value;
+
+    if (incentive.type === 'económico' || incentive.type === 'días_libres') {
+        const numericValue = parseFloat(String(incentive.value).replace(/[^0-9.-]+/g,""));
+        if (isNaN(numericValue)) return 'Valor Inválido';
+        rawIncentiveValue = numericValue;
+    }
+
+    if (typeof rawIncentiveValue === 'number') {
+        if (completionRatio >= 1) {
+            calculatedAmount = rawIncentiveValue;
+        } else if (completionRatio >= 0.75) {
+            calculatedAmount = rawIncentiveValue * 0.75;
+        }
+    }
+
+    switch (incentive.type) {
+        case 'económico':
+            return `€${calculatedAmount.toFixed(2)}`;
+        case 'días_libres':
+            if (calculatedAmount === 0) return 'No alcanzado';
+            return `${calculatedAmount} ${calculatedAmount === 1 ? 'día' : 'días'}`;
+        case 'formación':
+        case 'otro':
+             return completionRatio >= 1 ? String(incentive.value) : 'No alcanzado';
+        default:
+            return 'N/A';
+    }
+}
+
+
 export default function EmployeePerformancePage() {
     const [myObjectives, setMyObjectives] = useState<Objective[]>([]);
     const [tasks, setTasks] = useState<Task[]>([]);
@@ -101,6 +152,7 @@ export default function EmployeePerformancePage() {
                         {myObjectives.map((objective, index) => {
                             const incentive = incentives.find(i => i.id === objective.incentive_id);
                             const { progress, completed, total } = getObjectiveProgress(objective.id);
+                            const calculatedIncentive = calculateIncentive(objective, tasks, incentives);
                             return (
                                 <div key={index}>
                                     <div className="flex items-center justify-between mb-2">
@@ -121,9 +173,16 @@ export default function EmployeePerformancePage() {
                                          <span className="text-sm text-muted-foreground">{completed}/{total}</span>
                                     </div>
                                     <Progress value={progress} className="h-2" />
-                                    <p className="text-sm text-muted-foreground mt-1">
-                                        {objective.description}
-                                    </p>
+                                    <div className="flex justify-between items-start mt-1">
+                                        <p className="text-sm text-muted-foreground w-3/4">
+                                            {objective.description}
+                                        </p>
+                                        {objective.is_incentivized && calculatedIncentive !== 'N/A' && (
+                                            <p className="text-sm text-right font-medium text-primary">
+                                            Incentivo: {calculatedIncentive}
+                                            </p>
+                                        )}
+                                    </div>
                                 </div>
                             )
                         })}
