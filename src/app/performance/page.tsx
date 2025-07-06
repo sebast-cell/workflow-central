@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Gift, X, Check, Loader2, PlusCircle } from "lucide-react"
+import { Gift, X, Loader2 } from "lucide-react"
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -289,7 +289,7 @@ export default function PerformancePage() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="objective-description">Descripción</Label>
-                                    <Textarea id="objective-description" value={newObjectiveData.description} onChange={(e) => setNewObjectiveData({...newObjectiveData, description: e.target.value})} />
+                                    <Textarea id="objective-description" value={newObjectiveData.description || ''} onChange={(e) => setNewObjectiveData({...newObjectiveData, description: e.target.value})} />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
@@ -413,7 +413,7 @@ export default function PerformancePage() {
                                                 </div>
                                                 <div className="flex justify-between font-bold text-lg text-primary">
                                                     <span>Valor:</span>
-                                                    <span>{incentiveResult.result}</span>
+                                                    <span>{typeof incentiveResult.result === 'number' ? `€${incentiveResult.result.toFixed(2)}` : incentiveResult.result}</span>
                                                 </div>
                                             </CardContent>
                                         </Card>
@@ -430,3 +430,5 @@ export default function PerformancePage() {
         </div>
     )
 }
+
+    
