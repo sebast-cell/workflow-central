@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
 
 // Admin notifications
 const adminNotifications = [
@@ -31,6 +32,12 @@ const employeeNotifications = [
 
 export function Header() {
     const pathname = usePathname();
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
+
     const isPortal = pathname.startsWith('/portal');
     const notifications = isPortal ? employeeNotifications : adminNotifications;
 
@@ -45,7 +52,7 @@ export function Header() {
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" aria-label="Notifications" className="relative rounded-full">
                             <Bell className="h-5 w-5" />
-                            {notifications.length > 0 && (
+                            {isClient && notifications.length > 0 && (
                                 <span className="absolute top-1.5 right-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground ring-2 ring-background">
                                     {notifications.length}
                                 </span>
