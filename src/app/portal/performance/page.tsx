@@ -4,69 +4,39 @@ import { useState, useEffect } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Gift, Goal, PlusCircle } from "lucide-react";
+import { Gift, Goal, PlusCircle, Loader2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Progress } from "@/components/ui/progress";
-import { type Objective, type Task, type Incentive, listObjectives, listTasks, listIncentives } from "@/lib/api";
+import { type Objective, type Task, type Incentive, listObjectives, listTasks, listIncentives, calculateIncentiveForObjective } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
-const calculateIncentive = (objective: Objective, allTasks: Task[], allIncentives: Incentive[]) => {
-    if (!objective.is_incentivized || !objective.incentive_id) {
-        return 'N/A';
-    }
-
-    const incentive = allIncentives.find(i => i.id === objective.incentive_id);
-    if (!incentive) {
-        return 'N/A';
-    }
-    
-    const objectiveTasks = allTasks.filter(t => t.objective_id === objective.id);
-    const totalTasks = objectiveTasks.length;
-    if (totalTasks === 0) {
-        return incentive.type === 'económico' ? '€0.00' : '0 Tareas';
-    }
-
-    const completedTasks = objectiveTasks.filter(t => t.completed).length;
-    const completionRatio = completedTasks / totalTasks;
-    
-    let calculatedAmount = 0;
-    let rawIncentiveValue: number | string = incentive.value;
-
-    if (incentive.type === 'económico' || incentive.type === 'días_libres') {
-        const numericValue = parseFloat(String(incentive.value).replace(/[^0-9.-]+/g,""));
-        if (isNaN(numericValue)) return 'Valor Inválido';
-        rawIncentiveValue = numericValue;
-    }
-
-    if (typeof rawIncentiveValue === 'number') {
-        if (completionRatio >= 1) {
-            calculatedAmount = rawIncentiveValue;
-        } else if (completionRatio >= 0.75) {
-            calculatedAmount = rawIncentiveValue * 0.75;
-        }
-    }
-
-    switch (incentive.type) {
-        case 'económico':
-            return `€${calculatedAmount.toFixed(2)}`;
-        case 'días_libres':
-            if (calculatedAmount === 0) return 'No alcanzado';
-            return `${calculatedAmount} ${calculatedAmount === 1 ? 'día' : 'días'}`;
-        case 'formación':
-        case 'otro':
-             return completionRatio >= 1 ? String(incentive.value) : 'No alcanzado';
-        default:
-            return 'N/A';
-    }
-}
-
+type ObjectiveWithIncentive = Objective & {
+    incentiveResult?: { result: string | number; message: string; };
+    isLoadingIncentive: boolean;
+};
 
 export default function EmployeePerformancePage() {
-    const [myObjectives, setMyObjectives] = useState<Objective[]>([]);
+    const { toast } = useToast();
+    const [myObjectives, setMyObjectives] = useState<ObjectiveWithIncentive[]>([]);
     const [tasks, setTasks] = useState<Task[]>([]);
     const [incentives, setIncentives] = useState<Incentive[]>([]);
 
     // Simulating logged in user
     const currentUserId = "a1b2c3d4-e5f6-7890-1234-567890abcdef"; // Olivia Martin's UUID
+
+    const fetchIncentiveDataForObjective = async (objective: Objective) => {
+        if (!objective.is_incentivized) return;
+
+        setMyObjectives(prev => prev.map(o => o.id === objective.id ? { ...o, isLoadingIncentive: true } : o));
+        try {
+            const result = await calculateIncentiveForObjective(objective.id);
+             setMyObjectives(prev => prev.map(o => o.id === objective.id ? { ...o, incentiveResult: result, isLoadingIncentive: false } : o));
+        } catch (error) {
+            console.error(`Failed to fetch incentive for objective ${objective.id}:`, error);
+            setMyObjectives(prev => prev.map(o => o.id === objective.id ? { ...o, isLoadingIncentive: false } : o));
+             toast({ variant: "destructive", title: "Error", description: `No se pudo calcular el incentivo para "${objective.title}".` });
+        }
+    };
 
     const fetchData = async () => {
         try {
@@ -76,12 +46,22 @@ export default function EmployeePerformancePage() {
                 listIncentives()
             ]);
             
-            // This filtering should ideally happen on the backend
-            setMyObjectives(allObjectives.filter(o => o.assigned_to === currentUserId));
+            const userObjectives = allObjectives.filter(o => o.assigned_to === currentUserId);
+            
+            setMyObjectives(userObjectives.map(o => ({...o, isLoadingIncentive: false })));
             setTasks(allTasks);
             setIncentives(allIncentives);
+
+            // Fetch incentive data for each objective
+            userObjectives.forEach(obj => {
+                if(obj.is_incentivized) {
+                    fetchIncentiveDataForObjective(obj);
+                }
+            });
+
         } catch (error) {
             console.error("Failed to fetch data:", error);
+            toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los datos de desempeño." });
         }
     };
 
@@ -116,12 +96,11 @@ export default function EmployeePerformancePage() {
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <TooltipProvider>
-                        {myObjectives.map((objective, index) => {
+                        {myObjectives.map((objective) => {
                             const incentive = incentives.find(i => i.id === objective.incentive_id);
                             const { progress, completed, total } = getObjectiveProgress(objective.id);
-                            const calculatedIncentive = calculateIncentive(objective, tasks, incentives);
                             return (
-                                <div key={index}>
+                                <div key={objective.id}>
                                     <div className="flex items-center justify-between mb-2">
                                         <div className="flex items-center gap-2 font-medium">
                                           <span>{objective.title}</span>
@@ -144,10 +123,19 @@ export default function EmployeePerformancePage() {
                                         <p className="text-sm text-muted-foreground w-3/4">
                                             {objective.description}
                                         </p>
-                                        {objective.is_incentivized && calculatedIncentive !== 'N/A' && (
-                                            <p className="text-sm text-right font-medium text-primary">
-                                            Incentivo: {calculatedIncentive}
-                                            </p>
+                                        {objective.is_incentivized && (
+                                            <div className="text-sm text-right font-medium text-primary">
+                                                {objective.isLoadingIncentive ? <Loader2 className="h-4 w-4 animate-spin ml-auto" /> :
+                                                  objective.incentiveResult && objective.incentiveResult.result !== 0 ? (
+                                                      <>
+                                                        <p>Incentivo: {typeof objective.incentiveResult.result === 'number' ? `€${objective.incentiveResult.result.toFixed(2)}` : objective.incentiveResult.result}</p>
+                                                        <p className="text-xs text-muted-foreground">{objective.incentiveResult.message}</p>
+                                                      </>
+                                                  ) : objective.incentiveResult ? (
+                                                     <p className="text-xs text-muted-foreground">{objective.incentiveResult.message}</p>
+                                                  ) : null
+                                                }
+                                            </div>
                                         )}
                                     </div>
                                 </div>

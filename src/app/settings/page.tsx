@@ -440,7 +440,7 @@ const SettingsTabs = () => {
     const [isIncentiveDialogOpen, setIsIncentiveDialogOpen] = useState(false);
     const [dialogIncentiveMode, setDialogIncentiveMode] = useState<'add' | 'edit'>('add');
     const [selectedIncentive, setSelectedIncentive] = useState<Incentive | null>(null);
-    const [incentiveFormData, setIncentiveFormData] = useState<Omit<Incentive, 'id' | 'company_id'>>({ name: "", type: "económico", value: "", period: "anual", active: true, condition_expression: {}});
+    const [incentiveFormData, setIncentiveFormData] = useState<Omit<Incentive, 'id' | 'company_id'>>({ name: "", type: "económico", value: "", period: "anual", active: true, condition_expression: { modality: 'all-or-nothing' }});
 
 
     const allSchedules = ['Horario Fijo', 'Horario Flexible', ...shifts.map(s => s.name)];
@@ -795,7 +795,7 @@ const SettingsTabs = () => {
     const openAddIncentiveDialog = () => {
         setDialogIncentiveMode('add');
         setSelectedIncentive(null);
-        setIncentiveFormData({ name: "", type: "económico", value: "", period: "anual", active: true, condition_expression: {} });
+        setIncentiveFormData({ name: "", type: "económico", value: "", period: "anual", active: true, condition_expression: { modality: 'all-or-nothing' } });
         setIsIncentiveDialogOpen(true);
     };
 
@@ -804,7 +804,7 @@ const SettingsTabs = () => {
         setSelectedIncentive(incentive);
         setIncentiveFormData({
             ...incentive,
-            condition_expression: incentive.condition_expression || {}
+            condition_expression: incentive.condition_expression || { modality: 'all-or-nothing' }
         });
     };
 
@@ -812,18 +812,24 @@ const SettingsTabs = () => {
         e.preventDefault();
         if (!incentiveFormData.name) return;
         
-        const newIncentive: Incentive = {
-            id: selectedIncentive?.id || uuidv4(),
-            company_id: uuidv4(), // Should come from user context
-            ...incentiveFormData
-        };
+        const newIncentiveData = {...incentiveFormData};
+        // Ensure condition_expression is an object
+        if (typeof newIncentiveData.condition_expression === 'string') {
+            try {
+                newIncentiveData.condition_expression = JSON.parse(newIncentiveData.condition_expression);
+            } catch {
+                newIncentiveData.condition_expression = { modality: 'all-or-nothing' };
+            }
+        }
+
 
         if (dialogIncentiveMode === 'add') {
-            const saved = await createIncentive(newIncentive);
+            const saved = await createIncentive(newIncentiveData);
             setIncentives(prev => [...prev, saved]);
-        } else {
+        } else if (selectedIncentive) {
             // Update logic would go here (requires a PUT/PATCH endpoint)
-            setIncentives(prev => prev.map(i => i.id === newIncentive.id ? newIncentive : i));
+            const updatedIncentive = { ...selectedIncentive, ...newIncentiveData };
+            setIncentives(prev => prev.map(i => i.id === selectedIncentive.id ? updatedIncentive : i));
         }
         setIsIncentiveDialogOpen(false);
     };
@@ -1993,7 +1999,7 @@ const SettingsTabs = () => {
                                         <TableHead>Nombre</TableHead>
                                         <TableHead>Tipo</TableHead>
                                         <TableHead>Valor</TableHead>
-                                        <TableHead>Periodo</TableHead>
+                                        <TableHead>Modalidad</TableHead>
                                         <TableHead>Estado</TableHead>
                                         <TableHead><span className="sr-only">Acciones</span></TableHead>
                                     </TableRow>
@@ -2004,7 +2010,9 @@ const SettingsTabs = () => {
                                             <TableCell className="font-medium">{incentive.name}</TableCell>
                                             <TableCell className="capitalize">{incentive.type}</TableCell>
                                             <TableCell>{incentive.value}</TableCell>
-                                            <TableCell className="capitalize">{incentive.period}</TableCell>
+                                            <TableCell className="capitalize">
+                                                {incentive.condition_expression?.modality === 'proportional' ? 'Proporcional' : 'Todo o Nada'}
+                                            </TableCell>
                                             <TableCell>
                                                 <Badge variant={incentive.active ? "active" : "secondary"}>
                                                     {incentive.active ? "Activo" : "Inactivo"}
@@ -2075,14 +2083,20 @@ const SettingsTabs = () => {
                                     </div>
                                 </div>
                                  <div className="space-y-2">
-                                    <Label htmlFor="incentive-condition">Condiciones (Opcional, JSON)</Label>
-                                    <Textarea id="incentive-condition" value={JSON.stringify(incentiveFormData.condition_expression, null, 2)} onChange={e => {
-                                        try {
-                                            setIncentiveFormData({...incentiveFormData, condition_expression: JSON.parse(e.target.value)})
-                                        } catch (err) {
-                                            // Handle invalid JSON
-                                        }
-                                    }} placeholder='Ej. {"operator": "AND", "conditions": [{"metric": "sales", "operator": ">=", "value": 10000}]}'/>
+                                    <Label>Modalidad del Incentivo</Label>
+                                    <RadioGroup 
+                                        value={incentiveFormData.condition_expression?.modality || 'all-or-nothing'} 
+                                        onValueChange={(value: 'proportional' | 'all-or-nothing') => setIncentiveFormData(prev => ({...prev, condition_expression: {...prev.condition_expression, modality: value}}))} 
+                                        className="flex gap-4 pt-2">
+                                        <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="all-or-nothing" id="modality-all"/>
+                                            <Label htmlFor="modality-all" className="font-normal">Todo o Nada</Label>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="proportional" id="modality-prop"/>
+                                            <Label htmlFor="modality-prop" className="font-normal">Proporcional</Label>
+                                        </div>
+                                    </RadioGroup>
                                 </div>
                                 <DialogFooter><Button type="submit">Guardar</Button></DialogFooter>
                             </form>

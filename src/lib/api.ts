@@ -3,6 +3,7 @@ import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 
 const apiClient = axios.create({
+    baseURL: 'http://localhost:8000',
     headers: {
         'Content-Type': 'application/json',
     }
@@ -18,7 +19,9 @@ export type Incentive = {
   period: 'mensual' | 'trimestral' | 'anual';
   active: boolean;
   company_id: string; // UUID
-  condition_expression?: object;
+  condition_expression?: {
+    modality?: 'proportional' | 'all-or-nothing';
+  };
 };
 
 export type Project = {
