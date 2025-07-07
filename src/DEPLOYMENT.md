@@ -1,6 +1,6 @@
-# Guía Visual Definitiva para Desplegar tu App
+# Guía Visual Definitiva para Desplegar tu App (Versión Corregida)
 
-¡Hola! Sé que los pasos anteriores han sido confusos. Te pido disculpas. Esta guía está diseñada para que sea imposible perderse. ¡Vamos a lograrlo!
+¡Hola! Siento muchísimo los problemas anteriores. El error `No such remote 'origin'` fue por una instrucción incorrecta que te di. Te pido disculpas. Esta guía corregida está diseñada para que funcione sí o sí. ¡Vamos a lograrlo!
 
 ---
 
@@ -33,28 +33,28 @@ La terminal está en la **PARTE INFERIOR** de toda la ventana del editor.
 
 ---
 
-### **Paso 1 (EN LA TERMINAL): Prepara tu Repositorio**
+### **Paso 1 (EN LA TERMINAL): Conecta tu Repositorio (El Comando Correcto)**
 
-Ahora que has encontrado la **TERMINAL**, copia y pega los siguientes 3 comandos, uno por uno. Presiona `Enter` después de cada uno.
+Ahora que has encontrado la **TERMINAL**, copia y pega este comando. Este es el comando corregido que **añade** la conexión a tu repositorio de GitHub. Presiona `Enter`.
 
-1.  Conecta tu repositorio de GitHub:
-    ```bash
-    git remote set-url origin https://github.com/sebast-cell/workflow-central.git
-    ```
-
-2.  Nombra la rama principal como `main`:
-    ```bash
-    git branch -M main
-    ```
-
-3.  **Sube TODO el código a GitHub (el comando final):**
-    ```bash
-    git push -u origin main
-    ```
+```bash
+git remote add origin https://github.com/sebast-cell/workflow-central.git
+```
+*(Si te da un error que dice `remote origin already exists`, no te preocupes, es bueno. Simplemente continúa con el siguiente paso).*
 
 ---
 
-### **Paso 2 (EN LA TERMINAL): Tu Usuario y Contraseña Especial**
+### **Paso 2 (EN LA TERMINAL): Sube TODO el Código**
+
+Ahora, copia y pega este comando para subir tu código. Presiona `Enter`.
+
+```bash
+git push -u origin main
+```
+
+---
+
+### **Paso 3 (EN LA TERMINAL): Tu Usuario y Contraseña Especial**
 
 Después del último comando, la terminal te pedirá dos cosas:
 
@@ -63,7 +63,7 @@ Después del último comando, la terminal te pedirá dos cosas:
 
 ---
 
-### **Paso 3: ¡Victoria!**
+### **Paso 4: ¡Victoria!**
 
 *   Si todo ha ido bien, la terminal mostrará que los archivos se están subiendo.
 *   En la página de **Firebase App Hosting**, empezará un nuevo despliegue automáticamente. ¡Esta vez funcionará!
