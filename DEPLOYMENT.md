@@ -56,9 +56,9 @@ git push -u origin main
 
 ### **Paso 3 (EN LA TERMINAL): Tu Usuario y Contraseña Especial**
 
-Después del último comando, la terminal te pedirá dos cosas:
+Después del último comando, la terminal te pedirá dos cosas. **¡Puede que se quede parada sin escribir nada, es normal!** Está esperando a que tú escribas.
 
-*   `Username`: Escribe tu nombre de usuario de GitHub y presiona `Enter`.
+*   `Username`: Escribe tu nombre de usuario de GitHub (`sebast-cell`) y presiona `Enter`.
 *   `Password`: **¡MUY IMPORTANTE!** Pega aquí tu **Token de Acceso Personal** (la contraseña que empieza por `ghp_...`). **No verás nada mientras escribes o pegas.** Es normal. Solo pégalo y presiona `Enter`.
 
 ---
