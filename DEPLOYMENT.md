@@ -4,7 +4,7 @@
 
 ## 1. ¿Por qué Firebase?
 
-Firebase es una plataforma de desarrollo de aplicaciones de Google que nos proporciona una base de datos (Firestore), un sistema de autenticación, hosting y mucho más. Es una solución robusta y muy bien integrada con el ecosistema de Google.
+Firebase es una plataforma de desarrollo de aplicaciones de Google que nos proporciona una base de datos (Firestore), un sistema de autenticación, hosting y mucho más. Es una solución robusta, escalable y muy bien integrada con el ecosistema de Google.
 
 ## 2. Los 3 Pilares del Despliegue
 
@@ -30,7 +30,7 @@ Para que la aplicación sea funcional en producción, necesitas tres componentes
 
 3.  **Crea las Colecciones Iniciales:**
     *   Firestore organiza los datos en "colecciones". Ve a la pestaña de "Datos" de Firestore y crea las siguientes colecciones principales. Puedes dejarlas vacías por ahora; tu aplicación las llenará.
-    *   Colecciones a crear: `employees`, `projects`, `objectives`, `tasks`, `incentives`, `settings`.
+    *   **ACCIÓN REQUERIDA:** Crea las siguientes colecciones: `employees`, `projects`, `objectives`, `tasks`, `incentives`, `settings`.
 
 4.  **Genera las Credenciales de Servidor (La Llave Secreta):**
     *   Tu backend de Next.js necesita una forma segura de comunicarse con Firebase. Para esto, generaremos una "cuenta de servicio".
@@ -46,8 +46,8 @@ Para que la aplicación sea funcional en producción, necesitas tres componentes
 Ahora le diremos a tu código cómo hablar con la base de datos que acabas de crear.
 
 1.  **Configura las Variables de Entorno (Tus Secretos):**
-    *   En la raíz de tu proyecto, crea un archivo llamado `.env.local`.
-    *   Abre este archivo y el archivo `.json` que descargaste. Copia los valores correspondientes.
+    *   En la raíz de tu proyecto, crea un archivo llamado `.env.local` (si no existe ya).
+    *   **ACCIÓN REQUERIDA:** Abre este archivo y el archivo `.json` que descargaste. Copia los valores correspondientes.
 
         ```env
         # Claves de Firebase para el servidor
@@ -63,6 +63,8 @@ Ahora le diremos a tu código cómo hablar con la base de datos que acabas de cr
 
 3.  **Actualiza las Rutas de la API (El Gran Cambio):**
     *   Este es el paso más importante. Debes ir a cada archivo dentro de `/src/app/api/...` y cambiar la lógica para que use Firestore en lugar de la base de datos de prueba (`db`).
+    *   **ACCIÓN REQUERIDA:** Aplica el patrón "Antes/Después" a **TODAS las rutas de la API** en la carpeta `/src/app/api`. La [documentación de Firebase](https://firebase.google.com/docs/firestore/quickstart) es excelente si tienes dudas sobre algún método.
+
     *   **Ejemplo con `src/app/api/projects/route.ts`:**
 
         ```typescript
@@ -104,6 +106,7 @@ Ahora le diremos a tu código cómo hablar con la base de datos que acabas de cr
         export async function POST(request: Request) {
             try {
                 const projectData: Omit<Project, 'id'> = await request.json();
+                // Firestore genera el ID automáticamente con .add()
                 const docRef = await firestore.collection('projects').add(projectData);
                 const newProject = { id: docRef.id, ...projectData };
                 return NextResponse.json(newProject, { status: 201 });
@@ -113,7 +116,6 @@ Ahora le diremos a tu código cómo hablar con la base de datos que acabas de cr
             }
         }
         ```
-    *   **Acción Requerida:** Debes aplicar este mismo patrón (reemplazar `db` con `firestore` y sus métodos `.collection()`, `.get()`, `.add()`, etc.) a **TODAS las rutas de la API** en la carpeta `/src/app/api`. La [documentación de Firebase](https://firebase.google.com/docs/firestore/quickstart) es excelente para esto.
 
 ---
 
@@ -137,8 +139,8 @@ Firebase Authentication es muy fácil de usar.
 2.  **Importa tu Proyecto:** En Vercel, haz clic en "Add New... > Project" y selecciona el repositorio de tu aplicación.
 3.  **Configura el Proyecto:** Vercel detectará que es un proyecto Next.js y lo pre-configurará.
 4.  **Añade las Variables de Entorno (VITAL):**
-    *   Ve a "Settings" > "Environment Variables".
-    *   Añade las **mismas claves** que pusiste en tu archivo `.env.local` (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL` y `FIREBASE_PRIVATE_KEY`).
+    *   **ACCIÓN REQUERIDA:** Ve a "Settings" > "Environment Variables".
+    *   Añade las **mismas claves** que pusiste en tu archivo `.env.local` (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL` y `FIREBASE_PRIVATE_KEY`). Esto es crucial para que el servidor en producción pueda conectar con tu base de datos.
 5.  **Despliega:** Haz clic en "Deploy".
 
 ---
@@ -148,4 +150,4 @@ Firebase Authentication es muy fácil de usar.
 Una vez finalizado el despliegue, Vercel te dará una URL pública (ej. `https://workflow-central.vercel.app`).
 
 *   **¡Esa es la URL que debes compartir con tus empleados!**
-*   Cada vez que hagas un `git push` a la rama principal de tu repositorio, Vercel detectará los cambios y redesplegará automáticamente la última versión. ¡Así de fácil!
+*   Cada vez que hagas un `git push` a la rama principal de tu repositorio, Vercel detectará los cambios y redesplegará automáticamente la última versión. ¡Así de fácil
