@@ -2,42 +2,39 @@
 
 ¡Felicidades por llegar a esta etapa! Esta guía te ayudará a llevar tu aplicación WorkFlow Central de un entorno con datos de prueba a un entorno de producción real, utilizando **Firebase** como nuestro backend (base de datos, autenticación, etc.) y **Firebase App Hosting** para el despliegue.
 
-## 0. ¿Por qué el Ecosistema de Firebase?
+## 0. Paso Requerido: Subir tu Código a GitHub por Primera Vez
 
-Firebase es una plataforma de desarrollo de aplicaciones de Google que nos proporciona una base de datos (Firestore), un sistema de autenticación, y hosting. Usar Firebase App Hosting nos permite mantener toda nuestra infraestructura en un solo lugar, simplificando la gestión y asegurando una integración perfecta.
+Antes de que Firebase pueda desplegar tu aplicación, necesita tener acceso a tu código. El lugar estándar para guardar el código es un repositorio de GitHub. Si estás leyendo esto, es porque probablemente Firebase no encuentra la "rama" `main` o `master`. ¡No te preocupes! Esto solo significa que nos falta subir el código desde tu entorno local al repositorio de GitHub que creaste.
 
----
+Vamos a hacerlo en 3 sencillos pasos usando la **Terminal** que tienes aquí mismo en el editor de código.
 
-### **Paso 0 (Requisito Previo): Subir tu Código a GitHub**
+1.  **Abre la Terminal:**
+    *   En la parte inferior de esta ventana del editor, busca una pestaña que diga **"Terminal"**. Haz clic en ella. Verás una pantalla negra o blanca con texto, donde puedes escribir comandos.
 
-Antes de que Firebase pueda desplegar tu aplicación, necesita tener acceso a tu código. El lugar estándar para guardar el código es un repositorio de GitHub. Si no lo has hecho, aquí tienes cómo subir tu proyecto:
+2.  **Conecta tu Código con GitHub:**
+    *   Ve a la página de tu repositorio en GitHub. Deberías ver una URL como `https://github.com/TU_USUARIO/workflow-central.git`. Cópiala.
+    *   Ahora, en la **Terminal**, escribe o pega el siguiente comando, reemplazando la URL por la tuya, y presiona Enter:
+        ```bash
+        git remote add origin https://github.com/TU_USUARIO/workflow-central.git
+        ```
+        *Si te da un error que dice `fatal: remote origin already exists`, no pasa nada, ignóralo y continúa al siguiente paso.*
 
-1.  **Crea un Repositorio en GitHub:**
-    *   Ve a [GitHub](https://github.com/new) y crea un nuevo repositorio.
-    *   Dale un nombre (ej. `workflow-central`).
-    *   Selecciona la opción **`Private`** (Privado).
-    *   **No** marques ninguna de las casillas de inicialización (README, .gitignore, etc.).
-    *   Haz clic en "Create repository".
-
-2.  **Conecta y Sube tu Código (Desde una Terminal):**
-    *   GitHub te mostrará una página con unos comandos. Nos interesan los que están bajo el título `…or push an existing repository from the command line`.
-    *   Abre una terminal o línea de comandos en la carpeta de tu proyecto.
-    *   Copia y pega los siguientes tres comandos, uno por uno, presionando Enter después de cada uno. Reemplaza la URL con la que te da GitHub:
+3.  **Sube tu Código:**
+    *   Ahora, copia y pega estos dos comandos en la **Terminal**, uno después del otro. Presiona Enter después de cada uno:
 
         ```bash
-        # Este comando conecta tu proyecto local con el repositorio de GitHub
-        git remote add origin https://github.com/TU_USUARIO/workflow-central.git
-
-        # Este comando se asegura de que tu rama principal se llame "main"
+        # 1. Este comando asegura que tu rama principal se llame "main"
         git branch -M main
 
-        # Este comando sube todos tus archivos al repositorio de GitHub
+        # 2. Este comando SUBE todo tu código a GitHub. Es el paso más importante.
         git push -u origin main
         ```
-    *   ¡Listo! Tu código ya está en GitHub, y ahora Firebase puede usarlo.
+
+4.  **Verifica que ha funcionado:**
+    *   ¡Listo! Ahora ve a la página de tu repositorio en GitHub en tu navegador y actualízala. **Deberías ver todos los archivos de tu proyecto listados allí** (`src`, `package.json`, etc.).
+    *   Si ves tus archivos, ¡lo has conseguido! Ahora puedes volver a Firebase App Hosting, refrescar la página, y cuando te pida la "Rama activa", escribe **`main`**. El error desaparecerá.
 
 ---
-
 
 ## 1. Los 3 Pilares del Despliegue
 
