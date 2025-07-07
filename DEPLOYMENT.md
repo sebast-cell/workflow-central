@@ -33,9 +33,9 @@ Estos pasos son **obligatorios**. Debes hacerlos desde la **Terminal que está D
         git push -u origin main
         ```
 
-4.  **Introduce tu Usuario y tu "Contraseña Especial" (Token):**
+4.  **Introduce tu Usuario y tu "Contraseña Especial" (El Token):**
     *   La terminal te pedirá tu `Username`: escribe tu nombre de usuario de GitHub y presiona `Enter`.
-    *   Luego te pedirá `Password`: **pega aquí el Token de Acceso Personal (la contraseña que empieza por `ghp_...`) que creaste antes.** No se verá nada mientras pegas, es normal. Solo pégalo y presiona `Enter`.
+    *   Luego te pedirá `Password`: **¡OJO! No me la des a mí. Pega aquí en la TERMINAL el Token de Acceso Personal (la contraseña que empieza por `ghp_...`) que creaste antes.** No se verá nada mientras pegas, es normal. Solo pégalo y presiona `Enter`.
 
 5.  **Verifica que ha funcionado:**
     *   ¡Listo! Ve a la página de tu repositorio en GitHub y actualízala.
