@@ -1,83 +1,148 @@
-# Guía de Despliegue a Producción Detallada
+# Guía de Despliegue a Producción Detallada (con Supabase)
 
-¡Felicidades por llegar a esta etapa! Esta guía te ayudará a llevar tu aplicación WorkFlow Central de un entorno de desarrollo con datos de prueba a un entorno de producción real para que tus empleados puedan empezar a usarla.
+¡Felicidades por llegar a esta etapa! Esta guía te ayudará a llevar tu aplicación WorkFlow Central de un entorno con datos de prueba a un entorno de producción real, utilizando **Supabase** como nuestro backend (base de datos, autenticación, etc.).
 
-## 1. Conceptos Clave
+## 1. ¿Por qué Supabase?
 
-*   **Aplicación Web:** A diferencia de una app móvil, esta es una aplicación web. No se descarga de una tienda. Se aloja en un servidor y se accede a ella a través de una URL (ej. `https://tuempresa.com`) en un navegador.
-*   **Frontend y Backend:** Aunque están en el mismo proyecto, tu aplicación tiene dos partes:
-    *   **Frontend (React/Next.js):** Lo que el usuario ve y con lo que interactúa.
-    *   **Backend (Next.js API Routes):** La lógica que se ejecuta en el servidor, se conecta a la base de datos y gestiona los datos.
-*   **Entorno de Producción:** Un entorno real que utiliza servicios en la nube (base de datos, autenticación, hosting) para ser accesible, seguro y escalable.
+Supabase es una alternativa de código abierto a Firebase. Nos proporciona una base de datos PostgreSQL, autenticación, APIs automáticas y almacenamiento, todo en una única plataforma. Es perfecto para nuestro caso.
 
 ## 2. Los 3 Pilares del Despliegue
 
-Para que la aplicación sea funcional, necesitas tres componentes clave:
+Para que la aplicación sea funcional, necesitas tres componentes clave en la nube:
 
-1.  **Una Base de Datos:** Para almacenar y persistir los datos de forma segura (empleados, objetivos, etc.).
+1.  **Una Base de Datos:** Para almacenar y persistir los datos de forma segura (empleados, proyectos, etc.).
 2.  **Un Sistema de Autenticación:** Para que los usuarios puedan iniciar sesión de forma segura.
 3.  **Un Servicio de Hosting:** Para alojar tu aplicación y hacerla accesible en internet.
 
----
-
-### **Paso 1 (Detallado): Configurar la Base de Datos con Firestore**
-
-Tu aplicación necesita un lugar donde guardar la información de forma permanente. Usaremos Firestore, la base de datos de Firebase.
-
-1.  **Crea un Proyecto en Firebase:**
-    *   Ve a la [Consola de Firebase](https://console.firebase.google.com/).
-    *   Haz clic en "Crear un proyecto" y dale un nombre (ej. "WorkFlow Central"). Acepta los términos y continúa. Puedes deshabilitar Google Analytics para este proyecto si lo deseas.
-
-2.  **Activa Firestore:**
-    *   Dentro del panel de tu nuevo proyecto, en el menú de la izquierda, ve a `Construir > Firestore Database`.
-    *   Haz clic en "Crear base de datos".
-    *   **IMPORTANTE:** Selecciona el modo **Producción** (empieza en modo bloqueado por seguridad).
-    *   Elige una ubicación para tus servidores de base de datos. Selecciona la que esté más cerca de la mayoría de tus usuarios (ej. `europe-west` para Europa).
-
-3.  **Crea las Colecciones Iniciales:**
-    *   Firestore organiza los datos en "colecciones" (piensa en ellas como carpetas) que contienen "documentos". Necesitas crear las colecciones principales para que tu aplicación tenga dónde guardar los datos.
-    *   En la pestaña "Datos" de Firestore, haz clic en "+ Iniciar colección" y crea las siguientes (puedes dejarlas vacías por ahora, la app las llenará):
-        *   `employees`
-        *   `projects`
-        *   `objectives`
-        *   `tasks`
-        *   `incentives`
-        *   `settings` (Dentro de esta, puedes crear un documento inicial llamado `main` para guardar configuraciones generales).
-
-4.  **Genera las Credenciales de Servicio (La Llave Secreta):**
-    *   En la esquina superior izquierda, haz clic en el engranaje (a la derecha de "Project Overview") y selecciona "Configuración del proyecto".
-    *   Ve a la pestaña "Cuentas de servicio".
-    *   Asegúrate de que "Firebase Admin SDK" está seleccionado y haz clic en el botón **"Generar nueva clave privada"**.
-    *   Se descargará un archivo JSON. **Guarda este archivo en un lugar seguro y no lo compartas públicamente.** Contiene las claves que le dan a tu aplicación acceso total a tu base de datos.
+Supabase nos proporciona los dos primeros, y usaremos Vercel para el tercero.
 
 ---
 
-### **Paso 2 (Detallado): Conectar la Aplicación a Firestore**
+### **Paso 1 (Detallado): Configurar el Backend con Supabase**
+
+1.  **Crea una Cuenta y un Proyecto en Supabase:**
+    *   Ve a [Supabase.io](https://supabase.io/) y regístrate.
+    *   Crea una nueva organización y luego un nuevo proyecto. Dale un nombre (ej. "WorkFlow Central") y elige una contraseña segura para la base de datos (guárdala bien).
+    *   Elige la región del servidor que esté más cerca de tus usuarios.
+
+2.  **Obtén tus Credenciales (Las Llaves de la API):**
+    *   Una vez creado el proyecto, ve al menú de la izquierda, haz clic en el engranaje de "Configuración" (`Settings`).
+    *   Selecciona la pestaña "API".
+    *   Aquí encontrarás dos valores muy importantes que necesitaremos:
+        *   **URL del Proyecto** (`Project URL`): Es la dirección de tu backend.
+        *   **Clave `anon` (pública)** (`Project API keys` > `anon` `public`): Esta clave es segura para usar en el navegador.
+
+3.  **Crea las Tablas en la Base de Datos:**
+    *   A diferencia de Firestore, en Supabase (que usa PostgreSQL) debemos definir la estructura de nuestras tablas.
+    *   Ve al "Editor SQL" (`SQL Editor`) en el menú de la izquierda.
+    *   Copia y pega el siguiente código SQL en una nueva consulta y haz clic en "RUN". Esto creará todas las tablas que tu aplicación necesita.
+
+    ```sql
+    -- Tabla para Empleados
+    CREATE TABLE employees (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        name TEXT NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        department TEXT,
+        role TEXT,
+        status TEXT DEFAULT 'Activo',
+        schedule TEXT,
+        avatar TEXT,
+        workCenter TEXT,
+        vacationManager TEXT,
+        clockInManager TEXT,
+        calendarId TEXT,
+        vacationPolicyId TEXT,
+        created_at TIMESTAMPTZ DEFAULT now()
+    );
+
+    -- Tabla para Proyectos
+    CREATE TABLE projects (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        name TEXT NOT NULL,
+        description TEXT,
+        created_at TIMESTAMPTZ DEFAULT now()
+    );
+
+    -- Tabla para Incentivos
+    CREATE TABLE incentives (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        name TEXT NOT NULL,
+        type TEXT NOT NULL,
+        value TEXT NOT NULL,
+        period TEXT,
+        active BOOLEAN DEFAULT true,
+        company_id UUID,
+        condition_expression JSONB,
+        created_at TIMESTAMPTZ DEFAULT now()
+    );
+
+    -- Tabla para Objetivos
+    CREATE TABLE objectives (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        title TEXT NOT NULL,
+        description TEXT,
+        type TEXT NOT NULL,
+        assigned_to TEXT,
+        project_id UUID REFERENCES projects(id),
+        is_incentivized BOOLEAN DEFAULT false,
+        incentive_id UUID REFERENCES incentives(id),
+        weight NUMERIC,
+        start_date DATE NOT NULL,
+        end_date DATE NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT now()
+    );
+
+    -- Tabla para Tareas
+    CREATE TABLE tasks (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        title TEXT NOT NULL,
+        objective_id UUID REFERENCES objectives(id) ON DELETE CASCADE,
+        is_incentivized BOOLEAN DEFAULT false,
+        incentive_id UUID REFERENCES incentives(id),
+        completed BOOLEAN DEFAULT false,
+        created_at TIMESTAMPTZ DEFAULT now()
+    );
+
+    -- Tabla para la Configuración (genérica, usando JSONB)
+    CREATE TABLE settings (
+        id TEXT PRIMARY KEY, -- 'departments', 'roles', 'centers', etc.
+        value JSONB,
+        updated_at TIMESTAMPTZ DEFAULT now()
+    );
+
+    -- Habilitar Row Level Security (Buena práctica de seguridad)
+    ALTER TABLE employees ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
+    -- Repetir para el resto de tablas...
+    ```
+
+---
+
+### **Paso 2 (Detallado): Conectar la Aplicación a Supabase**
 
 Ahora le diremos a tu código cómo hablar con la base de datos que acabas de crear.
 
 1.  **Configura las Variables de Entorno (Tus Secretos):**
-    *   En la raíz de tu proyecto, crea un archivo llamado `.env.local`. **Este archivo es ignorado por Git y nunca debe subirse al repositorio.**
-    *   Abre el archivo JSON que descargaste en el paso anterior. Verás campos como `"project_id"`, `"client_email"` y una larga `"private_key"`.
-    *   Copia estos valores en tu archivo `.env.local` de la siguiente manera:
+    *   En la raíz de tu proyecto, crea un archivo llamado `.env.local`.
+    *   Abre este archivo y añade las credenciales que copiaste de Supabase:
 
         ```env
-        # Credenciales de Firebase Admin
-        FIREBASE_PROJECT_ID="el-project-id-de-tu-json"
-        FIREBASE_CLIENT_EMAIL="el-client-email-de-tu-json"
-        FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...la-clave-completa...\n-----END PRIVATE KEY-----\n"
+        # Claves públicas de Supabase (seguras para el navegador)
+        NEXT_PUBLIC_SUPABASE_URL="la-url-de-tu-proyecto-de-supabase"
+        NEXT_PUBLIC_SUPABASE_ANON_KEY="tu-clave-anon-publica"
 
-        # Clave de API de Google Maps (si la usas)
+        # (Opcional por ahora) Clave de API de Google Maps
         NEXT_PUBLIC_GOOGLE_MAPS_API_KEY="tu-clave-de-google-maps"
         ```
-    *   **MUY IMPORTANTE:** La `private_key` en el JSON contiene saltos de línea (`\n`). Debes asegurarte de que se copien correctamente dentro de las comillas.
+    *   El prefijo `NEXT_PUBLIC_` es importante, ya que le dice a Next.js que estas variables son accesibles desde el navegador.
 
-2.  **Inicializador de Firebase:**
-    *   Ya he añadido la dependencia `firebase-admin` a tu `package.json` y he creado el archivo `src/lib/firebase-admin.ts`.
-    *   Este archivo lee automáticamente las variables de entorno que acabas de configurar y establece la conexión segura con Firebase. No necesitas modificarlo.
+2.  **Inicializador de Supabase:**
+    *   Ya he añadido la dependencia `@supabase/supabase-js` a tu `package.json` y he creado el archivo `src/lib/supabase.ts`.
+    *   Este archivo lee automáticamente las variables de entorno y crea un cliente para interactuar con Supabase. No necesitas modificarlo.
 
 3.  **Actualiza las Rutas de la API (El Gran Cambio):**
-    *   Este es el paso más importante. Debes ir a cada archivo dentro de `/src/app/api/...` y cambiar la lógica para que use Firestore en lugar de la base de datos de prueba (`db`).
+    *   Este es el paso más importante. Debes ir a cada archivo dentro de `/src/app/api/...` y cambiar la lógica para que use Supabase en lugar de la base de datos de prueba (`db`).
     *   **Ejemplo con `src/app/api/projects/route.ts`:**
 
         ```typescript
@@ -100,64 +165,67 @@ Ahora le diremos a tu código cómo hablar con la base de datos que acabas de cr
         ```
 
         ```typescript
-        // DESPUÉS (usando Firestore)
+        // DESPUÉS (usando Supabase)
         import { NextResponse } from 'next/server';
-        import { firestore } from '@/lib/firebase-admin'; // Importa tu cliente de Firestore
+        import { supabase } from '@/lib/supabase'; // Importa tu cliente de Supabase
         import type { Project } from '@/lib/api';
 
         export async function GET() {
             // Conecta a tu base de datos real y obtiene los proyectos
-            const projectsSnapshot = await firestore.collection('projects').get();
-            const projects = projectsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Project[];
+            const { data: projects, error } = await supabase.from('projects').select('*');
+            if (error) {
+                return NextResponse.json({ error: error.message }, { status: 500 });
+            }
             return NextResponse.json(projects);
         }
 
         export async function POST(request: Request) {
             const projectData: Omit<Project, 'id'> = await request.json();
-            // Añade un nuevo documento a la colección 'projects'
-            const docRef = await firestore.collection('projects').add(projectData);
-            return NextResponse.json({ id: docRef.id, ...projectData }, { status: 201 });
+            // Inserta un nuevo registro en la tabla 'projects'
+            const { data: newProject, error } = await supabase
+                .from('projects')
+                .insert([projectData])
+                .select()
+                .single(); // .single() para que devuelva el objeto creado
+
+            if (error) {
+                return NextResponse.json({ error: error.message }, { status: 500 });
+            }
+            return NextResponse.json(newProject, { status: 201 });
         }
         ```
-    *   **Acción Requerida:** Debes aplicar este mismo patrón (reemplazar `db` con `firestore` y sus métodos `get()`, `add()`, `update()`, `delete()`) a **TODAS las rutas de la API** en la carpeta `/src/app/api`.
+    *   **Acción Requerida:** Debes aplicar este mismo patrón (reemplazar `db` con `supabase` y sus métodos `select()`, `insert()`, `update()`, `delete()`) a **TODAS las rutas de la API** en la carpeta `/src/app/api`. La [documentación de Supabase](https://supabase.com/docs/reference/javascript/select) es excelente para esto.
 
 ---
 
 ### **Paso 3 (Detallado): Configurar la Autenticación**
 
-Para que los empleados inicien sesión de forma segura.
+Supabase incluye un sistema de autenticación muy fácil de usar.
 
 1.  **Activa Firebase Authentication:**
-    *   En la consola de Firebase, ve a `Construir > Authentication` y haz clic en "Comenzar".
-    *   En la pestaña "Sign-in method", elige un proveedor. El más común es **"Correo electrónico/Contraseña"**. Habilítalo.
+    *   En la consola de Supabase, ve a `Authentication` y luego a `Providers`.
+    *   Habilita el proveedor "Email" y, si quieres, otros como Google, GitHub, etc.
 2.  **Implementa el Flujo de Inicio de Sesión:**
-    *   Esto es una tarea de desarrollo. Necesitarás usar el [SDK de cliente de Firebase](https://firebase.google.com/docs/auth/web/start) en tu aplicación de Next.js.
-    *   Crea páginas o componentes para el registro de nuevos usuarios, el inicio de sesión y la recuperación de contraseña.
-    *   Utiliza un React Context o un gestor de estado para mantener la información del usuario logueado (su ID, email, etc.) disponible en toda la aplicación.
-3.  **Reemplaza los Datos de Prueba:**
-    *   En los archivos donde veas comentarios como `// TODO: Get current user from auth context`, deberás obtener el ID y los datos del usuario desde tu contexto de autenticación en lugar de usar los datos de prueba.
+    *   Usa el [SDK de cliente de Supabase](https://supabase.com/docs/guides/auth/quickstarts/react) en tu aplicación de Next.js.
+    *   Crea las páginas para registro, inicio de sesión, etc. Supabase ofrece componentes de UI pre-hechos que puedes usar para acelerar esto.
 
 ---
 
 ### **Paso 4 (Detallado): Desplegar la Aplicación en Vercel**
 
-Vercel es el servicio de hosting ideal para Next.js, creado por los mismos desarrolladores.
-
-1.  **Regístrate en Vercel:** Ve a [Vercel](https://vercel.com/) y crea una cuenta. Es recomendable registrarse usando tu cuenta de GitHub, GitLab o Bitbucket.
-2.  **Conecta tu Repositorio de Git:** Una vez dentro de tu panel de Vercel, haz clic en "Add New... > Project".
-3.  **Importa tu Proyecto:** Vercel te mostrará una lista de tus repositorios de Git. Selecciona el repositorio de tu aplicación WorkFlow Central y haz clic en "Import".
-4.  **Configura el Proyecto:** Vercel detectará que es un proyecto Next.js y pre-configurará todo por ti. No necesitas cambiar nada en la configuración de build.
-5.  **Añade las Variables de Entorno (VITAL):**
-    *   Antes de desplegar, ve a la pestaña "Settings" > "Environment Variables".
-    *   Aquí, debes añadir **las mismas claves** que pusiste en tu archivo `.env.local` (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`).
-    *   Esto es crucial porque Vercel no tiene acceso a tu archivo local `.env.local`. Le estás dando de forma segura las credenciales para que tu aplicación desplegada pueda conectarse a la base de datos.
-6.  **Despliega:** Haz clic en el botón "Deploy". Vercel instalará las dependencias, construirá tu aplicación y la desplegará en su red global.
+1.  **Regístrate en Vercel:** Ve a [Vercel](https://vercel.com/) y crea una cuenta (es mejor usar tu cuenta de GitHub, GitLab, etc.).
+2.  **Importa tu Proyecto:** En Vercel, haz clic en "Add New... > Project" y selecciona el repositorio de tu aplicación.
+3.  **Configura el Proyecto:** Vercel detectará que es un proyecto Next.js y lo pre-configurará.
+4.  **Añade las Variables de Entorno (VITAL):**
+    *   Ve a "Settings" > "Environment Variables".
+    *   Añade las **mismas claves** que pusiste en tu archivo `.env.local` (`NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY`).
+5.  **Despliega:** Haz clic en "Deploy".
 
 ---
 
 ### **Paso 5: ¡A Probar!**
 
-Una vez finalizado el despliegue (tarda unos minutos), Vercel te dará una URL pública (ej. `https://workflow-central.vercel.app`).
+Una vez finalizado el despliegue, Vercel te dará una URL pública (ej. `https://workflow-central.vercel.app`).
 
-*   **¡Esa es la URL que debes compartir con tus empleados para que empiecen a usar la aplicación!**
+*   **¡Esa es la URL que debes compartir con tus empleados!**
 *   Cada vez que hagas un `git push` a la rama principal de tu repositorio, Vercel detectará los cambios y redesplegará automáticamente la última versión. ¡Así de fácil!
