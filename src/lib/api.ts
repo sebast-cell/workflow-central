@@ -1,6 +1,5 @@
 'use client';
 import axios from 'axios';
-import { v4 as uuidv4 } from 'uuid';
 
 const apiClient = axios.create({
     baseURL: '/', // Use relative paths for Next.js API Routes
@@ -53,19 +52,22 @@ export type Task = {
   completed: boolean;
 };
 
-// These types are not in the API but used across the frontend
 export type Employee = {
     id: string; // UUID
     name: string;
     email: string;
+    department: string;
+    role: string;
+    status: string;
+    schedule: string;
+    avatar: string;
+    workCenter: string;
+    vacationManager: string;
+    clockInManager: string;
+    calendarId?: string;
+    vacationPolicyId?: string;
 };
 
-export type Department = {
-    id: string; // UUID
-    name: string;
-};
-
-// Not in API, but used in components
 export type Center = {
     name: string;
     address: string;
@@ -73,6 +75,10 @@ export type Center = {
     lat: number;
     lng: number;
     timezone: string;
+};
+
+export type Department = {
+    name: string;
 };
 
 export type Role = {
@@ -174,6 +180,37 @@ export type VacationPolicy = {
 
 // -------- API FUNCTIONS -------- //
 
+// -- Generic Settings Loader --
+export const listSettings = async (setting: string) => {
+    const response = await apiClient.get(`/api/settings/${setting}`);
+    return response.data;
+};
+
+export const createSetting = async (setting: string, data: any) => {
+    const response = await apiClient.post(`/api/settings/${setting}`, data);
+    return response.data;
+};
+
+// -- Employees --
+export const listEmployees = async (): Promise<Employee[]> => {
+    const response = await apiClient.get('/api/employees');
+    return response.data;
+};
+
+export const createEmployee = async (employeeData: Omit<Employee, 'id' | 'status' | 'avatar'>): Promise<Employee> => {
+    const response = await apiClient.post('/api/employees', employeeData);
+    return response.data;
+};
+
+export const updateEmployee = async (id: string, employeeData: Partial<Employee>): Promise<Employee> => {
+    const response = await apiClient.put(`/api/employees/${id}`, employeeData);
+    return response.data;
+};
+
+export const deleteEmployee = async (id: string): Promise<void> => {
+    await apiClient.delete(`/api/employees/${id}`);
+};
+
 // -- Incentives --
 export const listIncentives = async (): Promise<Incentive[]> => {
     const response = await apiClient.get('/api/incentives');
@@ -191,7 +228,7 @@ export const listObjectives = async (): Promise<Objective[]> => {
     return response.data;
 };
 
-export const createObjective = async (objective: Omit<Objective, 'id'>): Promise<Objective> => {
+export const createObjective = async (objective: Partial<Objective>): Promise<Objective> => {
     const response = await apiClient.post('/api/objectives', objective);
     return response.data;
 };

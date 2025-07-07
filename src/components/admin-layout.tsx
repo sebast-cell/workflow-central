@@ -4,7 +4,7 @@ import { Sidebar, SidebarContent, SidebarInset, SidebarProvider, SidebarHeader, 
 import SidebarNav from '@/components/sidebar-nav';
 import { Briefcase, LogOut } from 'lucide-react';
 import { Header } from '@/components/header';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { UserDropdown } from '@/components/user-dropdown';
 import Link from 'next/link';
 
 function AdminSidebarContent() {
@@ -26,28 +26,7 @@ function AdminSidebarContent() {
           <SidebarNav />
         </SidebarContent>
         <SidebarFooter>
-           <div className="flex items-center gap-3 mb-4">
-             <Avatar className="h-9 w-9">
-               <AvatarImage src="https://placehold.co/40x40.png" data-ai-hint="user avatar" alt="Usuario Administrador" />
-               <AvatarFallback className="bg-sidebar-accent">AU</AvatarFallback>
-             </Avatar>
-             {isOpen && (
-                <div className="flex flex-col">
-                  <span className="text-sm font-semibold text-sidebar-foreground">Usuario Administrador</span>
-                  <span className="text-xs text-sidebar-muted-foreground">admin@workflow.com</span>
-                </div>
-              )}
-          </div>
-          <SidebarMenu>
-            <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                    <Link href="/">
-                        <LogOut className="h-5 w-5 shrink-0" />
-                        <span className="truncate">Cerrar Sesión</span>
-                    </Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
+          <UserDropdown />
         </SidebarFooter>
     </>
   )

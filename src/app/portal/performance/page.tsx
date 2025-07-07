@@ -20,9 +20,11 @@ export default function EmployeePerformancePage() {
     const [myObjectives, setMyObjectives] = useState<ObjectiveWithIncentive[]>([]);
     const [tasks, setTasks] = useState<Task[]>([]);
     const [incentives, setIncentives] = useState<Incentive[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    // Simulating logged in user
-    const currentUserId = "a1b2c3d4-e5f6-7890-1234-567890abcdef"; // Olivia Martin's UUID
+    // TODO: Get current user from an auth context after implementing authentication.
+    // This is a placeholder for the logged-in user's ID.
+    const currentUserId = "a1b2c3d4-e5f6-7890-1234-567890abcdef"; // Olivia Martin's Mock UUID
 
     const fetchIncentiveDataForObjective = async (objective: Objective) => {
         if (!objective.is_incentivized) return;
@@ -39,6 +41,7 @@ export default function EmployeePerformancePage() {
     };
 
     const fetchData = async () => {
+        setIsLoading(true);
         try {
             const [allObjectives, allTasks, allIncentives] = await Promise.all([
                 listObjectives(),
@@ -46,13 +49,15 @@ export default function EmployeePerformancePage() {
                 listIncentives()
             ]);
             
+            // In a real app with auth, you'd filter by the current user ID on the backend.
             const userObjectives = allObjectives.filter(o => o.assigned_to === currentUserId);
             
             setMyObjectives(userObjectives.map(o => ({...o, isLoadingIncentive: false })));
             setTasks(allTasks);
             setIncentives(allIncentives);
+            setIsLoading(false);
 
-            // Fetch incentive data for each objective
+            // Fetch incentive data for each objective after initial data load
             userObjectives.forEach(obj => {
                 if(obj.is_incentivized) {
                     fetchIncentiveDataForObjective(obj);
@@ -62,6 +67,7 @@ export default function EmployeePerformancePage() {
         } catch (error) {
             console.error("Failed to fetch data:", error);
             toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los datos de desempeño." });
+            setIsLoading(false);
         }
     };
 
@@ -95,54 +101,59 @@ export default function EmployeePerformancePage() {
                         <Button variant="outline" size="sm"><PlusCircle className="mr-2 h-4 w-4"/> Sugerir Objetivo</Button>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        <TooltipProvider>
-                        {myObjectives.map((objective) => {
-                            const incentive = incentives.find(i => i.id === objective.incentive_id);
-                            const { progress, completed, total } = getObjectiveProgress(objective.id);
-                            return (
-                                <div key={objective.id}>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <div className="flex items-center gap-2 font-medium">
-                                          <span>{objective.title}</span>
-                                          {objective.is_incentivized && incentive && (
-                                              <Tooltip>
-                                                  <TooltipTrigger>
-                                                      <Gift className="h-4 w-4 text-primary" />
-                                                  </TooltipTrigger>
-                                                  <TooltipContent>
-                                                      <p className="font-semibold">{incentive.name}</p>
-                                                      <p>{incentive.type}: {incentive.value.toString()}</p>
-                                                  </TooltipContent>
-                                              </Tooltip>
-                                          )}
-                                        </div>
-                                         <span className="text-sm text-muted-foreground">{completed}/{total}</span>
-                                    </div>
-                                    <Progress value={progress} className="h-2" />
-                                    <div className="flex justify-between items-start mt-1">
-                                        <p className="text-sm text-muted-foreground w-3/4">
-                                            {objective.description}
-                                        </p>
-                                        {objective.is_incentivized && (
-                                            <div className="text-sm text-right font-medium text-primary">
-                                                {objective.isLoadingIncentive ? <Loader2 className="h-4 w-4 animate-spin ml-auto" /> :
-                                                  objective.incentiveResult && objective.incentiveResult.result !== 0 ? (
-                                                      <>
-                                                        <p>Incentivo: {typeof objective.incentiveResult.result === 'number' ? `€${objective.incentiveResult.result.toFixed(2)}` : objective.incentiveResult.result}</p>
-                                                        <p className="text-xs text-muted-foreground">{objective.incentiveResult.message}</p>
-                                                      </>
-                                                  ) : objective.incentiveResult ? (
-                                                     <p className="text-xs text-muted-foreground">{objective.incentiveResult.message}</p>
-                                                  ) : null
-                                                }
+                        {isLoading ? (
+                            <div className="flex justify-center items-center py-8">
+                                <Loader2 className="h-8 w-8 animate-spin" />
+                            </div>
+                        ) : myObjectives.length > 0 ? (
+                            <TooltipProvider>
+                            {myObjectives.map((objective) => {
+                                const incentive = incentives.find(i => i.id === objective.incentive_id);
+                                const { progress, completed, total } = getObjectiveProgress(objective.id);
+                                return (
+                                    <div key={objective.id}>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <div className="flex items-center gap-2 font-medium">
+                                              <span>{objective.title}</span>
+                                              {objective.is_incentivized && incentive && (
+                                                  <Tooltip>
+                                                      <TooltipTrigger>
+                                                          <Gift className="h-4 w-4 text-primary" />
+                                                      </TooltipTrigger>
+                                                      <TooltipContent>
+                                                          <p className="font-semibold">{incentive.name}</p>
+                                                          <p>{incentive.type}: {incentive.value.toString()}</p>
+                                                      </TooltipContent>
+                                                  </Tooltip>
+                                              )}
                                             </div>
-                                        )}
+                                             <span className="text-sm text-muted-foreground">{completed}/{total}</span>
+                                        </div>
+                                        <Progress value={progress} className="h-2" />
+                                        <div className="flex justify-between items-start mt-1">
+                                            <p className="text-sm text-muted-foreground w-3/4">
+                                                {objective.description}
+                                            </p>
+                                            {objective.is_incentivized && (
+                                                <div className="text-sm text-right font-medium text-primary">
+                                                    {objective.isLoadingIncentive ? <Loader2 className="h-4 w-4 animate-spin ml-auto" /> :
+                                                      objective.incentiveResult && objective.incentiveResult.result && (String(objective.incentiveResult.result) !== "0") ? (
+                                                          <>
+                                                            <p>Incentivo: {typeof objective.incentiveResult.result === 'number' ? `€${objective.incentiveResult.result.toFixed(2)}` : objective.incentiveResult.result}</p>
+                                                            <p className="text-xs text-muted-foreground">{objective.incentiveResult.message}</p>
+                                                          </>
+                                                      ) : objective.incentiveResult ? (
+                                                         <p className="text-xs text-muted-foreground">{objective.incentiveResult.message}</p>
+                                                      ) : null
+                                                    }
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            )
-                        })}
-                        </TooltipProvider>
-                        {myObjectives.length === 0 && (
+                                )
+                            })}
+                            </TooltipProvider>
+                        ) : (
                             <div className="text-center text-muted-foreground py-8">
                                 <Goal className="mx-auto h-8 w-8 mb-2" />
                                 <p>No tienes objetivos asignados actualmente.</p>

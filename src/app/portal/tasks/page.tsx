@@ -7,21 +7,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PlusCircle, Goal } from "lucide-react";
+import { PlusCircle, Goal, Loader2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { type Objective, type Task, listObjectives, listTasks, createTask } from "@/lib/api";
-import { v4 as uuidv4 } from 'uuid';
+import { useToast } from "@/hooks/use-toast";
 
 export default function EmployeeTasksPage() {
+    const { toast } = useToast();
     const [tasks, setTasks] = useState<Task[]>([]);
     const [myObjectives, setMyObjectives] = useState<Objective[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [newTaskData, setNewTaskData] = useState({ title: '', objective_id: ''});
 
-    // Simulating logged in user
-    const currentUserId = "a1b2c3d4-e5f6-7890-1234-567890abcdef"; // Olivia Martin's UUID
+    // TODO: Get current user from an auth context after implementing authentication.
+    // This is a placeholder for the logged-in user's ID.
+    const currentUserId = "a1b2c3d4-e5f6-7890-1234-567890abcdef"; // Olivia Martin's Mock UUID
 
     const fetchData = async () => {
+        setIsLoading(true);
         try {
             const [allObjectives, allTasks] = await Promise.all([
                 listObjectives(),
@@ -36,6 +40,9 @@ export default function EmployeeTasksPage() {
             setTasks(allTasks.filter(t => userObjectiveIds.includes(t.objective_id)));
         } catch (error) {
             console.error("Error loading data:", error);
+            toast({ variant: 'destructive', title: "Error", description: "No se pudieron cargar los datos." });
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -45,10 +52,12 @@ export default function EmployeeTasksPage() {
 
     const handleCreateTask = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newTaskData.title || !newTaskData.objective_id) return;
+        if (!newTaskData.title || !newTaskData.objective_id) {
+            toast({ variant: 'destructive', title: "Error", description: "Debes seleccionar un objetivo y un título para la tarea." });
+            return;
+        }
 
-        const newTask: Task = {
-            id: uuidv4(),
+        const newTaskPayload: Omit<Task, 'id'> = {
             title: newTaskData.title,
             objective_id: newTaskData.objective_id,
             completed: false,
@@ -57,19 +66,20 @@ export default function EmployeeTasksPage() {
         };
 
         try {
-            const savedTask = await createTask(newTask);
+            const savedTask = await createTask(newTaskPayload);
             setTasks(prev => [...prev, savedTask]);
             setNewTaskData({ title: '', objective_id: '' });
             setIsDialogOpen(false);
+            toast({ title: "Tarea creada", description: "La nueva tarea ha sido añadida." });
         } catch (error) {
             console.error("Failed to create task:", error);
+            toast({ variant: 'destructive', title: "Error", description: "No se pudo crear la tarea." });
         }
     };
 
-    const handleToggleTask = (taskId: string, completed: boolean) => {
-        // NOTE: The provided API does not have an endpoint to update a task.
-        // This update is only reflected in the local state for a better UX.
-        // In a real application, this should be a PATCH/PUT request to the backend.
+    const handleToggleTask = async (taskId: string, completed: boolean) => {
+        // NOTE: In a real app, this would be a PATCH/PUT request to the backend.
+        // The mock API does not support updates, so this change is client-side only.
         setTasks(prev => prev.map(t => t.id === taskId ? { ...t, completed } : t));
     };
 
@@ -82,7 +92,7 @@ export default function EmployeeTasksPage() {
                 </div>
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                     <DialogTrigger asChild>
-                        <Button disabled={myObjectives.length === 0}>
+                        <Button disabled={myObjectives.length === 0 || isLoading}>
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Crear Tarea
                         </Button>
@@ -101,6 +111,7 @@ export default function EmployeeTasksPage() {
                                     <Select 
                                         value={newTaskData.objective_id}
                                         onValueChange={(value) => setNewTaskData({...newTaskData, objective_id: value})}
+                                        required
                                     >
                                         <SelectTrigger id="objective">
                                             <SelectValue placeholder="Seleccionar objetivo" />
@@ -119,6 +130,7 @@ export default function EmployeeTasksPage() {
                                         placeholder="Ej., Diseñar la nueva landing page" 
                                         value={newTaskData.title}
                                         onChange={(e) => setNewTaskData({...newTaskData, title: e.target.value})}
+                                        required
                                     />
                                 </div>
                             </div>
@@ -129,8 +141,12 @@ export default function EmployeeTasksPage() {
                     </DialogContent>
                 </Dialog>
             </div>
-
-            {myObjectives.length > 0 ? (
+            
+            {isLoading ? (
+                <div className="flex justify-center items-center h-80">
+                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                </div>
+            ) : myObjectives.length > 0 ? (
                 <div className="space-y-6">
                     {myObjectives.map(objective => {
                         const objectiveTasks = tasks.filter(t => t.objective_id === objective.id);

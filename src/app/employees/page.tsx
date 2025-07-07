@@ -1,120 +1,39 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { Badge, badgeVariants } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Download, MoreHorizontal, PlusCircle, Search, UploadCloud, Link as LinkIcon } from "lucide-react";
+import { Download, MoreHorizontal, PlusCircle, Search, UploadCloud, Link as LinkIcon, Loader2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { cn } from "@/lib/utils";
 import type { VariantProps } from "class-variance-authority";
-import { badgeVariants } from "@/components/ui/badge";
-
-type CalendarData = {
-    id: string;
-    name: string;
-    holidays: { id: string, name: string, date: string }[];
-};
-
-type VacationPolicy = {
-  id: string;
-  name: string;
-  unit: 'days' | 'hours';
-  amount: number;
-  countBy: 'natural' | 'workdays';
-  limitRequests: boolean;
-  blockPeriods: boolean;
-};
-
-type Employee = {
-    id: number;
-    name: string;
-    email: string;
-    department: string;
-    role: string;
-    status: string;
-    schedule: string;
-    avatar: string;
-    workCenter: string;
-    vacationManager: string;
-    clockInManager: string;
-    calendarId?: string;
-    vacationPolicyId?: string;
-}
-
-const initialEmployees: Employee[] = [
-  { id: 1, name: "Olivia Martin", email: "olivia.martin@example.com", department: "Ingeniería", role: "Desarrollador Frontend", status: "Activo", schedule: "9-5", avatar: "OM", workCenter: "Oficina Central", vacationManager: "Noah Brown", clockInManager: "Noah Brown", calendarId: "default-calendar", vacationPolicyId: "default" },
-  { id: 2, name: "Jackson Lee", email: "jackson.lee@example.com", department: "Diseño", role: "Diseñador UI/UX", status: "Activo", schedule: "10-6", avatar: "JL", workCenter: "Oficina Central", vacationManager: "Noah Brown", clockInManager: "Noah Brown", calendarId: "default-calendar", vacationPolicyId: "default" },
-  { id: 3, name: "Isabella Nguyen", email: "isabella.nguyen@example.com", department: "Marketing", role: "Estratega de Contenido", status: "Activo", schedule: "9-5", avatar: "IN", workCenter: "Remoto", vacationManager: "Noah Brown", clockInManager: "Noah Brown", calendarId: "default-calendar", vacationPolicyId: "default" },
-  { id: 4, name: "William Kim", email: "will.kim@example.com", department: "Ingeniería", role: "Desarrollador Backend", status: "De Licencia", schedule: "9-5", avatar: "WK", workCenter: "Oficina Central", vacationManager: "Noah Brown", clockInManager: "Noah Brown", calendarId: "default-calendar", vacationPolicyId: "default" },
-  { id: 5, name: "Sophia Davis", email: "sophia.davis@example.com", department: "Ventas", role: "Ejecutivo de Cuentas", status: "Activo", schedule: "Flex", avatar: "SD", workCenter: "Almacén Norte", vacationManager: "Noah Brown", clockInManager: "Noah Brown", calendarId: "default-calendar", vacationPolicyId: "default" },
-  { id: 6, name: "Liam Garcia", email: "liam.garcia@example.com", department: "RRHH", role: "Generalista de RRHH", status: "Activo", schedule: "8-4", avatar: "LG", workCenter: "Oficina Central", vacationManager: "Noah Brown", clockInManager: "Noah Brown", calendarId: "default-calendar", vacationPolicyId: "default" },
-];
-
-const EMPLOYEES_STORAGE_KEY = 'workflow-central-employees';
-const CALENDARS_STORAGE_KEY = 'workflow-central-calendars';
-const VACATION_POLICIES_STORAGE_KEY = 'workflow-central-vacation-policies';
+import type { Employee, CalendarData, VacationPolicy, Department } from "@/lib/api";
+import { listEmployees, createEmployee, updateEmployee, deleteEmployee, listSettings } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 export default function EmployeesPage() {
-  const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
+  const { toast } = useToast();
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [calendars, setCalendars] = useState<CalendarData[]>([]);
   const [vacationPolicies, setVacationPolicies] = useState<VacationPolicy[]>([]);
+  
+  const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add');
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
-  const [isClient, setIsClient] = useState(false);
 
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [departmentFilter, setDepartmentFilter] = useState("all");
 
-  useEffect(() => {
-    if (isClient) {
-      try {
-        const storedEmployees = localStorage.getItem(EMPLOYEES_STORAGE_KEY);
-        if (storedEmployees) {
-          setEmployees(JSON.parse(storedEmployees));
-        } else {
-          localStorage.setItem(EMPLOYEES_STORAGE_KEY, JSON.stringify(initialEmployees));
-        }
-        
-        const storedCalendars = localStorage.getItem(CALENDARS_STORAGE_KEY);
-        if (storedCalendars) {
-          setCalendars(JSON.parse(storedCalendars));
-        }
-
-        const storedPolicies = localStorage.getItem(VACATION_POLICIES_STORAGE_KEY);
-        if (storedPolicies) {
-          setVacationPolicies(JSON.parse(storedPolicies));
-        }
-
-      } catch (error) {
-        console.error("Failed to access localStorage", error);
-      }
-    }
-  }, [isClient]);
-
-  useEffect(() => {
-    if (isClient) {
-      localStorage.setItem(EMPLOYEES_STORAGE_KEY, JSON.stringify(employees));
-    }
-  }, [employees, isClient]);
-
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<Partial<Employee>>({
     name: "",
     email: "",
     department: "",
@@ -126,6 +45,31 @@ export default function EmployeesPage() {
     calendarId: "",
     vacationPolicyId: "",
   });
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      const [employeesData, calendarsData, policiesData, departmentsData] = await Promise.all([
+        listEmployees(),
+        listSettings('calendars'),
+        listSettings('vacationPolicies'),
+        listSettings('departments'),
+      ]);
+      setEmployees(employeesData);
+      setCalendars(calendarsData);
+      setVacationPolicies(policiesData);
+      setDepartments(departmentsData);
+    } catch (error) {
+      console.error("Failed to fetch data:", error);
+      toast({ variant: 'destructive', title: "Error", description: "No se pudieron cargar los datos." });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -146,71 +90,80 @@ export default function EmployeesPage() {
   const openEditDialog = (employee: Employee) => {
     setDialogMode('edit');
     setSelectedEmployee(employee);
-    setFormData({
-        name: employee.name,
-        email: employee.email,
-        department: employee.department,
-        role: employee.role,
-        schedule: employee.schedule,
-        workCenter: employee.workCenter,
-        vacationManager: employee.vacationManager || "",
-        clockInManager: employee.clockInManager || "",
-        calendarId: employee.calendarId || "",
-        vacationPolicyId: employee.vacationPolicyId || "",
-    });
+    setFormData(employee);
     setIsDialogOpen(true);
   }
 
-  const handleFormSubmit = (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.email) return; 
+    if (!formData.name || !formData.email) return;
 
-    if (dialogMode === 'add') {
-        const newId = employees.length > 0 ? Math.max(...employees.map(emp => emp.id)) + 1 : 1;
-        const avatar = formData.name.split(' ').map(n => n[0]).join('').toUpperCase();
-        setEmployees(prev => [...prev, {
-          id: newId,
-          ...formData,
-          status: "Activo",
-          avatar: avatar,
-        }]);
-    } else if (dialogMode === 'edit' && selectedEmployee) {
-        setEmployees(prev => prev.map(emp => 
-            emp.id === selectedEmployee.id ? { ...emp, ...formData, avatar: emp.avatar, status: emp.status } : emp
-        ));
-    }
-    setIsDialogOpen(false);
-  };
-  
-  const handleToggleStatus = (employeeId: number) => {
-    setEmployees(prev => prev.map(emp => {
-      if (emp.id === employeeId) {
-        const newStatus = emp.status === "Activo" ? "Deshabilitado" : "Activo";
-        return { ...emp, status: newStatus };
+    try {
+      if (dialogMode === 'add') {
+        const newEmployee = await createEmployee(formData as Omit<Employee, 'id' | 'status' | 'avatar'>);
+        setEmployees(prev => [...prev, newEmployee]);
+        toast({ title: "Empleado añadido", description: `${newEmployee.name} ha sido añadido al equipo.` });
+      } else if (dialogMode === 'edit' && selectedEmployee) {
+        const updated = await updateEmployee(selectedEmployee.id, formData);
+        setEmployees(prev => prev.map(emp => (emp.id === selectedEmployee.id ? updated : emp)));
+        toast({ title: "Empleado actualizado", description: `Los datos de ${updated.name} han sido guardados.` });
       }
-      return emp;
-    }));
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error("Failed to save employee:", error);
+      toast({ variant: 'destructive', title: "Error", description: "No se pudo guardar el empleado." });
+    }
   };
 
-  const handleDeleteEmployee = (employeeId: number) => {
-    setEmployees(prev => prev.filter(emp => emp.id !== employeeId));
+  const handleToggleStatus = async (employee: Employee) => {
+    const newStatus = employee.status === "Activo" ? "Deshabilitado" : "Activo";
+    try {
+        const updated = await fetch(`/api/employees/${employee.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus }),
+        }).then(res => res.json());
+
+        setEmployees(prev => prev.map(emp => (emp.id === employee.id ? updated : emp)));
+        toast({ title: "Estado actualizado", description: `${employee.name} ahora está ${newStatus.toLowerCase()}.` });
+    } catch (error) {
+        console.error("Failed to toggle status:", error);
+        toast({ variant: 'destructive', title: "Error", description: "No se pudo actualizar el estado." });
+    }
+  };
+
+  const handleDeleteEmployee = async (employeeId: string) => {
+    try {
+        await deleteEmployee(employeeId);
+        setEmployees(prev => prev.filter(emp => emp.id !== employeeId));
+        toast({ title: "Empleado eliminado" });
+    } catch (error) {
+        console.error("Failed to delete employee:", error);
+        toast({ variant: 'destructive', title: "Error", description: "No se pudo eliminar al empleado." });
+    }
   };
   
   const getStatusBadgeVariant = (status: string): VariantProps<typeof badgeVariants>["variant"] => {
       switch (status) {
-          case "Activo":
-              return "active";
-          case "Deshabilitado":
-              return "secondary";
-          case "De Licencia":
-              return "warning";
-          default:
-              return "default";
+          case "Activo": return "active";
+          case "Deshabilitado": return "secondary";
+          case "De Licencia": return "warning";
+          default: return "default";
       }
   }
 
-  if (!isClient) {
-    return null; // or a loading skeleton
+  const filteredEmployees = useMemo(() => {
+    return employees.filter(employee => {
+        const matchesSearch = employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                              employee.email.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesDept = departmentFilter === 'all' || employee.department === departmentFilter;
+        return matchesSearch && matchesDept;
+    });
+  }, [employees, searchTerm, departmentFilter]);
+
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
   return (
@@ -228,19 +181,18 @@ export default function EmployeesPage() {
                 type="search"
                 placeholder="Buscar empleados..."
                 className="pl-8 w-full"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
             <div className="flex gap-2 w-full sm:w-auto flex-wrap">
-              <Select>
+              <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
                 <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="Filtrar por Departamento" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="engineering">Ingeniería</SelectItem>
-                  <SelectItem value="design">Diseño</SelectItem>
-                  <SelectItem value="marketing">Marketing</SelectItem>
-                  <SelectItem value="sales">Ventas</SelectItem>
-                  <SelectItem value="hr">RRHH</SelectItem>
+                  <SelectItem value="all">Todos los Deptos.</SelectItem>
+                  {departments.map(dept => <SelectItem key={dept.name} value={dept.name}>{dept.name}</SelectItem>)}
                 </SelectContent>
               </Select>
               <Button variant="outline" className="w-full sm:w-auto">
@@ -268,7 +220,7 @@ export default function EmployeesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {employees.map((employee) => (
+              {filteredEmployees.map((employee) => (
                 <TableRow key={employee.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
@@ -302,7 +254,7 @@ export default function EmployeesPage() {
                         <DropdownMenuItem onClick={() => openEditDialog(employee)}>Editar</DropdownMenuItem>
                         <DropdownMenuItem>Ver Perfil</DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => handleToggleStatus(employee.id)}>
+                        <DropdownMenuItem onClick={() => handleToggleStatus(employee)}>
                             {employee.status === 'Activo' ? 'Deshabilitar' : 'Habilitar'}
                         </DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteEmployee(employee.id)}>
@@ -353,11 +305,7 @@ export default function EmployeesPage() {
                               <SelectValue placeholder="Seleccionar" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="Ingeniería">Ingeniería</SelectItem>
-                              <SelectItem value="Diseño">Diseño</SelectItem>
-                              <SelectItem value="Marketing">Marketing</SelectItem>
-                              <SelectItem value="Ventas">Ventas</SelectItem>
-                              <SelectItem value="RRHH">RRHH</SelectItem>
+                              {departments.map(d => <SelectItem key={d.name} value={d.name}>{d.name}</SelectItem>)}
                             </SelectContent>
                           </Select>
                         </div>
