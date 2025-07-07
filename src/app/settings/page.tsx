@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -728,6 +729,54 @@ const SettingsTabs = () => {
                 
                 <TabsContent value="centers" className="space-y-4 m-0">
                     <CentersTabContent />
+                </TabsContent>
+                
+                <TabsContent value="breaks" className="m-0">
+                     <Card className="bg-gradient-accent-to-card">
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div>
+                                <CardTitle>Descansos</CardTitle>
+                                <CardDescription>Define las pausas que tus empleados pueden tomar.</CardDescription>
+                            </div>
+                            <Button onClick={openAddBreakDialog}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Descanso</Button>
+                        </CardHeader>
+                         <CardContent>
+                             {isLoading['breaks'] ? <Loader2 className="animate-spin" /> : <Table>
+                                 <TableHeader><TableRow><TableHead>Nombre</TableHead><TableHead>Tipo</TableHead><TableHead>Duración</TableHead><TableHead>Asignación</TableHead><TableHead><span className="sr-only">Acciones</span></TableHead></TableRow></TableHeader>
+                                 <TableBody>
+                                     {breaks.map(br => (
+                                         <TableRow key={br.name}>
+                                             <TableCell className="font-medium">{br.name}</TableCell>
+                                             <TableCell>{br.remunerated ? 'Remunerado' : 'No Remunerado'}</TableCell>
+                                             <TableCell>{br.limit} min</TableCell>
+                                             <TableCell>
+                                                 {br.assignedTo.length > 2 ? `${br.assignedTo.slice(0, 2).join(', ')}...` : br.assignedTo.join(', ')}
+                                             </TableCell>
+                                             <TableCell className="text-right">
+                                                 <Button variant="ghost" size="sm" onClick={() => openEditBreakDialog(br)}>Editar</Button>
+                                                 <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDeleteBreak(br.name)}>
+                                                     <Trash2 className="h-4 w-4" />
+                                                 </Button>
+                                             </TableCell>
+                                         </TableRow>
+                                     ))}
+                                     {breaks.length === 0 && <TableRow><TableCell colSpan={5} className="h-24 text-center">No hay descansos definidos.</TableCell></TableRow>}
+                                 </TableBody>
+                             </Table>}
+                         </CardContent>
+                     </Card>
+                     <Dialog open={isBreakDialogOpen} onOpenChange={setIsBreakDialogOpen}>
+                         <DialogContent className="sm:max-w-2xl">
+                            <DialogHeader>
+                                <DialogTitle>
+                                    {dialogBreakMode === 'add' ? 'Nuevo Descanso' : 'Editar Descanso'}
+                                </DialogTitle>
+                            </DialogHeader>
+                            <form onSubmit={handleBreakFormSubmit}>
+                                {/* Form fields for Breaks */}
+                            </form>
+                         </DialogContent>
+                     </Dialog>
                 </TabsContent>
 
                 {/* Other Tabs with similar loading patterns */}
