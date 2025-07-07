@@ -1,10 +1,10 @@
 # Guía de Despliegue a Producción Detallada (con Firebase)
 
-¡Felicidades por llegar a esta etapa! Esta guía te ayudará a llevar tu aplicación WorkFlow Central de un entorno con datos de prueba a un entorno de producción real, utilizando **Firebase** como nuestro backend (base de datos, autenticación, etc.).
+¡Felicidades por llegar a esta etapa! Esta guía te ayudará a llevar tu aplicación WorkFlow Central de un entorno con datos de prueba a un entorno de producción real, utilizando **Firebase** como nuestro backend (base de datos, autenticación, etc.) y **Firebase App Hosting** para el despliegue.
 
-## 1. ¿Por qué Firebase?
+## 1. ¿Por qué el Ecosistema de Firebase?
 
-Firebase es una plataforma de desarrollo de aplicaciones de Google que nos proporciona una base de datos (Firestore), un sistema de autenticación, hosting y mucho más. Es una solución robusta, escalable y muy bien integrada con el ecosistema de Google.
+Firebase es una plataforma de desarrollo de aplicaciones de Google que nos proporciona una base de datos (Firestore), un sistema de autenticación, y hosting. Usar Firebase App Hosting nos permite mantener toda nuestra infraestructura en un solo lugar, simplificando la gestión y asegurando una integración perfecta.
 
 ## 2. Los 3 Pilares del Despliegue
 
@@ -12,18 +12,18 @@ Para que la aplicación sea funcional en producción, necesitas tres componentes
 
 1.  **Una Base de Datos:** Para almacenar y persistir los datos de forma segura (empleados, proyectos, etc.). Usaremos **Firestore**.
 2.  **Un Sistema de Autenticación:** Para que los usuarios puedan iniciar sesión de forma segura. Usaremos **Firebase Authentication**.
-3.  **Un Servicio de Hosting:** Para alojar tu aplicación y hacerla accesible en internet. Usaremos **Vercel** o **Firebase App Hosting**.
+3.  **Un Servicio de Hosting:** Para alojar tu aplicación y hacerla accesible en internet. Usaremos **Firebase App Hosting**.
 
 ---
 
 ### **Paso 1 (Detallado): Configurar el Backend con Firebase**
 
 1.  **Crea un Proyecto en Firebase:**
-    *   Ve a la [Consola de Firebase](https://console.firebase.google.com/) y haz clic en "Crear un proyecto".
-    *   Dale un nombre (ej. "WorkFlow Central") y sigue los pasos. Si te lo pide, puedes deshabilitar Google Analytics para este proyecto si no lo necesitas.
+    *   Ve a la [Consola de Google Cloud](https://console.cloud.google.com/) para crear un nuevo proyecto y asociarlo a tu cuenta de facturación **Blaze**. Esto es crucial para evitar el límite de proyectos del plan gratuito.
+    *   Una vez creado, el proyecto aparecerá en tu [Consola de Firebase](https://console.firebase.google.com/). Selecciónalo.
 
 2.  **Activa Firestore Database:**
-    *   Una vez en el panel de tu proyecto, en el menú de la izquierda, ve a `Construir > Firestore Database`.
+    *   En el panel de tu proyecto de Firebase, ve a `Construir > Firestore Database`.
     *   Haz clic en "Crear base de datos".
     *   **Importante:** Selecciona iniciar en **modo de producción**. Esto asegura que tus datos estén protegidos por defecto.
     *   Elige una ubicación para tus servidores de Firestore (ej. `eur3` en Europa).
@@ -61,93 +61,35 @@ Ahora le diremos a tu código cómo hablar con la base de datos que acabas de cr
     *   He añadido la dependencia `firebase-admin` a tu `package.json` y he creado el archivo `src/lib/firebase-admin.ts`.
     *   Este archivo lee automáticamente las variables de entorno y crea un cliente para interactuar con Firebase desde el servidor. No necesitas modificarlo.
 
-3.  **Actualiza las Rutas de la API (El Gran Cambio):**
-    *   Este es el paso más importante. Debes ir a cada archivo dentro de `/src/app/api/...` y cambiar la lógica para que use Firestore en lugar de la base de datos de prueba (`db`).
-    *   **ACCIÓN REQUERIDA:** Aplica el patrón "Antes/Después" a **TODAS las rutas de la API** en la carpeta `/src/app/api`. La [documentación de Firebase](https://firebase.google.com/docs/firestore/quickstart) es excelente si tienes dudas sobre algún método.
-
-    *   **Ejemplo con `src/app/api/projects/route.ts`:**
-
-        ```typescript
-        // ANTES (usando la base de datos de prueba)
-        import { NextResponse } from 'next/server';
-        import { db } from '@/lib/db';
-        import type { Project } from '@/lib/api';
-        import { v4 as uuidv4 } from 'uuid';
-
-        export async function GET() {
-            return NextResponse.json(db.projects);
-        }
-
-        export async function POST(request: Request) {
-            const projectData: Omit<Project, 'id'> = await request.json();
-            const newProject: Project = { ...projectData, id: uuidv4() };
-            db.projects.push(newProject);
-            return NextResponse.json(newProject, { status: 201 });
-        }
-        ```
-
-        ```typescript
-        // DESPUÉS (usando Firestore)
-        import { NextResponse } from 'next/server';
-        import { firestore } from '@/lib/firebase-admin'; // Importa tu cliente de Firestore
-        import type { Project } from '@/lib/api';
-
-        export async function GET() {
-            try {
-                const projectsSnapshot = await firestore.collection('projects').get();
-                const projects = projectsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                return NextResponse.json(projects);
-            } catch (error) {
-                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-                return NextResponse.json({ error: errorMessage }, { status: 500 });
-            }
-        }
-
-        export async function POST(request: Request) {
-            try {
-                const projectData: Omit<Project, 'id'> = await request.json();
-                // Firestore genera el ID automáticamente con .add()
-                const docRef = await firestore.collection('projects').add(projectData);
-                const newProject = { id: docRef.id, ...projectData };
-                return NextResponse.json(newProject, { status: 201 });
-            } catch (error) {
-                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-                return NextResponse.json({ error: errorMessage }, { status: 500 });
-            }
-        }
-        ```
+3.  **Actualiza las Rutas de la API (Completado):**
+    *   Este paso ya ha sido completado por el asistente. Todos los archivos en `/src/app/api/...` han sido actualizados para usar Firestore en lugar de la base de datos de prueba.
 
 ---
 
-### **Paso 3 (Detallado): Configurar la Autenticación**
+### **Paso 3 (Detallado): Desplegar la Aplicación con Firebase App Hosting**
 
-Firebase Authentication es muy fácil de usar.
+1.  **Ve a la sección de App Hosting:**
+    *   En la [Consola de Firebase](https://console.firebase.google.com/), selecciona tu proyecto.
+    *   En el menú de la izquierda, ve a `Construir > App Hosting`.
 
-1.  **Activa Firebase Authentication:**
-    *   En la consola de Firebase, ve a `Construir > Authentication`.
-    *   Haz clic en "Empezar" y en la pestaña "Métodos de inicio de sesión", habilita el proveedor "Correo electrónico/Contraseña".
-2.  **Implementa el Flujo de Inicio de Sesión:**
-    *   Usa el SDK de cliente de Firebase en tu aplicación de Next.js (este es diferente a `firebase-admin`).
-    *   Crea las páginas para registro, inicio de sesión, etc.
-    *   Una vez que un usuario inicie sesión, puedes obtener su información y usarla en toda la aplicación.
+2.  **Crea un Backend de App Hosting:**
+    *   Haz clic en "Empezar".
+    *   App Hosting te pedirá conectar tu cuenta de GitHub y seleccionar el repositorio donde está tu aplicación.
+    *   Sigue los pasos. Firebase detectará tu framework (Next.js) y la configuración en `apphosting.yaml` automáticamente.
 
----
+3.  **Añade las Variables de Entorno como Secretos (VITAL):**
+    *   Una vez que el backend esté creado, ve a la configuración del backend de App Hosting.
+    *   Busca una opción para gestionar "Secretos" o "Variables de Entorno".
+    *   **ACCIÓN REQUERIDA:** Añade las **mismas claves** que pusiste en tu archivo `.env.local` (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL` y `FIREBASE_PRIVATE_KEY`) como secretos. Esto es crucial para que el servidor en producción pueda conectar con tu base de datos.
 
-### **Paso 4 (Detallado): Desplegar la Aplicación en Vercel**
-
-1.  **Regístrate en Vercel:** Ve a [Vercel](https://vercel.com/) y crea una cuenta (es mejor usar tu cuenta de GitHub, GitLab, etc.).
-2.  **Importa tu Proyecto:** En Vercel, haz clic en "Add New... > Project" y selecciona el repositorio de tu aplicación.
-3.  **Configura el Proyecto:** Vercel detectará que es un proyecto Next.js y lo pre-configurará.
-4.  **Añade las Variables de Entorno (VITAL):**
-    *   **ACCIÓN REQUERIDA:** Ve a "Settings" > "Environment Variables".
-    *   Añade las **mismas claves** que pusiste en tu archivo `.env.local` (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL` y `FIREBASE_PRIVATE_KEY`). Esto es crucial para que el servidor en producción pueda conectar con tu base de datos.
-5.  **Despliega:** Haz clic en "Deploy".
+4.  **Revisa el Despliegue:**
+    *   Una vez configurado, Firebase App Hosting intentará hacer el primer despliegue. Puedes ver el progreso en la consola.
+    *   Si todo va bien, te proporcionará una URL pública para tu aplicación (ej. `https://<tu-app>.web.app`).
 
 ---
 
-### **Paso 5: ¡A Probar!**
-
-Una vez finalizado el despliegue, Vercel te dará una URL pública (ej. `https://workflow-central.vercel.app`).
+### **Paso 4: ¡A Probar!**
 
 *   **¡Esa es la URL que debes compartir con tus empleados!**
-*   Cada vez que hagas un `git push` a la rama principal de tu repositorio, Vercel detectará los cambios y redesplegará automáticamente la última versión. ¡Así de fácil
+*   Cada vez que hagas un `git push` a la rama principal de tu repositorio, App Hosting detectará los cambios y redesplegará automáticamente la última versión. ¡Así de fácil!
+*   No olvides implementar también la **Autenticación de Firebase** para que tus empleados puedan iniciar sesión.
