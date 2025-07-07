@@ -2,11 +2,44 @@
 
 ¡Felicidades por llegar a esta etapa! Esta guía te ayudará a llevar tu aplicación WorkFlow Central de un entorno con datos de prueba a un entorno de producción real, utilizando **Firebase** como nuestro backend (base de datos, autenticación, etc.) y **Firebase App Hosting** para el despliegue.
 
-## 1. ¿Por qué el Ecosistema de Firebase?
+## 0. ¿Por qué el Ecosistema de Firebase?
 
 Firebase es una plataforma de desarrollo de aplicaciones de Google que nos proporciona una base de datos (Firestore), un sistema de autenticación, y hosting. Usar Firebase App Hosting nos permite mantener toda nuestra infraestructura en un solo lugar, simplificando la gestión y asegurando una integración perfecta.
 
-## 2. Los 3 Pilares del Despliegue
+---
+
+### **Paso 0 (Requisito Previo): Subir tu Código a GitHub**
+
+Antes de que Firebase pueda desplegar tu aplicación, necesita tener acceso a tu código. El lugar estándar para guardar el código es un repositorio de GitHub. Si no lo has hecho, aquí tienes cómo subir tu proyecto:
+
+1.  **Crea un Repositorio en GitHub:**
+    *   Ve a [GitHub](https://github.com/new) y crea un nuevo repositorio.
+    *   Dale un nombre (ej. `workflow-central`).
+    *   Selecciona la opción **`Private`** (Privado).
+    *   **No** marques ninguna de las casillas de inicialización (README, .gitignore, etc.).
+    *   Haz clic en "Create repository".
+
+2.  **Conecta y Sube tu Código (Desde una Terminal):**
+    *   GitHub te mostrará una página con unos comandos. Nos interesan los que están bajo el título `…or push an existing repository from the command line`.
+    *   Abre una terminal o línea de comandos en la carpeta de tu proyecto.
+    *   Copia y pega los siguientes tres comandos, uno por uno, presionando Enter después de cada uno. Reemplaza la URL con la que te da GitHub:
+
+        ```bash
+        # Este comando conecta tu proyecto local con el repositorio de GitHub
+        git remote add origin https://github.com/TU_USUARIO/workflow-central.git
+
+        # Este comando se asegura de que tu rama principal se llame "main"
+        git branch -M main
+
+        # Este comando sube todos tus archivos al repositorio de GitHub
+        git push -u origin main
+        ```
+    *   ¡Listo! Tu código ya está en GitHub, y ahora Firebase puede usarlo.
+
+---
+
+
+## 1. Los 3 Pilares del Despliegue
 
 Para que la aplicación sea funcional en producción, necesitas tres componentes clave en la nube:
 
