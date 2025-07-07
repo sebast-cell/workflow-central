@@ -1,33 +1,40 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { firestore } from '@/lib/firebase-admin';
+import type { Employee } from '@/lib/api';
 
 // GET a single employee
 export async function GET(
     request: Request,
     { params }: { params: { id: string } }
 ) {
-    const employee = db.employees.find(e => e.id === params.id);
-    if (employee) {
-        return NextResponse.json(employee);
+    try {
+        const doc = await firestore.collection('employees').doc(params.id).get();
+        if (!doc.exists) {
+            return NextResponse.json({ message: "Employee not found" }, { status: 404 });
+        }
+        return NextResponse.json({ id: doc.id, ...doc.data() });
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
-    return NextResponse.json({ message: "Employee not found" }, { status: 404 });
 }
-
 
 // UPDATE an employee
 export async function PUT(
     request: Request,
     { params }: { params: { id: string } }
 ) {
-    const employeeIndex = db.employees.findIndex(e => e.id === params.id);
-    if (employeeIndex !== -1) {
-        const updatedData = await request.json();
-        // Exclude properties that shouldn't be overwritten from the client
-        const { id, avatar, status, ...rest } = updatedData;
-        db.employees[employeeIndex] = { ...db.employees[employeeIndex], ...rest };
-        return NextResponse.json(db.employees[employeeIndex]);
+    try {
+        const updatedData: Partial<Employee> = await request.json();
+        // Exclude properties that shouldn't be overwritten from the client like id
+        const { id, ...rest } = updatedData;
+        await firestore.collection('employees').doc(params.id).update(rest);
+        const updatedDoc = await firestore.collection('employees').doc(params.id).get();
+        return NextResponse.json({ id: updatedDoc.id, ...updatedDoc.data() });
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
-    return NextResponse.json({ message: "Employee not found" }, { status: 404 });
 }
 
 // DELETE an employee
@@ -35,12 +42,13 @@ export async function DELETE(
     request: Request,
     { params }: { params: { id: string } }
 ) {
-    const employeeIndex = db.employees.findIndex(e => e.id === params.id);
-    if (employeeIndex !== -1) {
-        const [deletedEmployee] = db.employees.splice(employeeIndex, 1);
-        return NextResponse.json(deletedEmployee);
+    try {
+        await firestore.collection('employees').doc(params.id).delete();
+        return NextResponse.json({ message: "Employee deleted" }, { status: 200 });
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
-    return NextResponse.json({ message: "Employee not found" }, { status: 404 });
 }
 
 // PATCH for specific actions like changing status
@@ -48,13 +56,15 @@ export async function PATCH(
     request: Request,
     { params }: { params: { id: string } }
 ) {
-    const employeeIndex = db.employees.findIndex(e => e.id === params.id);
-    if (employeeIndex !== -1) {
+    try {
         const { status } = await request.json();
         if (status) {
-            db.employees[employeeIndex].status = status;
+            await firestore.collection('employees').doc(params.id).update({ status });
         }
-        return NextResponse.json(db.employees[employeeIndex]);
+        const updatedDoc = await firestore.collection('employees').doc(params.id).get();
+        return NextResponse.json({ id: updatedDoc.id, ...updatedDoc.data() });
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
-    return NextResponse.json({ message: "Employee not found" }, { status: 404 });
 }

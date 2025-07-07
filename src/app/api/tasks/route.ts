@@ -1,18 +1,26 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { firestore } from '@/lib/firebase-admin';
 import type { Task } from '@/lib/api';
-import { v4 as uuidv4 } from 'uuid';
 
 export async function GET() {
-    return NextResponse.json(db.tasks);
+    try {
+        const tasksSnapshot = await firestore.collection('tasks').get();
+        const tasks = tasksSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Omit<Task, 'id'> }));
+        return NextResponse.json(tasks);
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        return NextResponse.json({ error: errorMessage }, { status: 500 });
+    }
 }
 
 export async function POST(request: Request) {
-    const taskData: Omit<Task, 'id'> = await request.json();
-    const newTask: Task = {
-        ...taskData,
-        id: uuidv4(),
-    };
-    db.tasks.push(newTask);
-    return NextResponse.json(newTask, { status: 201 });
+    try {
+        const taskData: Omit<Task, 'id'> = await request.json();
+        const docRef = await firestore.collection('tasks').add(taskData);
+        const newTask = { id: docRef.id, ...taskData };
+        return NextResponse.json(newTask, { status: 201 });
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        return NextResponse.json({ error: errorMessage }, { status: 500 });
+    }
 }

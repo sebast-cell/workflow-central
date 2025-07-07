@@ -260,7 +260,7 @@ export const listProjects = async (): Promise<Project[]> => {
     return response.data;
 };
 
-export const createProject = async (project: Omit<Project, 'id'>): Promise<Project> => {
-    const response = await apiClient.post('/api/projects', project);
+export const createProject = async (projectData: Omit<Project, 'id'>): Promise<Project> => {
+    const response = await apiClient.post('/api/projects', projectData);
     return response.data;
 };

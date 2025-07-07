@@ -1,33 +1,43 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { firestore } from '@/lib/firebase-admin';
 
-// A single dynamic route to handle all settings models
-// The `setting` param will be an array, e.g., ['roles'] or ['centers']
-
-type DbKey = keyof typeof db;
+// This is a generic handler for multiple settings collections.
+// E.g. /api/settings/roles will target the 'roles' collection.
 
 export async function GET(
     request: Request,
-    { params }: { params: { setting: DbKey[] } }
+    { params }: { params: { setting: string[] } }
 ) {
-    const model = params.setting[0] as DbKey;
-    if (model in db) {
-        return NextResponse.json(db[model]);
+    const model = params.setting[0];
+    if (!model) {
+        return NextResponse.json({ message: "Setting model not specified" }, { status: 400 });
     }
-    return NextResponse.json({ message: `Setting model '${model}' not found` }, { status: 404 });
-}
 
+    try {
+        const snapshot = await firestore.collection(model).get();
+        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        return NextResponse.json(data);
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        return NextResponse.json({ error: `Could not fetch settings for '${model}': ${errorMessage}` }, { status: 500 });
+    }
+}
 
 export async function POST(
     request: Request,
-    { params }: { params: { setting: DbKey[] } }
+    { params }: { params: { setting: string[] } }
 ) {
-    const model = params.setting[0] as DbKey;
-    if (model in db) {
-        const data = await request.json();
-        // This is a generic implementation. In a real app, you'd add validation.
-        (db[model] as any[]).push(data);
-        return NextResponse.json(data, { status: 201 });
+    const model = params.setting[0];
+    if (!model) {
+        return NextResponse.json({ message: "Setting model not specified" }, { status: 400 });
     }
-    return NextResponse.json({ message: `Setting model '${model}' not found` }, { status: 404 });
+    
+    try {
+        const data = await request.json();
+        const docRef = await firestore.collection(model).add(data);
+        return NextResponse.json({ id: docRef.id, ...data }, { status: 201 });
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        return NextResponse.json({ error: `Could not create setting for '${model}': ${errorMessage}` }, { status: 500 });
+    }
 }
