@@ -1,61 +1,72 @@
-# Guía de Despliegue a Producción (Versión Súper Sencilla)
+# Guía Visual Definitiva para Desplegar tu App
 
-¡Felicidades por llegar a esta etapa! Esta guía te ayudará a llevar tu aplicación al mundo real.
-
-**El único obstáculo que nos queda es subir el código de esta aplicación a GitHub.** Una vez hecho eso, el resto es fácil.
+¡Hola! Sé que los pasos anteriores han sido confusos. Te pido disculpas. Esta guía está diseñada para que sea imposible perderse. ¡Vamos a lograrlo!
 
 ---
 
-### **Paso 0 (El más importante): Subir tu Código a GitHub**
+### **Paso 0: ¿DÓNDE ESTÁ LA TERMINAL? (La Guía Visual)**
 
-Estos pasos son **obligatorios**. Debes hacerlos desde la **Terminal que está DENTRO de esta ventana del editor**, no desde la terminal de tu ordenador personal.
+La terminal está en la **PARTE INFERIOR** de toda la ventana del editor.
 
-#### **¿DÓNDE ESTÁ LA TERMINAL?**
-Mira en la parte **INFERIOR** de esta misma ventana del editor. Verás varias pestañas. Una de ellas se llama **"TERMINAL"**. Haz clic en ella. ¡Ese es el lugar correcto!
+**Imagina que la pantalla es así:**
 
+```
++------------------------------------------------------+
+| Arriba:     Menú (Archivo, Editar...)                |
++------------------------------------------------------+
+| Izquierda:  LISTA DE ARCHIVOS (package.json, src...)  |
+|                                                      |
+|             DERECHA:                                 |
+|             VENTANA PRINCIPAL DEL CÓDIGO             |
+|             (Aquí es donde ves los archivos)         |
+|                                                      |
+|                                                      |
+|                                                      |
++------------------------------------------------------+
+| ABAJO:      [ PESTAÑAS: Problemas | Salida | TERMINAL ] <--- ¡AQUÍ ESTÁ!
++------------------------------------------------------+
+```
 
-
----
-
-1.  **Copia la URL de tu repositorio:**
-    *   Ve a la página de tu repositorio en GitHub. Busca un botón verde que dice **"< > Code"** y haz clic en él. Asegúrate de que está seleccionada la pestaña **HTTPS** y copia la URL que aparece. Debería ser algo como `https://github.com/TU_USUARIO/workflow-central.git`.
-
-2.  **Conecta y Sube el Código (Copiar y Pegar):**
-    *   Ahora, copia el siguiente comando, pégalo en la **Terminal de aquí abajo**, reemplaza la URL por la tuya y presiona `Enter`:
-        ```bash
-        git remote set-url origin https://github.com/TU_USUARIO/workflow-central.git
-        ```
-        *(Este comando actualiza la dirección de tu "almacén" de código. No debería dar ningún error.)*
-
-    *   A continuación, copia y pega este otro comando y presiona `Enter`. Esto prepara tu código para ser subido.
-        ```bash
-        git branch -M main
-        ```
-
-    *   Y ahora, el comando final para **enviar todo el código de la aplicación**:
-        ```bash
-        git push -u origin main
-        ```
-
-3.  **Introduce tu Usuario y tu "Contraseña Especial" (El Token):**
-    *   La terminal te pedirá tu `Username`: escribe tu nombre de usuario de GitHub y presiona `Enter`.
-    *   Luego te pedirá `Password`: **¡OJO! No me la des a mí. Pega aquí en la TERMINAL el Token de Acceso Personal (la contraseña que empieza por `ghp_...`) que creaste antes.** No se verá nada mientras pegas, es normal. Solo pégalo y presiona `Enter`.
-
-4.  **Verifica que ha funcionado:**
-    *   ¡Listo! Ve a la página de tu repositorio en GitHub y actualízala.
-    *   **¿Qué deberías ver?** Todos los archivos de tu proyecto: una carpeta `src`, un archivo `package.json`, etc.
-    *   Si ves tus archivos, ¡genial! **Ya puedes volver a la página de Firebase App Hosting**, refrescar la página, y cuando te pida la "Rama activa", escribe **`main`**. El error desaparecerá.
+1.  **Mueve tus ojos hacia la parte más BAJA de la ventana.**
+2.  Busca una fila de pestañas. Una de ellas dice **TERMINAL**.
+3.  **Haz clic en esa palabra: "TERMINAL"**. Se abrirá un recuadro negro. ¡Esa es la terminal!
 
 ---
 
-### **Pasos Finales en Firebase App Hosting**
+### **Paso 1 (EN LA TERMINAL): Prepara tu Repositorio**
 
-Una vez que Firebase acepte tu rama `main` y empiece a desplegar:
+Ahora que has encontrado la **TERMINAL**, copia y pega los siguientes 3 comandos, uno por uno. Presiona `Enter` después de cada uno.
 
-1.  **Añade los "Secretos" (las Claves):**
-    *   En la configuración de tu backend de App Hosting, busca una opción para gestionar **"Secretos"** o "Variables de Entorno".
-    *   Añade las **mismas tres claves** que tienes en tu archivo `.env.local`: `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL` y `FIREBASE_PRIVATE_KEY`.
-    *   Este paso es vital para que la aplicación en producción pueda hablar con tu base de datos.
+1.  Conecta tu repositorio de GitHub:
+    ```bash
+    git remote set-url origin https://github.com/sebast-cell/workflow-central.git
+    ```
 
-2.  **¡Espera y Comparte!**
-    *   Firebase tardará unos minutos en construir y desplegar tu aplicación. Cuando termine, te dará una URL pública. ¡Esa es la que debes compartir!
+2.  Nombra la rama principal como `main`:
+    ```bash
+    git branch -M main
+    ```
+
+3.  **Sube TODO el código a GitHub (el comando final):**
+    ```bash
+    git push -u origin main
+    ```
+
+---
+
+### **Paso 2 (EN LA TERMINAL): Tu Usuario y Contraseña Especial**
+
+Después del último comando, la terminal te pedirá dos cosas:
+
+*   `Username`: Escribe tu nombre de usuario de GitHub y presiona `Enter`.
+*   `Password`: **¡MUY IMPORTANTE!** Pega aquí tu **Token de Acceso Personal** (la contraseña que empieza por `ghp_...`). **No verás nada mientras escribes o pegas.** Es normal. Solo pégalo y presiona `Enter`.
+
+---
+
+### **Paso 3: ¡Victoria!**
+
+*   Si todo ha ido bien, la terminal mostrará que los archivos se están subiendo.
+*   En la página de **Firebase App Hosting**, empezará un nuevo despliegue automáticamente. ¡Esta vez funcionará!
+*   Cuando termine, te dará una URL. ¡Esa es tu aplicación funcionando!
+
+**¡Ánimo, ya estás en el último paso!**
