@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -106,7 +105,6 @@ export default function AttendancePage() {
     }, [dateRange, selectedLocation, selectedDepartment, selectedEmployee]);
 
     const husinStats = useMemo(() => {
-        // For this mock data, "today" is the latest date in the log.
         const today = new Date(2024, 7, 26);
         const todayNormalized = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
@@ -182,8 +180,7 @@ export default function AttendancePage() {
             const dateMatch = (() => {
                 if (!dateRange?.from) return true;
                 const from = dateRange.from;
-                const to = dateRange.to || from; // If no 'to' date, range is a single day
-                // Normalize dates to ignore time of day for comparison
+                const to = dateRange.to || from;
                 const start = new Date(from.getFullYear(), from.getMonth(), from.getDate());
                 const end = new Date(to.getFullYear(), to.getMonth(), to.getDate());
                 const current = new Date(logDate.getFullYear(), logDate.getMonth(), logDate.getDate());
@@ -416,17 +413,15 @@ export default function AttendancePage() {
                                         min={dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined}
                                         onChange={(e) => {
                                             const toValue = e.target.value;
-                                            const toDate = toValue ? parse(toValue, 'yyyy-MM-dd', new Date()) : undefined;
-                                            
                                             setDateRange(prev => {
-                                              if (prev?.from) {
+                                                const toDate = toValue ? parse(toValue, 'yyyy-MM-dd', new Date()) : undefined;
                                                 const validToDate = (toDate && !isNaN(toDate.getTime())) ? toDate : undefined;
-                                                return { from: prev.from, to: validToDate };
-                                              }
-                                              if (toDate && !isNaN(toDate.getTime())) {
-                                                return { from: toDate, to: toDate };
-                                              }
-                                              return undefined;
+                                                
+                                                if (prev?.from) {
+                                                    return { from: prev.from, to: validToDate };
+                                                }
+                                                
+                                                return validToDate ? { from: validToDate, to: validToDate } : undefined;
                                             });
                                         }}
                                     />
