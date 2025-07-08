@@ -390,12 +390,11 @@ export default function AttendancePage() {
                                         type="date"
                                         value={dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : ''}
                                         onChange={(e) => {
-                                            const dateStr = e.target.value;
-                                            const fromDate = dateStr ? parse(dateStr, 'yyyy-MM-dd', new Date()) : undefined;
+                                            const fromDate = e.target.value ? parse(e.target.value, 'yyyy-MM-dd', new Date()) : undefined;
                                             if (fromDate && !isNaN(fromDate.getTime())) {
-                                                setDateRange((prev): DateRange | undefined => ({ from: fromDate, to: prev?.to }));
+                                                setDateRange((prev) => ({ ...prev, from: fromDate }));
                                             } else {
-                                                setDateRange((prev): DateRange | undefined => ({ from: undefined, to: prev?.to }));
+                                                setDateRange((prev) => ({ ...prev, from: undefined }));
                                             }
                                         }}
                                     />
@@ -407,12 +406,11 @@ export default function AttendancePage() {
                                         type="date"
                                         value={dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : ''}
                                         onChange={(e) => {
-                                            const dateStr = e.target.value;
-                                            const toDate = dateStr ? parse(dateStr, 'yyyy-MM-dd', new Date()) : undefined;
+                                            const toDate = e.target.value ? parse(e.target.value, 'yyyy-MM-dd', new Date()) : undefined;
                                             if (toDate && !isNaN(toDate.getTime())) {
-                                                setDateRange((prev): DateRange | undefined => ({ from: prev?.from, to: toDate }));
+                                                setDateRange((prev) => ({ ...prev, to: toDate }));
                                             } else {
-                                                setDateRange((prev): DateRange | undefined => ({ from: prev?.from, to: undefined }));
+                                                setDateRange((prev) => ({ ...prev, to: undefined }));
                                             }
                                         }}
                                     />
