@@ -392,10 +392,10 @@ export default function AttendancePage() {
                                         value={dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : ''}
                                         onChange={(e) => {
                                             const fromValue = e.target.value;
-                                            const fromDate = fromValue ? parse(fromValue, 'yyyy-MM-dd', new Date()) : undefined;
-                                            const newFrom = (fromDate && !isNaN(fromDate.getTime())) ? fromDate : undefined;
-
                                             setDateRange(prev => {
+                                                const fromDate = fromValue ? parse(fromValue, 'yyyy-MM-dd', new Date()) : undefined;
+                                                const newFrom = (fromDate && !isNaN(fromDate.getTime())) ? fromDate : undefined;
+
                                                 if (!newFrom) {
                                                     return undefined;
                                                 }
