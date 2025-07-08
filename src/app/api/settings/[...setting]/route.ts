@@ -6,9 +6,9 @@ import { firestore } from '@/lib/firebase-admin';
 
 export async function GET(
     request: Request,
-    { params }: { params: { setting: string[] } }
+    { params }: { params: { setting: string } }
 ) {
-    const model = params.setting[0];
+    const model = params.setting;
     if (!model) {
         return NextResponse.json({ message: "Setting model not specified" }, { status: 400 });
     }
@@ -25,17 +25,19 @@ export async function GET(
 
 export async function POST(
     request: Request,
-    { params }: { params: { setting: string[] } }
+    { params }: { params: { setting: string } }
 ) {
-    const model = params.setting[0];
+    const model = params.setting;
     if (!model) {
         return NextResponse.json({ message: "Setting model not specified" }, { status: 400 });
     }
     
     try {
         const data = await request.json();
-        const docRef = await firestore.collection(model).add(data);
-        return NextResponse.json({ id: docRef.id, ...data }, { status: 201 });
+        // Remove id from data if it exists, as Firestore generates it
+        const { id, ...postData } = data;
+        const docRef = await firestore.collection(model).add(postData);
+        return NextResponse.json({ id: docRef.id, ...postData }, { status: 201 });
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         return NextResponse.json({ error: `Could not create setting for '${model}': ${errorMessage}` }, { status: 500 });
