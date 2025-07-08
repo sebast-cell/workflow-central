@@ -97,115 +97,91 @@ export default function AttendancePage() {
     const itemsPerPage = 5;
 
     const availableEmployees = useMemo(() => {
-      if (selectedDepartment === 'all') return employees;
-      return employees.filter(emp => emp.department === selectedDepartment);
+        if (selectedDepartment === 'all') {
+            return employees;
+        }
+        return employees.filter(emp => emp.department === selectedDepartment);
     }, [selectedDepartment]);
-    
+
     useEffect(() => {
-      if (
-        selectedEmployee !== 'all' &&
-        !availableEmployees.some(e => e.name === selectedEmployee)
-      ) {
-        setSelectedEmployee('all');
-      }
+        if (selectedEmployee !== 'all' && !availableEmployees.some(e => e.name === selectedEmployee)) {
+            setSelectedEmployee('all');
+        }
     }, [availableEmployees, selectedEmployee]);
-    
+
     useEffect(() => {
-      setCurrentPage(1);
+        setCurrentPage(1);
     }, [dateRange, selectedLocation, selectedDepartment, selectedEmployee]);
-    
+
     const husinStats = useMemo(() => {
-      const today = new Date(2024, 7, 26); // Agosto 26 (mes es 0-indexed)
-      const todayNormalized = new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        today.getDate()
-      );
-    
-      const stats = {
-        inOffice: { count: 0, list: [] as Employee[] },
-        remote: { count: 0, list: [] as Employee[] },
-        onBreak: { count: 0, list: [] as Employee[] },
-        onVacation: { count: 0, list: [] as Employee[] },
-        absent: { count: 0, list: [] as Employee[] },
-      };
-    
-      const employeesOnLeaveToday = new Set<string>();
-    
-      absencesData.forEach(absence => {
-        const employee = employees.find(e => e.name === absence.employee);
-        if (
-          employee &&
-          isWithinInterval(today, {
-            start: absence.from,
-            end: absence.to,
-          })
-        ) {
-          if (absence.type === 'De Vacaciones') {
-            stats.onVacation.list.push(employee);
-          }
-          employeesOnLeaveToday.add(absence.employee);
-        }
-      });
-    
-      const todaysLog = attendanceLog.filter(log => {
-        const logDate = new Date(
-          log.date.getFullYear(),
-          log.date.getMonth(),
-          log.date.getDate()
-        );
-        return logDate.getTime() === todayNormalized.getTime();
-      });
-    
-      const latestLogs: Record<string, AttendanceLog> = {};
-    
-      todaysLog.forEach(log => {
-        if (!employeesOnLeaveToday.has(log.employee)) {
-          if (
-            !latestLogs[log.employee] ||
-            parseAMPM(log.time) > parseAMPM(latestLogs[log.employee].time)
-          ) {
-            latestLogs[log.employee] = log;
-          }
-        }
-      });
-    
-      const presentEmployees = new Set<string>();
-    
-      Object.values(latestLogs).forEach(log => {
-        const employee = employees.find(e => e.name === log.employee);
-        if (!employee) return;
-    
-        presentEmployees.add(log.employee);
-    
-        switch (log.status) {
-          case 'Entrada Marcada':
-            if (log.location === 'Oficina') {
-              stats.inOffice.list.push(employee);
-            } else {
-              stats.remote.list.push(employee);
+        const today = new Date(2024, 7, 26);
+        const todayNormalized = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+        const stats = {
+            inOffice: { count: 0, list: [] as Employee[] },
+            remote: { count: 0, list: [] as Employee[] },
+            onBreak: { count: 0, list: [] as Employee[] },
+            onVacation: { count: 0, list: [] as Employee[] },
+            absent: { count: 0, list: [] as Employee[] },
+        };
+
+        const employeesOnLeaveToday = new Set<string>();
+        absencesData.forEach(absence => {
+            const employee = employees.find(e => e.name === absence.employee);
+            if (employee && isWithinInterval(today, { start: absence.from, end: absence.to })) {
+                if (absence.type === "De Vacaciones") {
+                    stats.onVacation.list.push(employee);
+                }
+                employeesOnLeaveToday.add(absence.employee);
             }
-            break;
-          case 'En Descanso':
-            stats.onBreak.list.push(employee);
-            break;
-        }
-      });
-    
-      stats.absent.list = employees.filter(
-        emp =>
-          !presentEmployees.has(emp.name) && !employeesOnLeaveToday.has(emp.name)
-      );
-    
-      // Asignar conteos
-      for (const key in stats) {
-        stats[key as keyof typeof stats].count =
-          stats[key as keyof typeof stats].list.length;
-      }
-    
-      return stats;
-    }, [absencesData]);
-    
+        });
+
+        const todaysLog = attendanceLog.filter(log => {
+            const logDate = new Date(log.date.getFullYear(), log.date.getMonth(), log.date.getDate());
+            return logDate.getTime() === todayNormalized.getTime();
+        });
+
+        const latestLogs: { [key: string]: any } = {};
+        todaysLog.forEach(log => {
+            if (!employeesOnLeaveToday.has(log.employee)) {
+                if (!latestLogs[log.employee] || parseAMPM(log.time) > parseAMPM(latestLogs[log.employee].time)) {
+                    latestLogs[log.employee] = log;
+                }
+            }
+        });
+
+        const presentEmployees = new Set<string>();
+        Object.values(latestLogs).forEach(log => {
+            const employee = employees.find(e => e.name === log.employee);
+            if (!employee) return;
+            
+            presentEmployees.add(log.employee);
+
+            switch (log.status) {
+                case "Entrada Marcada":
+                    if (log.location === "Oficina") {
+                        stats.inOffice.list.push(employee);
+                    } else {
+                        stats.remote.list.push(employee);
+                    }
+                    break;
+                case "En Descanso":
+                    stats.onBreak.list.push(employee);
+                    break;
+            }
+        });
+
+        stats.absent.list = employees.filter(emp => !presentEmployees.has(emp.name) && !employeesOnLeaveToday.has(emp.name));
+
+        stats.inOffice.count = stats.inOffice.list.length;
+        stats.remote.count = stats.remote.list.length;
+        stats.onBreak.count = stats.onBreak.list.length;
+        stats.onVacation.count = stats.onVacation.list.length;
+        stats.absent.count = stats.absent.list.length;
+
+        return stats;
+    }, []);
+
     const filteredLog = useMemo(() => {
         const startDate = dateRange?.from ? startOfDay(dateRange.from) : null;
         const endDate = dateRange?.to ? startOfDay(dateRange.to) : startDate;
@@ -224,26 +200,22 @@ export default function AttendancePage() {
             return dateMatch && locationMatch && departmentMatch && employeeMatch;
         });
     }, [dateRange, selectedLocation, selectedDepartment, selectedEmployee]);
-    
+
     const { paginatedLog, totalPages } = useMemo(() => {
-      const total = Math.ceil(filteredLog.length / itemsPerPage);
-      const startIndex = (currentPage - 1) * itemsPerPage;
-      return {
-        paginatedLog: filteredLog.slice(startIndex, startIndex + itemsPerPage),
-        totalPages: total || 1,
-      };
+        const total = Math.ceil(filteredLog.length / itemsPerPage);
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        return {
+            paginatedLog: filteredLog.slice(startIndex, startIndex + itemsPerPage),
+            totalPages: total > 0 ? total : 1,
+        };
     }, [filteredLog, currentPage]);
-    
+
     const getStatusVariant = (status: string) => {
       switch (status) {
-        case 'Entrada Marcada':
-          return 'active';
-        case 'Salida Marcada':
-          return 'destructive';
-        case 'En Descanso':
-          return 'warning';
-        default:
-          return 'secondary';
+        case "Entrada Marcada": return "active";
+        case "Salida Marcada": return "destructive";
+        case "En Descanso": return "warning";
+        default: return "secondary";
       }
     };
 
