@@ -6,6 +6,8 @@
 
 ### **Paso 0: ¿DÓNDE ESTÁ LA TERMINAL? (La Guía Visual)**
 
+**¡MUY IMPORTANTE!** Todos los comandos de esta guía deben ejecutarse en la **TERMINAL que está DENTRO de esta ventana del editor**, no en la terminal de tu propio ordenador.
+
 La terminal está en la **PARTE INFERIOR** de toda la ventana del editor.
 
 **Imagina que la pantalla es así:**
@@ -29,11 +31,11 @@ La terminal está en la **PARTE INFERIOR** de toda la ventana del editor.
 
 1.  **Mueve tus ojos hacia la parte más BAJA de la ventana.**
 2.  Busca una fila de pestañas. Una de ellas dice **TERMINAL**.
-3.  **Haz clic en esa palabra: "TERMINAL"**. Se abrirá un recuadro negro. ¡Esa es la terminal!
+3.  **Haz clic en esa palabra: "TERMINAL"**. Se abrirá un recuadro negro. ¡Esa es la terminal correcta!
 
 ---
 
-### **Paso 1 (EN LA TERMINAL): Conecta tu Repositorio (El Comando Correcto)**
+### **Paso 1 (EN LA TERMINAL DEL EDITOR): Conecta tu Repositorio (El Comando Correcto)**
 
 Ahora que has encontrado la **TERMINAL**, copia y pega este comando. Este es el comando corregido que **añade** la conexión a tu repositorio de GitHub. Presiona `Enter`.
 
@@ -44,7 +46,7 @@ git remote add origin https://github.com/sebast-cell/workflow-central.git
 
 ---
 
-### **Paso 2 (EN LA TERMINAL): Sube TODO el Código**
+### **Paso 2 (EN LA TERMINAL DEL EDITOR): Sube TODO el Código**
 
 Ahora, copia y pega este comando para subir tu código. Presiona `Enter`.
 
@@ -54,7 +56,7 @@ git push -u origin main
 
 ---
 
-### **Paso 3 (EN LA TERMINAL): Tu Usuario y Contraseña Especial**
+### **Paso 3 (EN LA TERMINAL DEL EDITOR): Tu Usuario y Contraseña Especial**
 
 Después del último comando, la terminal te pedirá dos cosas. **¡Puede que se quede parada sin escribir nada, es normal!** Está esperando a que tú escribas.
 
