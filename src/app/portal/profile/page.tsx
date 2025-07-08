@@ -18,11 +18,11 @@ export default function EmployeeProfilePage() {
             <div className="flex items-center gap-4">
                 <Avatar className="h-16 w-16">
                     <AvatarImage src="https://placehold.co/100x100.png" data-ai-hint="employee avatar" />
-                    <AvatarFallback>OM</AvatarFallback>
+                    <AvatarFallback>E</AvatarFallback>
                 </Avatar>
                 <div>
-                    <CardTitle className="text-2xl">Olivia Martin</CardTitle>
-                    <CardDescription>Desarrollador Frontend en el departamento de Ingeniería.</CardDescription>
+                    <CardTitle className="text-2xl">Nombre Empleado</CardTitle>
+                    <CardDescription>Cargo en el departamento.</CardDescription>
                 </div>
                 <Button variant="outline" className="ml-auto">Cambiar Foto</Button>
             </div>
@@ -35,19 +35,19 @@ export default function EmployeeProfilePage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="firstName">Nombre</Label>
-                            <Input id="firstName" defaultValue="Olivia" />
+                            <Input id="firstName" defaultValue="Nombre" />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="lastName">Apellidos</Label>
-                            <Input id="lastName" defaultValue="Martin" />
+                            <Input id="lastName" defaultValue="Apellido" />
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="email">Email</Label>
-                            <Input id="email" type="email" defaultValue="olivia.martin@example.com" readOnly />
+                            <Input id="email" type="email" defaultValue="empleado@email.com" readOnly />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="phone">Teléfono</Label>
-                            <Input id="phone" type="tel" defaultValue="+1 (555) 123-4567" />
+                            <Input id="phone" type="tel" defaultValue="+34 600 000 000" />
                         </div>
                     </div>
                 </div>
@@ -58,20 +58,20 @@ export default function EmployeeProfilePage() {
                     <div className="space-y-4">
                          <div className="space-y-2">
                             <Label htmlFor="address">Dirección</Label>
-                            <Input id="address" defaultValue="123 Main St" />
+                            <Input id="address" defaultValue="Calle Falsa, 123" />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="city">Ciudad</Label>
-                                <Input id="city" defaultValue="Anytown" />
+                                <Input id="city" defaultValue="Ciudad Ejemplo" />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="state">Provincia</Label>
-                                <Input id="state" defaultValue="CA" />
+                                <Input id="state" defaultValue="Provincia Ejemplo" />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="zip">Código Postal</Label>
-                                <Input id="zip" defaultValue="12345" />
+                                <Input id="zip" defaultValue="00000" />
                             </div>
                         </div>
                     </div>
@@ -83,15 +83,15 @@ export default function EmployeeProfilePage() {
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="emergencyName">Nombre Completo</Label>
-                            <Input id="emergencyName" defaultValue="John Doe" />
+                            <Input id="emergencyName" />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="emergencyPhone">Teléfono</Label>
-                            <Input id="emergencyPhone" type="tel" defaultValue="+1 (555) 987-6543" />
+                            <Input id="emergencyPhone" type="tel" />
                         </div>
                         <div className="space-y-2 md:col-span-2">
                             <Label htmlFor="emergencyRelation">Relación</Label>
-                            <Input id="emergencyRelation" defaultValue="Cónyuge" />
+                            <Input id="emergencyRelation" />
                         </div>
                     </div>
                 </div>

@@ -235,8 +235,8 @@ export default function EmployeeDashboard() {
             <CardContent className="flex items-center gap-4">
                 <User className="w-10 h-10 text-primary" />
                 <div>
-                    <p className="font-semibold">Olivia Martin</p>
-                    <p className="text-sm text-muted-foreground">olivia.martin@example.com</p>
+                    <p className="font-semibold">Empleado</p>
+                    <p className="text-sm text-muted-foreground">empleado@email.com</p>
                     <Button asChild variant="link" className="p-0 h-auto mt-1">
                         <Link href="/portal/profile">Editar Perfil</Link>
                     </Button>

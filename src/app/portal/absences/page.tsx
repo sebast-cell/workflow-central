@@ -50,25 +50,13 @@ export default function EmployeeAbsencesPage() {
 
     useEffect(() => {
         try {
-            const storedEmployees = localStorage.getItem(EMPLOYEES_STORAGE_KEY);
             const storedCalendars = localStorage.getItem(CALENDARS_STORAGE_KEY);
-            
-            if (storedEmployees && storedCalendars) {
-                const allEmployees: Employee[] = JSON.parse(storedEmployees);
+            if (storedCalendars) {
                 const allCalendars: CalendarData[] = JSON.parse(storedCalendars);
-
-                // Assuming Olivia Martin is the logged-in user (as per portal/page.tsx)
-                const currentUser = allEmployees.find(e => e.name === "Olivia Martin");
-                
-                if (currentUser?.calendarId) {
-                    const userCalendar = allCalendars.find(c => c.id === currentUser.calendarId);
-                    if (userCalendar) {
-                        setHolidays(userCalendar.holidays);
-                    }
-                } else {
-                    // Fallback to default calendar if user has no calendar assigned
-                    const defaultCalendar = allCalendars.find(c => c.id === 'default-calendar');
-                    if(defaultCalendar) setHolidays(defaultCalendar.holidays);
+                // For demo, just use the default calendar if it exists
+                const defaultCalendar = allCalendars.find(c => c.id === 'default-calendar');
+                if(defaultCalendar) {
+                    setHolidays(defaultCalendar.holidays);
                 }
             }
         } catch (error) {
