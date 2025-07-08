@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -394,13 +395,14 @@ export default function AttendancePage() {
                                             setDateRange(prev => {
                                                 const fromDate = fromValue ? parse(fromValue, 'yyyy-MM-dd', new Date()) : undefined;
                                                 const newFrom = (fromDate && !isNaN(fromDate.getTime())) ? fromDate : undefined;
-                                                const currentTo = prev?.to;
+                                                
+                                                if (!newFrom) return { from: undefined, to: prev?.to };
 
-                                                if (newFrom && currentTo && newFrom > currentTo) {
+                                                if (prev?.to && newFrom > prev.to) {
                                                     return { from: newFrom, to: undefined };
                                                 }
                                                 
-                                                return { from: newFrom, to: currentTo };
+                                                return { from: newFrom, to: prev?.to };
                                             });
                                         }}
                                     />
@@ -411,14 +413,16 @@ export default function AttendancePage() {
                                         id="date-to"
                                         type="date"
                                         value={dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : ''}
+                                        min={dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined}
                                         onChange={(e) => {
                                             const toValue = e.target.value;
                                             setDateRange(prev => {
                                                 const toDate = toValue ? parse(toValue, 'yyyy-MM-dd', new Date()) : undefined;
                                                 const newTo = (toDate && !isNaN(toDate.getTime())) ? toDate : undefined;
-                                                const currentFrom = prev?.from;
                                                 
-                                                return { from: currentFrom, to: newTo };
+                                                if (!prev?.from) return { from: undefined, to: newTo };
+
+                                                return { from: prev.from, to: newTo };
                                             });
                                         }}
                                     />
