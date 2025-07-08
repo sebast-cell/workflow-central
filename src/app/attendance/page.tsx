@@ -14,7 +14,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { format, parse, isWithinInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { DateRange } from 'react-day-picker';
+import { type DateRange } from 'react-day-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -390,14 +390,18 @@ export default function AttendancePage() {
                                         type="date"
                                         value={dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : ''}
                                         onChange={(e) => {
-                                            const fromDate = e.target.value ? parse(e.target.value, 'yyyy-MM-dd', new Date()) : undefined;
-                                            const newRange: DateRange = { ...dateRange };
-                                            if (fromDate && !isNaN(fromDate.getTime())) {
-                                                newRange.from = fromDate;
-                                            } else {
-                                                delete newRange.from;
-                                            }
-                                            setDateRange(newRange);
+                                            const fromValue = e.target.value;
+                                            setDateRange(prev => {
+                                                const fromDate = fromValue ? parse(fromValue, 'yyyy-MM-dd', new Date()) : undefined;
+                                                const newFrom = (fromDate && !isNaN(fromDate.getTime())) ? fromDate : undefined;
+                                                const currentTo = prev?.to;
+
+                                                if (newFrom && currentTo && newFrom > currentTo) {
+                                                    return { from: newFrom, to: undefined };
+                                                }
+                                                
+                                                return { from: newFrom, to: currentTo };
+                                            });
                                         }}
                                     />
                                 </div>
@@ -408,14 +412,14 @@ export default function AttendancePage() {
                                         type="date"
                                         value={dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : ''}
                                         onChange={(e) => {
-                                            const toDate = e.target.value ? parse(e.target.value, 'yyyy-MM-dd', new Date()) : undefined;
-                                            const newRange: DateRange = { ...dateRange };
-                                            if (toDate && !isNaN(toDate.getTime())) {
-                                                newRange.to = toDate;
-                                            } else {
-                                                delete newRange.to;
-                                            }
-                                            setDateRange(newRange);
+                                            const toValue = e.target.value;
+                                            setDateRange(prev => {
+                                                const toDate = toValue ? parse(toValue, 'yyyy-MM-dd', new Date()) : undefined;
+                                                const newTo = (toDate && !isNaN(toDate.getTime())) ? toDate : undefined;
+                                                const currentFrom = prev?.from;
+                                                
+                                                return { from: currentFrom, to: newTo };
+                                            });
                                         }}
                                     />
                                 </div>
