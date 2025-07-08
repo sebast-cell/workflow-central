@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -417,13 +416,14 @@ export default function AttendancePage() {
                                         min={dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined}
                                         onChange={(e) => {
                                             const toValue = e.target.value;
+                                            const toDate = toValue ? parse(toValue, 'yyyy-MM-dd', new Date()) : undefined;
+                                            
                                             setDateRange(prev => {
-                                              if (prev && prev.from) {
-                                                const toDate = toValue ? parse(toValue, 'yyyy-MM-dd', new Date()) : undefined;
-                                                const newTo = (toDate && !isNaN(toDate.getTime())) ? toDate : undefined;
-                                                return { from: prev.from, to: newTo };
-                                              }
-                                              return prev;
+                                                if (!prev?.from) {
+                                                    return undefined; 
+                                                }
+                                                const validToDate = (toDate && !isNaN(toDate.getTime())) ? toDate : undefined;
+                                                return { from: prev.from, to: validToDate };
                                             });
                                         }}
                                     />
