@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -399,9 +400,11 @@ export default function AttendancePage() {
                                                 const newFrom = (fromDate && !isNaN(fromDate.getTime())) ? fromDate : undefined;
 
                                                 if (!newFrom) {
-                                                    return undefined;
+                                                    return undefined; // Limpiar el rango si la fecha "from" se borra
                                                 }
+
                                                 const currentTo = prev?.to;
+                                                // Si la nueva fecha "from" es posterior a la fecha "to", limpia "to"
                                                 if (currentTo && newFrom > currentTo) {
                                                     return { from: newFrom, to: undefined };
                                                 }
@@ -420,14 +423,15 @@ export default function AttendancePage() {
                                         onChange={(e) => {
                                             const toValue = e.target.value;
                                             setDateRange(prev => {
+                                                // No hacer nada si "from" no está definido
+                                                if (!prev?.from) {
+                                                    return prev;
+                                                }
                                                 const toDate = toValue ? parse(toValue, 'yyyy-MM-dd', new Date()) : undefined;
                                                 const validToDate = (toDate && !isNaN(toDate.getTime())) ? toDate : undefined;
                                                 
-                                                if (prev?.from) {
-                                                    return { from: prev.from, to: validToDate };
-                                                }
-                                                
-                                                return validToDate ? { from: validToDate, to: validToDate } : undefined;
+                                                // Retornar el estado con la nueva fecha "to" (o undefined si se borró)
+                                                return { from: prev.from, to: validToDate };
                                             });
                                         }}
                                     />
@@ -545,3 +549,5 @@ export default function AttendancePage() {
     </div>
   )
 }
+
+    
