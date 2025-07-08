@@ -419,11 +419,14 @@ export default function AttendancePage() {
                                             const toDate = toValue ? parse(toValue, 'yyyy-MM-dd', new Date()) : undefined;
                                             
                                             setDateRange(prev => {
-                                                if (!prev?.from) {
-                                                    return undefined; 
-                                                }
+                                              if (prev?.from) {
                                                 const validToDate = (toDate && !isNaN(toDate.getTime())) ? toDate : undefined;
                                                 return { from: prev.from, to: validToDate };
+                                              }
+                                              if (toDate && !isNaN(toDate.getTime())) {
+                                                return { from: toDate, to: toDate };
+                                              }
+                                              return undefined;
                                             });
                                         }}
                                     />
