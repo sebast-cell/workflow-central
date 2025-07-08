@@ -10,7 +10,7 @@ import { Briefcase, Coffee, Globe, Home, UserX, Calendar as CalendarIcon, Filter
 import { AttendanceReportDialog } from "./_components/attendance-report-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { format, parse, isWithinInterval } from 'date-fns';
+import { format, parse, isWithinInterval, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { type DateRange } from 'react-day-picker';
@@ -99,7 +99,7 @@ export default function AttendancePage() {
     const availableEmployees = useMemo(() => {
       if (selectedDepartment === 'all') return employees;
       return employees.filter(emp => emp.department === selectedDepartment);
-    }, [selectedDepartment, employees]);
+    }, [selectedDepartment]);
     
     useEffect(() => {
       if (
@@ -204,51 +204,26 @@ export default function AttendancePage() {
       }
     
       return stats;
-    }, [employees, absencesData, attendanceLog]);
+    }, [absencesData]);
     
     const filteredLog = useMemo(() => {
-      return attendanceLog.filter(log => {
-        const logDate = log.date;
-    
-        const dateMatch = (() => {
-          if (!dateRange?.from) return true;
-          const from = new Date(
-            dateRange.from.getFullYear(),
-            dateRange.from.getMonth(),
-            dateRange.from.getDate()
-          );
-          const to = dateRange.to
-            ? new Date(
-                dateRange.to.getFullYear(),
-                dateRange.to.getMonth(),
-                dateRange.to.getDate()
-              )
-            : from;
-    
-          const current = new Date(
-            logDate.getFullYear(),
-            logDate.getMonth(),
-            logDate.getDate()
-          );
-          return current >= from && current <= to;
-        })();
-    
-        const locationMatch =
-          selectedLocation === 'all' || log.location === selectedLocation;
-        const departmentMatch =
-          selectedDepartment === 'all' || log.department === selectedDepartment;
-        const employeeMatch =
-          selectedEmployee === 'all' || log.employee === selectedEmployee;
-    
-        return dateMatch && locationMatch && departmentMatch && employeeMatch;
-      });
-    }, [
-      attendanceLog,
-      dateRange,
-      selectedLocation,
-      selectedDepartment,
-      selectedEmployee,
-    ]);
+        const startDate = dateRange?.from ? startOfDay(dateRange.from) : null;
+        const endDate = dateRange?.to ? startOfDay(dateRange.to) : startDate;
+
+        return attendanceLog.filter(log => {
+            const locationMatch = selectedLocation === 'all' || log.location === selectedLocation;
+            const departmentMatch = selectedDepartment === 'all' || log.department === selectedDepartment;
+            const employeeMatch = selectedEmployee === 'all' || log.employee === selectedEmployee;
+
+            const dateMatch = (() => {
+                if (!startDate) return true;
+                const currentDate = startOfDay(log.date);
+                return currentDate >= startDate && currentDate <= endDate!;
+            })();
+
+            return dateMatch && locationMatch && departmentMatch && employeeMatch;
+        });
+    }, [dateRange, selectedLocation, selectedDepartment, selectedEmployee]);
     
     const { paginatedLog, totalPages } = useMemo(() => {
       const total = Math.ceil(filteredLog.length / itemsPerPage);
