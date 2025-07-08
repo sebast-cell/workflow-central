@@ -398,11 +398,10 @@ export default function AttendancePage() {
                                                 const fromDate = fromValue ? parse(fromValue, 'yyyy-MM-dd', new Date()) : undefined;
                                                 const newFrom = (fromDate && !isNaN(fromDate.getTime())) ? fromDate : undefined;
 
-                                                if (!newFrom) {
-                                                    return undefined; 
-                                                }
+                                                if (!newFrom) return undefined; // Borra el rango si no hay fecha
 
                                                 const currentTo = prev?.to;
+                                                // Si la nueva fecha de inicio es posterior a la de fin, borra la de fin
                                                 if (currentTo && newFrom > currentTo) {
                                                     return { from: newFrom, to: undefined };
                                                 }
@@ -421,12 +420,12 @@ export default function AttendancePage() {
                                         onChange={(e) => {
                                             const toValue = e.target.value;
                                             setDateRange(prev => {
-                                                if (!prev?.from) {
-                                                    return prev;
-                                                }
+                                                // No hagas nada si no hay fecha de inicio
+                                                if (!prev?.from) return prev;
+
                                                 const toDate = toValue ? parse(toValue, 'yyyy-MM-dd', new Date()) : undefined;
                                                 const validToDate = (toDate && !isNaN(toDate.getTime())) ? toDate : undefined;
-                                                
+
                                                 return { from: prev.from, to: validToDate };
                                             });
                                         }}
