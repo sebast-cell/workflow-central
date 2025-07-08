@@ -393,9 +393,9 @@ export default function AttendancePage() {
                                             const dateStr = e.target.value;
                                             const fromDate = dateStr ? parse(dateStr, 'yyyy-MM-dd', new Date()) : undefined;
                                             if (fromDate && !isNaN(fromDate.getTime())) {
-                                                setDateRange(prev => ({ from: fromDate, to: prev?.to }));
+                                                setDateRange((prev): DateRange | undefined => ({ from: fromDate, to: prev?.to }));
                                             } else {
-                                                setDateRange(prev => ({ from: undefined, to: prev?.to }));
+                                                setDateRange((prev): DateRange | undefined => ({ from: undefined, to: prev?.to }));
                                             }
                                         }}
                                     />
@@ -410,9 +410,9 @@ export default function AttendancePage() {
                                             const dateStr = e.target.value;
                                             const toDate = dateStr ? parse(dateStr, 'yyyy-MM-dd', new Date()) : undefined;
                                             if (toDate && !isNaN(toDate.getTime())) {
-                                                setDateRange(prev => ({ from: prev?.from, to: toDate }));
+                                                setDateRange((prev): DateRange | undefined => ({ from: prev?.from, to: toDate }));
                                             } else {
-                                                setDateRange(prev => ({ from: prev?.from, to: undefined }));
+                                                setDateRange((prev): DateRange | undefined => ({ from: prev?.from, to: undefined }));
                                             }
                                         }}
                                     />

@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal } from 'lucide-react';
+import { Terminal, Loader2 } from 'lucide-react';
 
 const initialState = {
   report: null,
@@ -18,7 +18,7 @@ const initialState = {
 
 function SubmitButton() {
   const { pending } = useFormStatus();
-  return <Button type="submit" disabled={pending} className="w-full sm:w-auto">{pending ? 'Generando...' : 'Generar Informe'}</Button>;
+  return <Button type="submit" disabled={pending} className="w-full sm:w-auto">{pending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Generando...</> : 'Generar Informe'}</Button>;
 }
 
 export default function ReportGenerator({ formAction }: { formAction: (prevState: any, formData: FormData) => Promise<any> }) {
