@@ -181,7 +181,7 @@ export type VacationPolicy = {
 // -------- API FUNCTIONS -------- //
 
 // -- Generic Settings Loader --
-export const listSettings = async (setting: string) => {
+export const listSettings = async <T>(setting: string): Promise<T[]> => {
     const response = await apiClient.get(`/api/settings/${setting}`);
     return response.data;
 };

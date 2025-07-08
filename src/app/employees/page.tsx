@@ -52,9 +52,9 @@ export default function EmployeesPage() {
     try {
       const [employeesData, calendarsData, policiesData, departmentsData] = await Promise.all([
         listEmployees(),
-        listSettings('calendars'),
-        listSettings('vacationPolicies'),
-        listSettings('departments'),
+        listSettings<CalendarData>('calendars'),
+        listSettings<VacationPolicy>('vacationPolicies'),
+        listSettings<Department>('departments'),
       ]);
       setEmployees(employeesData);
       setCalendars(calendarsData);
@@ -395,5 +395,3 @@ export default function EmployeesPage() {
     </div>
   )
 }
-
-    
