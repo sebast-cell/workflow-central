@@ -25,6 +25,6 @@ jobs:
           credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY_JSON }}'
 
       - name: Deploy to App Hosting
-        uses: 'google-github-actions/deploy-apphosting@v0'
+        uses: 'google-github-actions/deploy-apphosting@v1'
         with:
           backend_id: 'workflow-central-backend'
