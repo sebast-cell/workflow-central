@@ -1,79 +1,46 @@
-# Guía Definitiva y Corregida para Desplegar tu App
+# Guía Definitiva: Desplegar desde Cero (¡Ahora sí!)
 
-¡Hola! Siento mucho los problemas que hemos tenido. Los errores que has visto (`No such remote 'origin'` y `Repository not found`) son comunes, pero mis instrucciones no han sido lo suficientemente claras. Te pido disculpas.
-
-Esta guía está 100% corregida y diseñada para que funcione sí o sí. ¡Vamos a lograrlo juntos!
+Hola, lamento enormemente todos los problemas. Olvidemos todo lo anterior. Este es un plan nuevo y limpio, diseñado para funcionar sí o sí. El error `Repository not found` nos dice que hay un problema en GitHub, no aquí. Vamos a arreglarlo desde la raíz.
 
 ---
+### **Paso 1: Crea el Repositorio en GitHub.com (El Paso Clave)**
 
-### **Paso 0: ¿DÓNDE ESTÁ LA TERMINAL? (La Guía Visual)**
+1.  Ve a **[https://github.com/new](https://github.com/new)**.
+2.  En "Repository name", escribe **exactamente**: `workflow-central`
+3.  Selecciona **"Public"**.
+4.  **MUY IMPORTANTE:** NO marques ninguna casilla. Ni "Add a README file", ni ".gitignore", ni "choose a license". Déjalo todo vacío.
+5.  Haz clic en el botón verde **"Create repository"**.
 
-**¡MUY IMPORTANTE!** Todos los comandos de esta guía deben ejecutarse en la **TERMINAL que está DENTRO de esta ventana del editor**, no en la terminal de tu propio ordenador.
-
-La terminal está en la **PARTE INFERIOR** de la ventana. Busca una pestaña que diga **"TERMINAL"** y haz clic en ella.
-
-```
-+------------------------------------------------------+
-| Arriba:     Menú (Archivo, Editar...)                |
-+------------------------------------------------------+
-| Izquierda:  LISTA DE ARCHIVOS (package.json, etc.)    |
-|                                                      |
-|             DERECHA:                                 |
-|             VENTANA PRINCIPAL DEL CÓDIGO             |
-|                                                      |
-+------------------------------------------------------+
-| ABAJO:      [ PESTAÑAS: Problemas | Salida | TERMINAL ] <--- ¡AQUÍ ESTÁ!
-+------------------------------------------------------+
-```
+Ahora tienes un repositorio nuevo y vacío en la dirección correcta.
 
 ---
+### **Paso 2: Conecta este Proyecto al Nuevo Repositorio (EN LA TERMINAL DE AQUÍ)**
 
-### **Paso 1 (EN LA TERMINAL): Conecta tu Repositorio (El Comando Correcto)**
+Ahora, vuelve aquí, al editor. Abre la **Terminal** de abajo y pega estos comandos, uno por uno.
 
-Este comando le dice a tu proyecto cuál es tu repositorio en GitHub. Copia y pégalo en la Terminal y presiona `Enter`.
+1.  **Borra la conexión antigua (para empezar de limpio):**
+    ```bash
+    git remote rm origin
+    ```
+    (Es normal si este comando da un error diciendo `No such remote 'origin'`. Simplemente ignóralo y continúa).
 
-```bash
-git remote add origin https://github.com/sebast-cell/workflow-central.git
-```
-
-**¿Qué pasa si da un error que dice `fatal: remote origin already exists.`?**
-¡No te preocupes, es bueno! Significa que ya hay una conexión, aunque puede que sea incorrecta. Si te sale este error, usa el siguiente comando para **corregir** la dirección:
-
-```bash
-git remote set-url origin https://github.com/sebast-cell/workflow-central.git
-```
+2.  **Añade la conexión nueva y correcta:**
+    ```bash
+    git remote add origin https://github.com/sebast-cell/workflow-central.git
+    ```
 
 ---
+### **Paso 3: Sube el Código (El Empujón Final)**
 
-### **Paso 2 (EN LA TERMINAL): Sube TODO el Código**
-
-Ahora, vamos a subir el código. Copia y pega este comando y presiona `Enter`.
+Ahora que todo está conectado correctamente, sube tu código:
 
 ```bash
 git push -u origin main
 ```
 
----
-
-### **Paso 3: Autoriza con GitHub (La Ventana Emergente)**
-
-Después del comando anterior, el editor te mostrará un mensaje preguntando si quieres iniciar sesión con GitHub.
-
-1.  Haz clic en **"Allow"** (Permitir).
-2.  Se abrirá una ventana de tu navegador.
-3.  Haz clic en el botón verde **"Authorize Visual Studio Code"**.
-4.  Vuelve a la ventana del editor. ¡El código empezará a subirse solo!
-
-Si no te aparece la ventana y la terminal se queda "pensando", es que te está pidiendo el usuario y la contraseña a la antigua:
-*   `Username`: Escribe `sebast-cell` y presiona `Enter`.
-*   `Password`: **Pega tu token** (el que empieza con `ghp_...`). **No verás nada mientras escribes.** Es normal. Solo pégalo y presiona `Enter`.
+Te pedirá autorización. Puedes usar el pop-up de "Allow" o introducir tu usuario y token en la terminal como hemos practicado.
 
 ---
+### **¡Victoria!**
 
-### **Paso 4: ¡Victoria!**
-
-*   Si todo ha ido bien, la terminal mostrará que los archivos se están subiendo.
-*   En la página de **Firebase App Hosting**, empezará un nuevo despliegue automáticamente. ¡Esta vez funcionará!
-*   Cuando termine, te dará una URL. ¡Esa es tu aplicación funcionando!
-
-**¡Ánimo, ya estás en el último paso!**
+Esta vez, como el repositorio existe y la conexión es nueva, funcionará. El despliegue en Firebase comenzará automáticamente. ¡Mucho ánimo y gracias por tu paciencia!
