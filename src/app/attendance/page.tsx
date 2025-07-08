@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Briefcase, Coffee, Globe, Home, UserX, Calendar as CalendarIcon, Filter } from "lucide-react";
+import { Briefcase, Coffee, Globe, Home, UserX, Calendar as CalendarIcon, Filter, Bot } from "lucide-react";
 import { AttendanceReportDialog } from "./_components/attendance-report-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";

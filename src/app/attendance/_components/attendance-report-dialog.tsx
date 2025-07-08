@@ -3,10 +3,9 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Download, FileSpreadsheet, Loader2 } from 'lucide-react';
-import { Label } from '@/components/ui/label';
+import { Terminal, Download, Bot, Loader2 } from 'lucide-react';
+import { summarizeAttendance } from '@/ai/flows/summarize-attendance-flow';
 
 type AttendanceLog = {
   time: string;
@@ -15,20 +14,17 @@ type AttendanceLog = {
   location: string;
 };
 
+
 export function AttendanceReportDialog({ attendanceLog }: { attendanceLog: AttendanceLog[] }) {
   const [isOpen, setIsOpen] = useState(false);
   const [report, setReport] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   
-  // Form state
-  const [format, setFormat] = useState('PDF');
-
   const resetState = () => {
     setReport(null);
     setError(null);
     setIsGenerating(false);
-    setFormat('PDF');
   };
 
   const handleOpenChange = (open: boolean) => {
@@ -38,68 +34,44 @@ export function AttendanceReportDialog({ attendanceLog }: { attendanceLog: Atten
     }
   };
 
-  const handleGenerateReport = () => {
+  const handleGenerateReport = async () => {
     setIsGenerating(true);
     setError(null);
     setReport(null);
 
-    // Simulate processing time
-    setTimeout(() => {
-      try {
-        // Data is already filtered from the parent component.
-        const filteredData = [...attendanceLog];
-        
-        if (filteredData.length === 0) {
-          setError("No se encontraron datos para exportar con los filtros actuales.");
-          setIsGenerating(false);
-          return;
-        }
-
-        let generatedReport: string;
-        if (format === 'Excel') {
-          const headers = ["Hora", "Empleado", "Estado", "Ubicación"];
-          const csvRows = [
-            headers.join(','),
-            ...filteredData.map(row =>
-              [row.time, row.employee, row.status, row.location]
-              .map(value => `"${String(value).replace(/"/g, '""')}"`)
-              .join(',')
-            )
-          ];
-          generatedReport = csvRows.join('\n');
-        } else { // PDF (Plain Text)
-          const reportLines = [
-            `Informe de Asistencia`,
-            "===========================================================",
-            ...filteredData.map(row =>
-              `${row.time.padEnd(10)} | ${row.employee.padEnd(20)} | ${row.status.padEnd(15)} | ${row.location}`
-            )
-          ];
-          generatedReport = reportLines.join('\n');
-        }
-        setReport(generatedReport);
-      } catch (e) {
-          const errorMessage = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
-          setError(`No se pudo generar el informe: ${errorMessage}`);
-      } finally {
+    if (attendanceLog.length === 0) {
+        setError("No se encontraron datos para analizar con los filtros actuales.");
         setIsGenerating(false);
-      }
-    }, 500); // Simulate network/processing delay
+        return;
+    }
+
+    try {
+      // The attendanceLog prop contains more fields, but the flow only needs these ones.
+      // We map it to ensure we only send what's necessary.
+      const attendanceDataForAI = attendanceLog.map(log => ({
+        time: log.time,
+        employee: log.employee,
+        status: log.status,
+        location: log.location,
+      }));
+      const result = await summarizeAttendance(attendanceDataForAI);
+      setReport(result.summary);
+    } catch (e) {
+        const errorMessage = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
+        setError(`No se pudo generar el informe de IA: ${errorMessage}`);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleDownload = () => {
     if (!report) return;
-
-    const extension = format.toLowerCase();
-    const isExcel = extension === 'excel';
-    const downloadExtension = isExcel ? 'csv' : 'txt';
-    const mimeType = isExcel ? 'text/csv;charset=utf-8' : 'text/plain;charset=utf-8';
     
-    const blob = new Blob([report], { type: mimeType });
+    const blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `informe_asistencia.${downloadExtension}`;
+    a.download = `informe_asistencia_ia.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -110,15 +82,15 @@ export function AttendanceReportDialog({ attendanceLog }: { attendanceLog: Atten
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button variant="outline">
-          <FileSpreadsheet className="mr-2 h-4 w-4" />
-          Exportar Datos
+          <Bot className="mr-2 h-4 w-4" />
+          Resumen con IA
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>Generar Informe de Asistencia</DialogTitle>
+          <DialogTitle>Generar Resumen de Asistencia con IA</DialogTitle>
           <DialogDescription>
-            El informe se generará usando los filtros aplicados en la tabla.
+            La IA analizará los datos filtrados para generar un resumen con métricas clave y patrones.
           </DialogDescription>
         </DialogHeader>
         
@@ -126,31 +98,27 @@ export function AttendanceReportDialog({ attendanceLog }: { attendanceLog: Atten
           <div className="space-y-4 pt-4">
             <Alert>
               <Terminal className="h-4 w-4" />
-              <AlertTitle>¡Informe generado!</AlertTitle>
+              <AlertTitle>¡Resumen generado!</AlertTitle>
               <AlertDescription>
-                Tu informe de texto está listo para descargar.
+                Tu informe de IA está listo para descargar o copiar.
               </AlertDescription>
             </Alert>
-            <DialogFooter className="pt-4">
-              <Button onClick={handleDownload} className="w-full">
+            <div className="max-h-[40vh] overflow-y-auto rounded-md border bg-muted p-4">
+                <pre className="whitespace-pre-wrap font-sans text-sm">{report}</pre>
+            </div>
+            <DialogFooter className="pt-4 sm:justify-start">
+              <Button onClick={handleDownload} className="w-full sm:w-auto">
                 <Download className="mr-2 h-4 w-4" />
-                Descargar como {format === 'Excel' ? '.csv' : '.txt'}
+                Descargar como .txt
               </Button>
             </DialogFooter>
           </div>
         ) : (
           <div className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label htmlFor="format">Formato de Salida</Label>
-              <Select name="format" value={format} onValueChange={setFormat}>
-                  <SelectTrigger id="format">
-                      <SelectValue placeholder="Seleccionar formato" />
-                  </SelectTrigger>
-                  <SelectContent>
-                      <SelectItem value="PDF">PDF (texto)</SelectItem>
-                      <SelectItem value="Excel">Excel (CSV)</SelectItem>
-                  </SelectContent>
-              </Select>
+            <div className="text-center p-8 border-2 border-dashed rounded-lg">
+                <p className="text-muted-foreground">
+                    Se analizarán <strong>{attendanceLog.length}</strong> registros de asistencia.
+                </p>
             </div>
             
             {error && (
@@ -163,9 +131,9 @@ export function AttendanceReportDialog({ attendanceLog }: { attendanceLog: Atten
 
             <DialogFooter className="pt-4">
               <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancelar</Button>
-              <Button onClick={handleGenerateReport} disabled={isGenerating}>
+              <Button onClick={handleGenerateReport} disabled={isGenerating || attendanceLog.length === 0}>
                 {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isGenerating ? 'Generando...' : 'Generar Informe'}
+                {isGenerating ? 'Analizando...' : 'Generar Resumen'}
               </Button>
             </DialogFooter>
           </div>
