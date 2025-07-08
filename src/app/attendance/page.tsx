@@ -391,11 +391,12 @@ export default function AttendancePage() {
                                         value={dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : ''}
                                         onChange={(e) => {
                                             const fromDate = e.target.value ? parse(e.target.value, 'yyyy-MM-dd', new Date()) : undefined;
-                                            if (fromDate && !isNaN(fromDate.getTime())) {
-                                                setDateRange((prev) => ({ ...prev, from: fromDate }));
-                                            } else {
-                                                setDateRange((prev) => ({ ...prev, from: undefined }));
-                                            }
+                                            setDateRange(currentRange => {
+                                                if (fromDate && !isNaN(fromDate.getTime())) {
+                                                    return { from: fromDate, to: currentRange?.to };
+                                                }
+                                                return undefined;
+                                            });
                                         }}
                                     />
                                 </div>
@@ -407,11 +408,15 @@ export default function AttendancePage() {
                                         value={dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : ''}
                                         onChange={(e) => {
                                             const toDate = e.target.value ? parse(e.target.value, 'yyyy-MM-dd', new Date()) : undefined;
-                                            if (toDate && !isNaN(toDate.getTime())) {
-                                                setDateRange((prev) => ({ ...prev, to: toDate }));
-                                            } else {
-                                                setDateRange((prev) => ({ ...prev, to: undefined }));
-                                            }
+                                            setDateRange(currentRange => {
+                                                if (!currentRange?.from) {
+                                                    return currentRange;
+                                                }
+                                                if (toDate && !isNaN(toDate.getTime())) {
+                                                    return { from: currentRange.from, to: toDate };
+                                                }
+                                                return { from: currentRange.from, to: undefined };
+                                            });
                                         }}
                                     />
                                 </div>
