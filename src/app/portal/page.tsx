@@ -154,7 +154,7 @@ export default function EmployeeDashboard() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Hola, Olivia</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Bienvenido al Portal del Empleado</h1>
         <p className="text-muted-foreground">Aquí tienes un resumen de tu jornada y tus tareas.</p>
       </div>
 

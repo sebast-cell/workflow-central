@@ -22,9 +22,9 @@ export default function EmployeePerformancePage() {
     const [incentives, setIncentives] = useState<Incentive[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    // TODO: Get current user from an auth context after implementing authentication.
-    // This is a placeholder for the logged-in user's ID.
-    const currentUserId = "a1b2c3d4-e5f6-7890-1234-567890abcdef"; // Olivia Martin's Mock UUID
+    // This page shows a generic demonstration. In a real app, you would get the
+    // current user ID from an authentication context to show personalized data.
+    const isDemoMode = true; 
 
     const fetchIncentiveDataForObjective = async (objective: Objective) => {
         if (!objective.is_incentivized) return;
@@ -49,16 +49,16 @@ export default function EmployeePerformancePage() {
                 listIncentives()
             ]);
             
-            // In a real app with auth, you'd filter by the current user ID on the backend.
-            const userObjectives = allObjectives.filter(o => o.assigned_to === currentUserId);
+            // For this demo, we'll just show the first few objectives as an example.
+            const demoObjectives = allObjectives.slice(0, 3);
             
-            setMyObjectives(userObjectives.map(o => ({...o, isLoadingIncentive: false })));
+            setMyObjectives(demoObjectives.map(o => ({...o, isLoadingIncentive: false })));
             setTasks(allTasks);
             setIncentives(allIncentives);
             setIsLoading(false);
 
             // Fetch incentive data for each objective after initial data load
-            userObjectives.forEach(obj => {
+            demoObjectives.forEach(obj => {
                 if(obj.is_incentivized) {
                     fetchIncentiveDataForObjective(obj);
                 }

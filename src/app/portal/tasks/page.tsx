@@ -20,9 +20,9 @@ export default function EmployeeTasksPage() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [newTaskData, setNewTaskData] = useState({ title: '', objective_id: ''});
 
-    // TODO: Get current user from an auth context after implementing authentication.
-    // This is a placeholder for the logged-in user's ID.
-    const currentUserId = "a1b2c3d4-e5f6-7890-1234-567890abcdef"; // Olivia Martin's Mock UUID
+    // This page shows a generic demonstration. In a real app, you would get the
+    // current user ID from an authentication context to show personalized data.
+    const isDemoMode = true; 
 
     const fetchData = async () => {
         setIsLoading(true);
@@ -32,12 +32,12 @@ export default function EmployeeTasksPage() {
                 listTasks()
             ]);
             
-            // This filtering should ideally happen on the backend
-            const userObjectives = allObjectives.filter(o => o.assigned_to === currentUserId);
-            const userObjectiveIds = userObjectives.map(o => o.id);
+            // For this demo, we'll just show the first few objectives as an example.
+            const demoObjectives = allObjectives.slice(0, 3);
+            const demoObjectiveIds = demoObjectives.map(o => o.id);
 
-            setMyObjectives(userObjectives);
-            setTasks(allTasks.filter(t => userObjectiveIds.includes(t.objective_id)));
+            setMyObjectives(demoObjectives);
+            setTasks(allTasks.filter(t => demoObjectiveIds.includes(t.objective_id)));
         } catch (error) {
             console.error("Error loading data:", error);
             toast({ variant: 'destructive', title: "Error", description: "No se pudieron cargar los datos." });
