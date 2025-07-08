@@ -2,9 +2,10 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -25,7 +26,7 @@ import type { DateRange } from "react-day-picker";
 import { APIProvider, Map, AdvancedMarker, useMapsLibrary } from "@vis.gl/react-google-maps";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { type Employee, type Center, type Department, type Role, type Break, type ClockInType, type Shift, type FlexibleSchedule, type FixedSchedule, type AbsenceType, type Holiday, type CalendarData, type VacationPolicy, type Incentive, listIncentives, createIncentive, listSettings, createSetting, listEmployees } from "@/lib/api";
+import { type Employee, type Center, type Department, type Role, type Break, type ClockInType, type Shift, type FlexibleSchedule, type FixedSchedule, type AbsenceType, type Holiday, type CalendarData, type VacationPolicy, type Incentive, listIncentives, createIncentive, listSettings, createSetting, updateSetting, deleteSetting, listEmployees } from "@/lib/api";
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from "@/hooks/use-toast";
 
@@ -445,7 +446,9 @@ const SettingsTabs = () => {
     const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
     const [dialogRoleMode, setDialogRoleMode] = useState<'add' | 'edit'>('add');
     const [selectedRole, setSelectedRole] = useState<Role | null>(null);
-    const [roleFormData, setRoleFormData] = useState<Role>({ name: '', description: '', permissions: [] });
+    const [roleFormData, setRoleFormData] = useState<Partial<Role>>({ name: '', description: '', permissions: [] });
+    const [isDeleteRoleAlertOpen, setIsDeleteRoleAlertOpen] = useState(false);
+    const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
     
     const [isBreakDialogOpen, setIsBreakDialogOpen] = useState(false);
     const [dialogBreakMode, setDialogBreakMode] = useState<'add' | 'edit'>('add');
@@ -526,7 +529,6 @@ const SettingsTabs = () => {
             fetchSetting(name as keyof typeof dataHooks, hook);
         });
         
-        // Fetch employees separately as they are not a "setting"
         const fetchEmployeesAndIncentives = async () => {
             setIsLoading(prev => ({...prev, employees: true, incentives: true }));
             try {
@@ -545,11 +547,58 @@ const SettingsTabs = () => {
 
     const allSchedules = ['Horario Fijo', 'Horario Flexible', ...shifts.map(s => s.name)];
     
-    // Form Handlers (Add/Edit/Delete) - Implement these with API calls
     // Role Handlers
-    const openAddRoleDialog = () => { setIsRoleDialogOpen(true); setDialogRoleMode('add'); setRoleFormData({ name: '', description: '', permissions: [] }); };
+    const openAddRoleDialog = () => { setIsRoleDialogOpen(true); setDialogRoleMode('add'); setSelectedRole(null); setRoleFormData({ name: '', description: '', permissions: [] }); };
     const openEditRoleDialog = (role: Role) => { setIsRoleDialogOpen(true); setDialogRoleMode('edit'); setSelectedRole(role); setRoleFormData(role); };
-    const handleRoleFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: API call */ setIsRoleDialogOpen(false); };
+    
+    const handleRoleFormSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!roleFormData.name) {
+        toast({ variant: 'destructive', title: "Error", description: "El nombre del rol es obligatorio." });
+        return;
+      }
+
+      try {
+        if (dialogRoleMode === 'add') {
+          const payload: Omit<Role, 'id'> = {
+            name: roleFormData.name,
+            description: roleFormData.description || "",
+            permissions: roleFormData.permissions || [],
+          };
+          const newRole = await createSetting<Role>('roles', payload);
+          setRoles(prev => [...prev, newRole]);
+          toast({ title: "Rol creado", description: `El rol "${newRole.name}" ha sido creado.` });
+        } else if (dialogRoleMode === 'edit' && selectedRole?.id) {
+          const updatedRole = await updateSetting<Role>('roles', selectedRole.id, roleFormData);
+          setRoles(prev => prev.map(r => r.id === updatedRole.id ? updatedRole : r));
+          toast({ title: "Rol actualizado", description: `El rol "${updatedRole.name}" ha sido guardado.` });
+        }
+        setIsRoleDialogOpen(false);
+      } catch (error) {
+        console.error("Failed to save role", error);
+        toast({ variant: 'destructive', title: "Error", description: "No se pudo guardar el rol." });
+      }
+    };
+
+    const confirmDeleteRole = (role: Role) => {
+        setRoleToDelete(role);
+        setIsDeleteRoleAlertOpen(true);
+    };
+
+    const handleDeleteRole = async () => {
+        if (!roleToDelete?.id) return;
+        try {
+            await deleteSetting('roles', roleToDelete.id);
+            setRoles(prev => prev.filter(r => r.id !== roleToDelete.id));
+            toast({ title: "Rol eliminado" });
+        } catch (error) {
+            console.error("Failed to delete role", error);
+            toast({ variant: 'destructive', title: "Error", description: "No se pudo eliminar el rol." });
+        } finally {
+            setIsDeleteRoleAlertOpen(false);
+            setRoleToDelete(null);
+        }
+    };
     
     // Break Handlers
     const openAddBreakDialog = () => { setIsBreakDialogOpen(true); setDialogBreakMode('add'); setBreakFormData({ name: "", remunerated: false, limit: 30, isAutomatic: false, intervalStart: "", intervalEnd: "", notifyStart: false, notifyEnd: false, assignedTo: [] }); };
@@ -636,7 +685,6 @@ const SettingsTabs = () => {
             </TabsList>
             
             <div className="flex-1">
-                {/* Each TabsContent can have a loading state check */}
                 <TabsContent value="general" className="space-y-4 m-0">
                     <Card className="bg-gradient-accent-to-card">
                         <CardHeader>
@@ -666,13 +714,18 @@ const SettingsTabs = () => {
                             <Button onClick={openAddRoleDialog}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Rol</Button>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            {isLoading['roles'] ? <Loader2 className="animate-spin" /> : roles.map((role, index) => (
-                                <div key={index} className="flex items-center justify-between rounded-xl border p-4">
+                            {isLoading['roles'] ? <Loader2 className="animate-spin" /> : roles.map((role) => (
+                                <div key={role.id} className="flex items-center justify-between rounded-xl border p-4">
                                     <div>
                                         <h3 className="font-semibold">{role.name}</h3>
                                         <p className="text-sm text-muted-foreground">{role.description}</p>
                                     </div>
-                                    <Button variant="ghost" size="sm" onClick={() => openEditRoleDialog(role)}>Editar</Button>
+                                    <div className="flex items-center">
+                                      <Button variant="ghost" size="sm" onClick={() => openEditRoleDialog(role)}>Editar</Button>
+                                      <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => confirmDeleteRole(role)}>
+                                          <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
                                 </div>
                             ))}
                         </CardContent>
@@ -702,13 +755,14 @@ const SettingsTabs = () => {
                                                     <div key={permission.id} className="flex items-start space-x-2">
                                                         <Checkbox
                                                             id={`perm-${permission.id}`}
-                                                            checked={roleFormData.permissions.includes(permission.id)}
+                                                            checked={(roleFormData.permissions || []).includes(permission.id)}
                                                             onCheckedChange={(checked) => {
+                                                                const currentPermissions = roleFormData.permissions || [];
                                                                 setRoleFormData(prev => ({
                                                                     ...prev,
                                                                     permissions: checked
-                                                                        ? [...prev.permissions, permission.id]
-                                                                        : prev.permissions.filter(p => p !== permission.id)
+                                                                        ? [...currentPermissions, permission.id]
+                                                                        : currentPermissions.filter(p => p !== permission.id)
                                                                 }));
                                                             }}
                                                         />
@@ -725,6 +779,20 @@ const SettingsTabs = () => {
                             </form>
                         </DialogContent>
                     </Dialog>
+                    <AlertDialog open={isDeleteRoleAlertOpen} onOpenChange={setIsDeleteRoleAlertOpen}>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>¿Estás realmente seguro?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Esta acción no se puede deshacer. Esto eliminará permanentemente el rol "{roleToDelete?.name}".
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel onClick={() => setRoleToDelete(null)}>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleDeleteRole} className={cn(buttonVariants({ variant: "destructive" }))}>Eliminar</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                 </TabsContent>
                 
                 <TabsContent value="centers" className="space-y-4 m-0">
@@ -779,7 +847,6 @@ const SettingsTabs = () => {
                      </Dialog>
                 </TabsContent>
 
-                {/* Other Tabs with similar loading patterns */}
                 <TabsContent value="incentives" className="space-y-4 m-0">
                     <Card className="bg-gradient-accent-to-card">
                         <CardHeader className="flex flex-row items-center justify-between">
@@ -900,7 +967,6 @@ const SettingsTabs = () => {
                         </DialogContent>
                     </Dialog>
                 </TabsContent>
-                {/* ... other tabs would follow a similar pattern ... */}
             </div>
         </Tabs>
     );

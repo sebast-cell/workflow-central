@@ -82,6 +82,7 @@ export type Department = {
 };
 
 export type Role = {
+    id: string;
     name: string;
     description: string;
     permissions: string[];
@@ -186,10 +187,20 @@ export const listSettings = async <T>(setting: string): Promise<T[]> => {
     return response.data;
 };
 
-export const createSetting = async (setting: string, data: any) => {
+export const createSetting = async <T extends {id: string}>(setting: string, data: Omit<T, 'id'>): Promise<T> => {
     const response = await apiClient.post(`/api/settings/${setting}`, data);
     return response.data;
 };
+
+export const updateSetting = async <T>(setting:string, id: string, data: Partial<T>): Promise<T> => {
+    const response = await apiClient.put(`/api/settings/${setting}/${id}`, data);
+    return response.data;
+}
+
+export const deleteSetting = async (setting: string, id: string): Promise<void> => {
+    await apiClient.delete(`/api/settings/${setting}/${id}`);
+}
+
 
 // -- Employees --
 export const listEmployees = async (): Promise<Employee[]> => {
