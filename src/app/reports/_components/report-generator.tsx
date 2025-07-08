@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useFormState } from 'react-dom';
 import { useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,7 +23,7 @@ function SubmitButton() {
 }
 
 export default function ReportGenerator({ formAction }: { formAction: (prevState: any, formData: FormData) => Promise<any> }) {
-  const [state, action] = useActionState(formAction, initialState);
+  const [state, action] = useFormState(formAction, initialState);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
