@@ -413,16 +413,23 @@ export default function AttendancePage() {
                                         min={dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined}
                                         onChange={(e) => {
                                             const toValue = e.target.value;
-                                            setDateRange(prev => {
-                                                const toDate = toValue ? parse(toValue, 'yyyy-MM-dd', new Date()) : undefined;
-                                                const validToDate = (toDate && !isNaN(toDate.getTime())) ? toDate : undefined;
-                                                
-                                                if (prev?.from) {
-                                                    return { from: prev.from, to: validToDate };
-                                                }
-                                                
-                                                return validToDate ? { from: validToDate, to: validToDate } : undefined;
-                                            });
+                                            const toDate = toValue ? parse(toValue, 'yyyy-MM-dd', new Date()) : undefined;
+
+                                            if (toDate && !isNaN(toDate.getTime())) {
+                                                setDateRange(prev => {
+                                                  if (prev?.from) {
+                                                    return { from: prev.from, to: toDate };
+                                                  }
+                                                  return { from: toDate, to: toDate };
+                                                });
+                                            } else {
+                                                setDateRange(prev => {
+                                                  if (prev?.from) {
+                                                    return { from: prev.from, to: undefined as unknown as Date };
+                                                  }
+                                                  return undefined;
+                                                });
+                                            }
                                         }}
                                     />
                                 </div>
