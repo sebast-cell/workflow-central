@@ -418,12 +418,12 @@ export default function AttendancePage() {
                                         onChange={(e) => {
                                             const toValue = e.target.value;
                                             setDateRange(prev => {
-                                                if (!prev?.from) {
-                                                    return prev; 
-                                                }
+                                              if (prev && prev.from) {
                                                 const toDate = toValue ? parse(toValue, 'yyyy-MM-dd', new Date()) : undefined;
                                                 const newTo = (toDate && !isNaN(toDate.getTime())) ? toDate : undefined;
                                                 return { from: prev.from, to: newTo };
+                                              }
+                                              return prev;
                                             });
                                         }}
                                     />
