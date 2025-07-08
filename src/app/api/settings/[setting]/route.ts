@@ -38,7 +38,7 @@ export async function POST(
         const { id, ...postData } = data;
         const docRef = await firestore.collection(model).add(postData);
         return NextResponse.json({ id: docRef.id, ...postData }, { status: 201 });
-    } catch (error)
+    } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         return NextResponse.json({ error: `Could not create setting for '${model}': ${errorMessage}` }, { status: 500 });
     }
