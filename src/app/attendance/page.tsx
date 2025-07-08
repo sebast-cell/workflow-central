@@ -25,6 +25,15 @@ type Employee = {
     department: string;
 };
 
+type AttendanceLog = {
+    date: Date;
+    time: string;
+    employee: string;
+    status: string;
+    location: string;
+    department: string;
+};
+
 const employees: Employee[] = [
   { id: 1, name: "Olivia Martin", department: "Ingeniería" },
   { id: 2, name: "Jackson Lee", department: "Diseño" },
@@ -42,7 +51,7 @@ const employees: Employee[] = [
 
 const allDepartments = ["Ingeniería", "Diseño", "Marketing", "Ventas", "RRHH"];
 
-const attendanceLog = [
+const attendanceLog: AttendanceLog[] = [
   { date: new Date(2024, 7, 26), time: "09:01 AM", employee: "Olivia Martin", status: "Entrada Marcada", location: "Oficina", department: "Ingeniería" },
   { date: new Date(2024, 7, 26), time: "09:03 AM", employee: "Jackson Lee", status: "Entrada Marcada", location: "Remoto", department: "Diseño" },
   { date: new Date(2024, 7, 26), time: "11:30 AM", employee: "Isabella Nguyen", status: "En Descanso", location: "Oficina", department: "Marketing" },
@@ -88,128 +97,178 @@ export default function AttendancePage() {
     const itemsPerPage = 5;
 
     const availableEmployees = useMemo(() => {
-        if (selectedDepartment === 'all') {
-            return employees;
-        }
-        return employees.filter(emp => emp.department === selectedDepartment);
-    }, [selectedDepartment]);
-
+      if (selectedDepartment === 'all') return employees;
+      return employees.filter(emp => emp.department === selectedDepartment);
+    }, [selectedDepartment, employees]);
+    
     useEffect(() => {
-        if (selectedEmployee !== 'all' && !availableEmployees.some(e => e.name === selectedEmployee)) {
-            setSelectedEmployee('all');
-        }
+      if (
+        selectedEmployee !== 'all' &&
+        !availableEmployees.some(e => e.name === selectedEmployee)
+      ) {
+        setSelectedEmployee('all');
+      }
     }, [availableEmployees, selectedEmployee]);
-
+    
     useEffect(() => {
-        setCurrentPage(1);
+      setCurrentPage(1);
     }, [dateRange, selectedLocation, selectedDepartment, selectedEmployee]);
-
+    
     const husinStats = useMemo(() => {
-        const today = new Date(2024, 7, 26);
-        const todayNormalized = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-
-        const stats = {
-            inOffice: { count: 0, list: [] as Employee[] },
-            remote: { count: 0, list: [] as Employee[] },
-            onBreak: { count: 0, list: [] as Employee[] },
-            onVacation: { count: 0, list: [] as Employee[] },
-            absent: { count: 0, list: [] as Employee[] },
-        };
-
-        const employeesOnLeaveToday = new Set<string>();
-        absencesData.forEach(absence => {
-            const employee = employees.find(e => e.name === absence.employee);
-            if (employee && isWithinInterval(today, { start: absence.from, end: absence.to })) {
-                if (absence.type === "De Vacaciones") {
-                    stats.onVacation.list.push(employee);
-                }
-                employeesOnLeaveToday.add(absence.employee);
+      const today = new Date(2024, 7, 26); // Agosto 26 (mes es 0-indexed)
+      const todayNormalized = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate()
+      );
+    
+      const stats = {
+        inOffice: { count: 0, list: [] as Employee[] },
+        remote: { count: 0, list: [] as Employee[] },
+        onBreak: { count: 0, list: [] as Employee[] },
+        onVacation: { count: 0, list: [] as Employee[] },
+        absent: { count: 0, list: [] as Employee[] },
+      };
+    
+      const employeesOnLeaveToday = new Set<string>();
+    
+      absencesData.forEach(absence => {
+        const employee = employees.find(e => e.name === absence.employee);
+        if (
+          employee &&
+          isWithinInterval(today, {
+            start: absence.from,
+            end: absence.to,
+          })
+        ) {
+          if (absence.type === 'De Vacaciones') {
+            stats.onVacation.list.push(employee);
+          }
+          employeesOnLeaveToday.add(absence.employee);
+        }
+      });
+    
+      const todaysLog = attendanceLog.filter(log => {
+        const logDate = new Date(
+          log.date.getFullYear(),
+          log.date.getMonth(),
+          log.date.getDate()
+        );
+        return logDate.getTime() === todayNormalized.getTime();
+      });
+    
+      const latestLogs: Record<string, AttendanceLog> = {};
+    
+      todaysLog.forEach(log => {
+        if (!employeesOnLeaveToday.has(log.employee)) {
+          if (
+            !latestLogs[log.employee] ||
+            parseAMPM(log.time) > parseAMPM(latestLogs[log.employee].time)
+          ) {
+            latestLogs[log.employee] = log;
+          }
+        }
+      });
+    
+      const presentEmployees = new Set<string>();
+    
+      Object.values(latestLogs).forEach(log => {
+        const employee = employees.find(e => e.name === log.employee);
+        if (!employee) return;
+    
+        presentEmployees.add(log.employee);
+    
+        switch (log.status) {
+          case 'Entrada Marcada':
+            if (log.location === 'Oficina') {
+              stats.inOffice.list.push(employee);
+            } else {
+              stats.remote.list.push(employee);
             }
-        });
-
-        const todaysLog = attendanceLog.filter(log => {
-            const logDate = new Date(log.date.getFullYear(), log.date.getMonth(), log.date.getDate());
-            return logDate.getTime() === todayNormalized.getTime();
-        });
-
-        const latestLogs: { [key: string]: any } = {};
-        todaysLog.forEach(log => {
-            if (!employeesOnLeaveToday.has(log.employee)) {
-                if (!latestLogs[log.employee] || parseAMPM(log.time) > parseAMPM(latestLogs[log.employee].time)) {
-                    latestLogs[log.employee] = log;
-                }
-            }
-        });
-
-        const presentEmployees = new Set<string>();
-        Object.values(latestLogs).forEach(log => {
-            const employee = employees.find(e => e.name === log.employee);
-            if (!employee) return;
-            
-            presentEmployees.add(log.employee);
-
-            switch (log.status) {
-                case "Entrada Marcada":
-                    if (log.location === "Oficina") {
-                        stats.inOffice.list.push(employee);
-                    } else {
-                        stats.remote.list.push(employee);
-                    }
-                    break;
-                case "En Descanso":
-                    stats.onBreak.list.push(employee);
-                    break;
-            }
-        });
-
-        stats.absent.list = employees.filter(emp => !presentEmployees.has(emp.name) && !employeesOnLeaveToday.has(emp.name));
-
-        stats.inOffice.count = stats.inOffice.list.length;
-        stats.remote.count = stats.remote.list.length;
-        stats.onBreak.count = stats.onBreak.list.length;
-        stats.onVacation.count = stats.onVacation.list.length;
-        stats.absent.count = stats.absent.list.length;
-
-        return stats;
-    }, []);
-
+            break;
+          case 'En Descanso':
+            stats.onBreak.list.push(employee);
+            break;
+        }
+      });
+    
+      stats.absent.list = employees.filter(
+        emp =>
+          !presentEmployees.has(emp.name) && !employeesOnLeaveToday.has(emp.name)
+      );
+    
+      // Asignar conteos
+      for (const key in stats) {
+        stats[key as keyof typeof stats].count =
+          stats[key as keyof typeof stats].list.length;
+      }
+    
+      return stats;
+    }, [employees, absencesData, attendanceLog]);
+    
     const filteredLog = useMemo(() => {
-        return attendanceLog.filter(log => {
-            const logDate = log.date;
-
-            const dateMatch = (() => {
-                if (!dateRange?.from) return true;
-                const from = dateRange.from;
-                const to = dateRange.to || from;
-                const start = new Date(from.getFullYear(), from.getMonth(), from.getDate());
-                const end = new Date(to.getFullYear(), to.getMonth(), to.getDate());
-                const current = new Date(logDate.getFullYear(), logDate.getMonth(), logDate.getDate());
-                return current >= start && current <= end;
-            })();
-            
-            const locationMatch = selectedLocation === 'all' || log.location === selectedLocation;
-            const departmentMatch = selectedDepartment === 'all' || log.department === selectedDepartment;
-            const employeeMatch = selectedEmployee === 'all' || log.employee === selectedEmployee;
-
-            return dateMatch && locationMatch && departmentMatch && employeeMatch;
-        });
-    }, [dateRange, selectedLocation, selectedDepartment, selectedEmployee]);
-
+      return attendanceLog.filter(log => {
+        const logDate = log.date;
+    
+        const dateMatch = (() => {
+          if (!dateRange?.from) return true;
+          const from = new Date(
+            dateRange.from.getFullYear(),
+            dateRange.from.getMonth(),
+            dateRange.from.getDate()
+          );
+          const to = dateRange.to
+            ? new Date(
+                dateRange.to.getFullYear(),
+                dateRange.to.getMonth(),
+                dateRange.to.getDate()
+              )
+            : from;
+    
+          const current = new Date(
+            logDate.getFullYear(),
+            logDate.getMonth(),
+            logDate.getDate()
+          );
+          return current >= from && current <= to;
+        })();
+    
+        const locationMatch =
+          selectedLocation === 'all' || log.location === selectedLocation;
+        const departmentMatch =
+          selectedDepartment === 'all' || log.department === selectedDepartment;
+        const employeeMatch =
+          selectedEmployee === 'all' || log.employee === selectedEmployee;
+    
+        return dateMatch && locationMatch && departmentMatch && employeeMatch;
+      });
+    }, [
+      attendanceLog,
+      dateRange,
+      selectedLocation,
+      selectedDepartment,
+      selectedEmployee,
+    ]);
+    
     const { paginatedLog, totalPages } = useMemo(() => {
-        const total = Math.ceil(filteredLog.length / itemsPerPage);
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        return {
-            paginatedLog: filteredLog.slice(startIndex, startIndex + itemsPerPage),
-            totalPages: total > 0 ? total : 1,
-        };
+      const total = Math.ceil(filteredLog.length / itemsPerPage);
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      return {
+        paginatedLog: filteredLog.slice(startIndex, startIndex + itemsPerPage),
+        totalPages: total || 1,
+      };
     }, [filteredLog, currentPage]);
-
+    
     const getStatusVariant = (status: string) => {
       switch (status) {
-        case "Entrada Marcada": return "active";
-        case "Salida Marcada": return "destructive";
-        case "En Descanso": return "warning";
-        default: return "secondary";
+        case 'Entrada Marcada':
+          return 'active';
+        case 'Salida Marcada':
+          return 'destructive';
+        case 'En Descanso':
+          return 'warning';
+        default:
+          return 'secondary';
       }
     };
 
@@ -413,23 +472,16 @@ export default function AttendancePage() {
                                         min={dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined}
                                         onChange={(e) => {
                                             const toValue = e.target.value;
-                                            const toDate = toValue ? parse(toValue, 'yyyy-MM-dd', new Date()) : undefined;
-
-                                            if (toDate && !isNaN(toDate.getTime())) {
-                                                setDateRange(prev => {
-                                                  if (prev?.from) {
-                                                    return { from: prev.from, to: toDate };
-                                                  }
-                                                  return { from: toDate, to: toDate };
-                                                });
-                                            } else {
-                                                setDateRange(prev => {
-                                                  if (prev?.from) {
-                                                    return { from: prev.from, to: undefined as unknown as Date };
-                                                  }
-                                                  return undefined;
-                                                });
-                                            }
+                                            setDateRange(prev => {
+                                                const toDate = toValue ? parse(toValue, 'yyyy-MM-dd', new Date()) : undefined;
+                                                const validToDate = (toDate && !isNaN(toDate.getTime())) ? toDate : undefined;
+                                                
+                                                if (prev?.from) {
+                                                    return { from: prev.from, to: validToDate };
+                                                }
+                                                
+                                                return validToDate ? { from: validToDate, to: validToDate } : undefined;
+                                            });
                                         }}
                                     />
                                 </div>
