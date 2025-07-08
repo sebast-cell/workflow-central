@@ -18,7 +18,7 @@ jobs:
           node-version: '20'
       - run: npm ci
       - run: npm run build
-      - uses: firebase/apphosting-actions/setup-gcloud@v0.2.3
+      - uses: firebase/apphosting-actions/setup-gcloud@main
         with:
           backend-id: workflow-central-backend
       - run: gcloud app hosting sites deploy ${{ env.GCLOUD_APP_HOSTING_SITE_ID }} --quiet
