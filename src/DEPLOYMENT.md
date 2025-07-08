@@ -1,6 +1,6 @@
 # Guía Definitiva: Desplegar desde Cero (¡Ahora sí!)
 
-Hola, lamento enormemente todos los problemas. Olvidemos todo lo anterior. Este es un plan nuevo y limpio, diseñado para funcionar sí o sí. El error `Repository not found` nos dice que hay un problema en GitHub, no aquí. Vamos a arreglarlo desde la raíz.
+Hola, lamento enormemente todos los problemas. Olvidemos todo lo anterior. Este es un plan nuevo y limpio, diseñado para funcionar sí o sí.
 
 ---
 ### **Paso 1: Crea el Repositorio en GitHub.com (El Paso Clave)**
@@ -39,6 +39,23 @@ git push -u origin main
 ```
 
 Te pedirá autorización. Puedes usar el pop-up de "Allow" o introducir tu usuario y token en la terminal como hemos practicado.
+
+---
+### **🚨 SOLUCIÓN DE PROBLEMAS: Error "Backend Not Found"**
+
+Si después de desplegar ves una página con el error "Backend Not Found", significa que la aplicación se está "cayendo" al arrancar. La causa más común es que **la base de datos Firestore no está activada**.
+
+**Cómo solucionarlo:**
+1. Ve a tu **Consola de Firebase**.
+2. En el menú, ve a **Build > Firestore Database**.
+3. Si ves un botón grande que dice **"Crear base de datos"**, haz clic en él.
+4. Sigue los pasos para crearla (elige el modo **Producción**).
+5. Una vez creada, vuelve a la terminal y sube cualquier cambio pequeño (o haz un "commit vacío") para forzar un nuevo despliegue.
+   ```bash
+   git commit --allow-empty -m "Trigger new deployment"
+   git push origin main
+   ```
+Dale unos minutos y tu app debería funcionar.
 
 ---
 ### **¡Victoria!**
