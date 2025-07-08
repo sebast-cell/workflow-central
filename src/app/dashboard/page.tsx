@@ -1,5 +1,7 @@
+
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,6 +10,8 @@ import { Badge } from "@/components/ui/badge"
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from "recharts"
 import { ArrowUpRight, CheckCircle, Clock, Users, Zap } from "lucide-react"
 import Link from "next/link"
+import { listEmployees, type Employee } from '@/lib/api';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const recentActivities = [
   { name: "Olivia Martin", activity: "marcó entrada", time: "hace 5m", avatar: "OM", link: "/attendance" },
@@ -15,13 +19,6 @@ const recentActivities = [
   { name: "Isabella Nguyen", activity: "completó la tarea 'Diseño de UI'", time: "hace 30m", avatar: "IN", link: "/projects" },
   { name: "William Kim", activity: "está en descanso", time: "hace 45m", avatar: "WK", link: "/attendance" },
   { name: "Sophia Davis", activity: "marcó salida", time: "hace 1h", avatar: "SD", link: "/attendance" },
-]
-
-const teamSummary = [
-  { name: "Liam Johnson", email: "liam@workflow.com", department: "Ingeniería", status: "Entrada Marcada", schedule: "9:00 AM - 5:00 PM"},
-  { name: "Emma Wilson", email: "emma@workflow.com", department: "Marketing", status: "Entrada Marcada", schedule: "10:00 AM - 6:00 PM"},
-  { name: "Noah Brown", email: "noah@workflow.com", department: "Diseño", status: "En Descanso", schedule: "9:30 AM - 5:30 PM"},
-  { name: "Ava Smith", email: "ava@workflow.com", department: "Ventas", status: "Salida Marcada", schedule: "9:00 AM - 5:00 PM"},
 ]
 
 const getStatusVariant = (status: string): "active" | "destructive" | "warning" | "secondary" => {
@@ -32,6 +29,10 @@ const getStatusVariant = (status: string): "active" | "destructive" | "warning" 
       return "destructive";
     case "En Descanso":
       return "warning";
+    case "Activo":
+      return "active";
+    case "Deshabilitado":
+        return "secondary";
     default:
       return "secondary";
   }
@@ -48,6 +49,24 @@ const chartData = [
 ]
 
 export default function Dashboard() {
+  const [teamSummary, setTeamSummary] = useState<Employee[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const employees = await listEmployees();
+        setTeamSummary(employees.slice(0, 4));
+      } catch (error) {
+        console.error("Failed to fetch employees for dashboard:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
   return (
     <div className="flex flex-col gap-8">
       <div>
@@ -176,19 +195,45 @@ export default function Dashboard() {
             <Table>
               <TableHeader><TableRow><TableHead>Empleado</TableHead><TableHead>Departamento</TableHead><TableHead className="hidden sm:table-cell">Estado</TableHead><TableHead className="text-right">Horario</TableHead></TableRow></TableHeader>
               <TableBody>
-                {teamSummary.map((member, index) => (
-                    <TableRow key={index} className="hover:bg-muted/50 cursor-pointer" onClick={() => window.location.href = '/employees'}>
-                    <TableCell>
-                      <div className="font-medium">{member.name}</div>
-                      <div className="text-sm text-muted-foreground hidden md:inline">{member.email}</div>
-                    </TableCell>
-                    <TableCell>{member.department}</TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      <Badge variant={getStatusVariant(member.status)}>{member.status}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">{member.schedule}</TableCell>
+                {isLoading ? (
+                  Array.from({ length: 4 }).map((_, index) => (
+                    <TableRow key={index}>
+                      <TableCell><div className="flex items-center gap-3"><Skeleton className="h-10 w-10 rounded-full" /><div className="space-y-2"><Skeleton className="h-4 w-32" /><Skeleton className="h-3 w-48" /></div></div></TableCell>
+                      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                      <TableCell className="hidden sm:table-cell"><Skeleton className="h-6 w-20 rounded-lg" /></TableCell>
+                      <TableCell className="text-right"><Skeleton className="h-4 w-28 ml-auto" /></TableCell>
                     </TableRow>
-                ))}
+                  ))
+                ) : (
+                  teamSummary.map((member) => (
+                      <TableRow key={member.id} className="hover:bg-muted/50 cursor-pointer" onClick={() => window.location.href = '/employees'}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar>
+                            <AvatarImage src={`https://placehold.co/40x40.png`} data-ai-hint="people avatar" alt={member.name} />
+                            <AvatarFallback>{member.avatar}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="font-medium">{member.name}</div>
+                            <div className="text-sm text-muted-foreground hidden md:inline">{member.email}</div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{member.department}</TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        <Badge variant={getStatusVariant(member.status)}>{member.status}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right">{member.schedule}</TableCell>
+                      </TableRow>
+                  ))
+                )}
+                { !isLoading && teamSummary.length === 0 && (
+                    <TableRow>
+                        <TableCell colSpan={4} className="h-24 text-center">
+                            No hay empleados para mostrar. Comienza añadiendo uno en la sección de Empleados.
+                        </TableCell>
+                    </TableRow>
+                )}
               </TableBody>
             </Table>
           </CardContent>
