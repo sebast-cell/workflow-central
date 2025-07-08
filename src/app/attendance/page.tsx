@@ -396,8 +396,10 @@ export default function AttendancePage() {
                                                 const fromDate = fromValue ? parse(fromValue, 'yyyy-MM-dd', new Date()) : undefined;
                                                 const newFrom = (fromDate && !isNaN(fromDate.getTime())) ? fromDate : undefined;
                                                 
-                                                if (!newFrom) return { from: undefined, to: prev?.to };
-
+                                                if (!newFrom) {
+                                                    return undefined;
+                                                }
+                                
                                                 if (prev?.to && newFrom > prev.to) {
                                                     return { from: newFrom, to: undefined };
                                                 }
@@ -420,8 +422,10 @@ export default function AttendancePage() {
                                                 const toDate = toValue ? parse(toValue, 'yyyy-MM-dd', new Date()) : undefined;
                                                 const newTo = (toDate && !isNaN(toDate.getTime())) ? toDate : undefined;
                                                 
-                                                if (!prev?.from) return { from: undefined, to: newTo };
-
+                                                if (!prev?.from) {
+                                                    return prev; // Can't set 'to' without 'from'
+                                                }
+                                
                                                 return { from: prev.from, to: newTo };
                                             });
                                         }}
