@@ -1,6 +1,8 @@
-# Guía Visual Definitiva para Desplegar tu App (Versión Corregida)
+# Guía Definitiva y Corregida para Desplegar tu App
 
-¡Hola! Siento muchísimo los problemas anteriores. El error `No such remote 'origin'` fue por una instrucción incorrecta que te di. Te pido disculpas. Esta guía corregida está diseñada para que funcione sí o sí. ¡Vamos a lograrlo!
+¡Hola! Siento mucho los problemas que hemos tenido. Los errores que has visto (`No such remote 'origin'` y `Repository not found`) son comunes, pero mis instrucciones no han sido lo suficientemente claras. Te pido disculpas.
+
+Esta guía está 100% corregida y diseñada para que funcione sí o sí. ¡Vamos a lograrlo juntos!
 
 ---
 
@@ -8,47 +10,44 @@
 
 **¡MUY IMPORTANTE!** Todos los comandos de esta guía deben ejecutarse en la **TERMINAL que está DENTRO de esta ventana del editor**, no en la terminal de tu propio ordenador.
 
-La terminal está en la **PARTE INFERIOR** de toda la ventana del editor.
-
-**Imagina que la pantalla es así:**
+La terminal está en la **PARTE INFERIOR** de la ventana. Busca una pestaña que diga **"TERMINAL"** y haz clic en ella.
 
 ```
 +------------------------------------------------------+
 | Arriba:     Menú (Archivo, Editar...)                |
 +------------------------------------------------------+
-| Izquierda:  LISTA DE ARCHIVOS (package.json, src...)  |
+| Izquierda:  LISTA DE ARCHIVOS (package.json, etc.)    |
 |                                                      |
 |             DERECHA:                                 |
 |             VENTANA PRINCIPAL DEL CÓDIGO             |
-|             (Aquí es donde ves los archivos)         |
-|                                                      |
-|                                                      |
 |                                                      |
 +------------------------------------------------------+
 | ABAJO:      [ PESTAÑAS: Problemas | Salida | TERMINAL ] <--- ¡AQUÍ ESTÁ!
 +------------------------------------------------------+
 ```
 
-1.  **Mueve tus ojos hacia la parte más BAJA de la ventana.**
-2.  Busca una fila de pestañas. Una de ellas dice **TERMINAL**.
-3.  **Haz clic en esa palabra: "TERMINAL"**. Se abrirá un recuadro negro. ¡Esa es la terminal correcta!
-
 ---
 
-### **Paso 1 (EN LA TERMINAL DEL EDITOR): Conecta tu Repositorio (El Comando Correcto)**
+### **Paso 1 (EN LA TERMINAL): Conecta tu Repositorio (El Comando Correcto)**
 
-Ahora que has encontrado la **TERMINAL**, copia y pega este comando. Este es el comando corregido que **añade** la conexión a tu repositorio de GitHub. Presiona `Enter`.
+Este comando le dice a tu proyecto cuál es tu repositorio en GitHub. Copia y pégalo en la Terminal y presiona `Enter`.
 
 ```bash
 git remote add origin https://github.com/sebast-cell/workflow-central.git
 ```
-*(Si te da un error que dice `remote origin already exists`, no te preocupes, es bueno. Simplemente continúa con el siguiente paso).*
+
+**¿Qué pasa si da un error que dice `fatal: remote origin already exists.`?**
+¡No te preocupes, es bueno! Significa que ya hay una conexión, aunque puede que sea incorrecta. Si te sale este error, usa el siguiente comando para **corregir** la dirección:
+
+```bash
+git remote set-url origin https://github.com/sebast-cell/workflow-central.git
+```
 
 ---
 
-### **Paso 2 (EN LA TERMINAL DEL EDITOR): Sube TODO el Código**
+### **Paso 2 (EN LA TERMINAL): Sube TODO el Código**
 
-Ahora, copia y pega este comando para subir tu código. Presiona `Enter`.
+Ahora, vamos a subir el código. Copia y pega este comando y presiona `Enter`.
 
 ```bash
 git push -u origin main
@@ -56,12 +55,18 @@ git push -u origin main
 
 ---
 
-### **Paso 3 (EN LA TERMINAL DEL EDITOR): Tu Usuario y Contraseña Especial**
+### **Paso 3: Autoriza con GitHub (La Ventana Emergente)**
 
-Después del último comando, la terminal te pedirá dos cosas. **¡Puede que se quede parada sin escribir nada, es normal!** Está esperando a que tú escribas.
+Después del comando anterior, el editor te mostrará un mensaje preguntando si quieres iniciar sesión con GitHub.
 
-*   `Username`: Escribe tu nombre de usuario de GitHub (`sebast-cell`) y presiona `Enter`.
-*   `Password`: **¡MUY IMPORTANTE!** Pega aquí tu **Token de Acceso Personal** (la contraseña que empieza por `ghp_...`). **No verás nada mientras escribes o pegas.** Es normal. Solo pégalo y presiona `Enter`.
+1.  Haz clic en **"Allow"** (Permitir).
+2.  Se abrirá una ventana de tu navegador.
+3.  Haz clic en el botón verde **"Authorize Visual Studio Code"**.
+4.  Vuelve a la ventana del editor. ¡El código empezará a subirse solo!
+
+Si no te aparece la ventana y la terminal se queda "pensando", es que te está pidiendo el usuario y la contraseña a la antigua:
+*   `Username`: Escribe `sebast-cell` y presiona `Enter`.
+*   `Password`: **Pega tu token** (el que empieza con `ghp_...`). **No verás nada mientras escribes.** Es normal. Solo pégalo y presiona `Enter`.
 
 ---
 
