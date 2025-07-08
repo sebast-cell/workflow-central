@@ -15,16 +15,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Download, MoreHorizontal, PlusCircle, Search, UploadCloud, Link as LinkIcon, Loader2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { VariantProps } from "class-variance-authority";
-import type { Employee, CalendarData, VacationPolicy, Department } from "@/lib/api";
+import type { Employee, Department } from "@/lib/api";
 import { listEmployees, createEmployee, updateEmployee, deleteEmployee, listSettings } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 
 export default function EmployeesPage() {
   const { toast } = useToast();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [calendars, setCalendars] = useState<CalendarData[]>([]);
-  const [vacationPolicies, setVacationPolicies] = useState<VacationPolicy[]>([]);
   
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -40,25 +39,18 @@ export default function EmployeesPage() {
     department: "",
     role: "",
     schedule: "",
-    workCenter: "",
-    vacationManager: "",
-    clockInManager: "",
-    calendarId: "",
-    vacationPolicyId: "",
+    hireDate: format(new Date(), 'yyyy-MM-dd'),
+    phone: "",
   });
 
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [employeesData, calendarsData, policiesData, departmentsData] = await Promise.all([
+      const [employeesData, departmentsData] = await Promise.all([
         listEmployees(),
-        listSettings<CalendarData>('calendars'),
-        listSettings<VacationPolicy>('vacationPolicies'),
         listSettings<Department>('departments'),
       ]);
       setEmployees(employeesData);
-      setCalendars(calendarsData);
-      setVacationPolicies(policiesData);
       setDepartments(departmentsData);
     } catch (error) {
       console.error("Failed to fetch data:", error);
@@ -84,7 +76,7 @@ export default function EmployeesPage() {
   const openAddDialog = () => {
     setDialogMode('add');
     setSelectedEmployee(null);
-    setFormData({ name: "", email: "", department: "", role: "", schedule: "", workCenter: "", vacationManager: "", clockInManager: "", calendarId: "", vacationPolicyId: "" });
+    setFormData({ name: "", email: "", department: "", role: "", schedule: "", hireDate: format(new Date(), 'yyyy-MM-dd'), phone: "" });
     setIsDialogOpen(true);
   }
 
@@ -214,7 +206,7 @@ export default function EmployeesPage() {
                 <TableHead>Empleado</TableHead>
                 <TableHead className="hidden lg:table-cell">Departamento</TableHead>
                 <TableHead>Estado</TableHead>
-                <TableHead className="hidden md:table-cell">Centro</TableHead>
+                <TableHead className="hidden md:table-cell">Teléfono</TableHead>
                 <TableHead>
                   <span className="sr-only">Acciones</span>
                 </TableHead>
@@ -241,7 +233,7 @@ export default function EmployeesPage() {
                       {employee.status}
                     </Badge>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">{employee.workCenter}</TableCell>
+                  <TableCell className="hidden md:table-cell">{employee.phone}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -300,6 +292,10 @@ export default function EmployeesPage() {
                           <Input id="email" type="email" value={formData.email} onChange={handleInputChange} placeholder="juan@ejemplo.com" required />
                         </div>
                         <div className="space-y-2">
+                          <Label htmlFor="phone">Teléfono</Label>
+                          <Input id="phone" type="tel" value={formData.phone} onChange={handleInputChange} placeholder="+34 600 000 000" />
+                        </div>
+                        <div className="space-y-2">
                           <Label htmlFor="department">Departamento</Label>
                            <Select value={formData.department} onValueChange={(value) => handleSelectChange('department', value)}>
                             <SelectTrigger id="department">
@@ -314,66 +310,13 @@ export default function EmployeesPage() {
                           <Label htmlFor="role">Cargo</Label>
                           <Input id="role" value={formData.role} onChange={handleInputChange} placeholder="Ej. Desarrollador Frontend" />
                         </div>
-                         <div className="space-y-2">
-                          <Label htmlFor="workCenter">Centro de Trabajo</Label>
-                           <Select value={formData.workCenter} onValueChange={(value) => handleSelectChange('workCenter', value)}>
-                            <SelectTrigger id="workCenter">
-                              <SelectValue placeholder="Seleccionar" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Oficina Central">Oficina Central</SelectItem>
-                              <SelectItem value="Almacén Norte">Almacén Norte</SelectItem>
-                              <SelectItem value="Remoto">Remoto</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="vacationManager">Responsable de Aprobación de Vacaciones</Label>
-                            <Select value={formData.vacationManager} onValueChange={(value) => handleSelectChange('vacationManager', value)}>
-                                <SelectTrigger id="vacationManager">
-                                    <SelectValue placeholder="Seleccionar" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {employees.map(e => <SelectItem key={`${e.id}-vac`} value={e.name}>{e.name}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                        </div>
                         <div className="space-y-2">
-                            <Label htmlFor="clockInManager">Responsable de Aprobación de Fichajes</Label>
-                            <Select value={formData.clockInManager} onValueChange={(value) => handleSelectChange('clockInManager', value)}>
-                                <SelectTrigger id="clockInManager">
-                                    <SelectValue placeholder="Seleccionar" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {employees.map(e => <SelectItem key={`${e.id}-clock`} value={e.name}>{e.name}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
+                          <Label htmlFor="hireDate">Fecha de Contratación</Label>
+                          <Input id="hireDate" type="date" value={formData.hireDate} onChange={handleInputChange} />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="schedule">Horario</Label>
                           <Input id="schedule" value={formData.schedule} onChange={handleInputChange} placeholder="Ej. 9-5, Fijo, Flexible" />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="calendarId">Calendario Laboral</Label>
-                            <Select value={formData.calendarId} onValueChange={(value) => handleSelectChange('calendarId', value)}>
-                                <SelectTrigger id="calendarId">
-                                <SelectValue placeholder="Seleccionar Calendario" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {calendars.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="vacationPolicyId">Política de Vacaciones</Label>
-                            <Select value={formData.vacationPolicyId} onValueChange={(value) => handleSelectChange('vacationPolicyId', value)}>
-                                <SelectTrigger id="vacationPolicyId">
-                                <SelectValue placeholder="Seleccionar Política" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {vacationPolicies.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
                         </div>
                       </div>
                       <DialogFooter>

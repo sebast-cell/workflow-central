@@ -53,19 +53,16 @@ export type Task = {
 };
 
 export type Employee = {
-    id: string; // UUID
+    id: string;
     name: string;
     email: string;
     department: string;
     role: string;
     status: string;
     schedule: string;
+    hireDate: string;
+    phone: string;
     avatar: string;
-    workCenter: string;
-    vacationManager: string;
-    clockInManager: string;
-    calendarId?: string;
-    vacationPolicyId?: string;
 };
 
 export type Center = {

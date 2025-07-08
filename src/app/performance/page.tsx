@@ -22,12 +22,12 @@ import { cn } from "@/lib/utils";
 import { format, addMonths } from "date-fns";
 
 
-const initialEmployees: (Employee & { id: string })[] = [
-  { id: "a1b2c3d4-e5f6-7890-1234-567890abcdef", name: "Olivia Martin", email: "olivia.martin@example.com", department: "Ingeniería", role: "Frontend Developer", status: "Activo", schedule: "9-5", avatar: "OM", workCenter: "Oficina Central", vacationManager: "Noah Brown", clockInManager: "Noah Brown" },
-  { id: "b2c3d4e5-f6a7-8901-2345-67890abcdef1", name: "Jackson Lee", email: "jackson.lee@example.com", department: "Diseño", role: "UI/UX Designer", status: "Activo", schedule: "9-5", avatar: "JL", workCenter: "Oficina Central", vacationManager: "Noah Brown", clockInManager: "Noah Brown" },
-  { id: "c3d4e5f6-a7b8-9012-3456-7890abcdef2", name: "Isabella Nguyen", email: "isabella.nguyen@example.com", department: "Marketing", role: "Marketing Manager", status: "Activo", schedule: "9-5", avatar: "IN", workCenter: "Remoto", vacationManager: "Noah Brown", clockInManager: "Noah Brown" },
-  { id: "d4e5f6a7-b8c9-0123-4567-890abcdef3", name: "William Kim", email: "william.kim@example.com", department: "Ingeniería", role: "Backend Developer", status: "Activo", schedule: "9-5", avatar: "WK", workCenter: "Oficina Central", vacationManager: "Noah Brown", clockInManager: "Noah Brown" },
-  { id: "e5f6a7b8-c9d0-1234-5678-90abcdef4", name: "Sophia Davis", email: "sophia.davis@example.com", department: "Ventas", role: "Sales Associate", status: "Activo", schedule: "9-5", avatar: "SD", workCenter: "Oficina Central", vacationManager: "Noah Brown", clockInManager: "Noah Brown" },
+const initialEmployees: Employee[] = [
+  { id: "a1b2c3d4-e5f6-7890-1234-567890abcdef", name: "Olivia Martin", email: "olivia.martin@example.com", department: "Ingeniería", role: "Frontend Developer", status: "Activo", schedule: "9-5", hireDate: "2023-01-15", phone: "123-456-7890", avatar: "OM" },
+  { id: "b2c3d4e5-f6a7-8901-2345-67890abcdef1", name: "Jackson Lee", email: "jackson.lee@example.com", department: "Diseño", role: "UI/UX Designer", status: "Activo", schedule: "9-5", hireDate: "2022-11-20", phone: "123-456-7891", avatar: "JL" },
+  { id: "c3d4e5f6-a7b8-9012-3456-7890abcdef2", name: "Isabella Nguyen", email: "isabella.nguyen@example.com", department: "Marketing", role: "Marketing Manager", status: "Activo", schedule: "9-5", hireDate: "2021-07-10", phone: "123-456-7892", avatar: "IN" },
+  { id: "d4e5f6a7-b8c9-0123-4567-890abcdef3", name: "William Kim", email: "william.kim@example.com", department: "Ingeniería", role: "Backend Developer", status: "Activo", schedule: "9-5", hireDate: "2023-02-28", phone: "123-456-7893", avatar: "WK" },
+  { id: "e5f6a7b8-c9d0-1234-5678-90abcdef4", name: "Sophia Davis", email: "sophia.davis@example.com", department: "Ventas", role: "Sales Associate", status: "Activo", schedule: "9-5", hireDate: "2022-09-01", phone: "123-456-7894", avatar: "SD" },
 ];
 
 const initialDepartments: (Department & { id: string })[] = [
@@ -41,7 +41,7 @@ const initialDepartments: (Department & { id: string })[] = [
 
 export default function PerformancePage() {
     const { toast } = useToast();
-    const [employees, setEmployees] = useState<(Employee & { id: string })[]>(initialEmployees);
+    const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
     const [departments, setDepartments] = useState<(Department & { id: string })[]>(initialDepartments);
     const [objectives, setObjectives] = useState<Objective[]>([]);
     const [incentives, setIncentives] = useState<Incentive[]>([]);
