@@ -391,11 +391,9 @@ export default function AttendancePage() {
                                             setDateRange(prev => {
                                                 const fromDate = fromValue ? parse(fromValue, 'yyyy-MM-dd', new Date()) : undefined;
                                                 const newFrom = (fromDate && !isNaN(fromDate.getTime())) ? fromDate : undefined;
-
                                                 if (!newFrom) {
                                                     return undefined; 
                                                 }
-
                                                 const currentTo = prev?.to;
                                                 if (currentTo && newFrom > currentTo) {
                                                     return { from: newFrom, to: undefined };
