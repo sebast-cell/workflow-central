@@ -147,7 +147,7 @@ export default function AttendancePage() {
         Object.values(latestLogs).forEach(log => {
             const employee = employees.find(e => e.name === log.employee);
             if (!employee) return;
-
+            
             presentEmployees.add(log.employee);
 
             switch (log.status) {
@@ -247,9 +247,104 @@ export default function AttendancePage() {
 
       <div>
         <h2 className="text-2xl font-semibold tracking-tight mb-4">Husin (Quién está dentro)</h2>
-        {/* Husin cards... */}
-      </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 items-start">
+            <div className="relative">
+                <Collapsible>
+                    <CollapsibleTrigger className="w-full text-left">
+                        <Card className="bg-gradient-accent-to-card">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">En Oficina</CardTitle>
+                                <Home className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{husinStats.inOffice.count}</div>
+                            </CardContent>
+                        </Card>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="absolute z-10 w-full">
+                        <HusinCardContent employees={husinStats.inOffice.list} />
+                    </CollapsibleContent>
+                </Collapsible>
+            </div>
+            
+            <div className="relative">
+                <Collapsible>
+                    <CollapsibleTrigger className="w-full text-left">
+                        <Card className="bg-gradient-accent-to-card">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Trabajo Remoto</CardTitle>
+                                <Globe className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{husinStats.remote.count}</div>
+                            </CardContent>
+                        </Card>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="absolute z-10 w-full">
+                        <HusinCardContent employees={husinStats.remote.list} />
+                    </CollapsibleContent>
+                </Collapsible>
+            </div>
 
+            <div className="relative">
+                <Collapsible>
+                    <CollapsibleTrigger className="w-full text-left">
+                        <Card className="bg-gradient-accent-to-card">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">En Descanso</CardTitle>
+                                <Coffee className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{husinStats.onBreak.count}</div>
+                            </CardContent>
+                        </Card>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="absolute z-10 w-full">
+                        <HusinCardContent employees={husinStats.onBreak.list} />
+                    </CollapsibleContent>
+                </Collapsible>
+            </div>
+
+             <div className="relative">
+                <Collapsible>
+                    <CollapsibleTrigger className="w-full text-left">
+                        <Card className="bg-gradient-accent-to-card">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">De Vacaciones</CardTitle>
+                            <Briefcase className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{husinStats.onVacation.count}</div>
+                        </CardContent>
+                        </Card>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="absolute z-10 w-full">
+                        <HusinCardContent employees={husinStats.onVacation.list} />
+                    </CollapsibleContent>
+                </Collapsible>
+            </div>
+
+            <div className="relative">
+                <Collapsible>
+                    <CollapsibleTrigger className="w-full text-left">
+                        <Card className="bg-gradient-accent-to-card">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Ausente</CardTitle>
+                            <UserX className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{husinStats.absent.count}</div>
+                        </CardContent>
+                        </Card>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="absolute z-10 w-full">
+                        <HusinCardContent employees={husinStats.absent.list} />
+                    </CollapsibleContent>
+                </Collapsible>
+            </div>
+        </div>
+      </div>
+      
       <Card className="bg-gradient-accent-to-card">
         <CardHeader>
           <CardTitle>Timeline de Fichajes</CardTitle>
@@ -324,7 +419,7 @@ export default function AttendancePage() {
                                                 }
                                                 const toDate = toValue ? parse(toValue, 'yyyy-MM-dd', new Date()) : undefined;
                                                 const validToDate = (toDate && !isNaN(toDate.getTime())) ? toDate : undefined;
-
+                                                
                                                 return { from: prev.from, to: validToDate };
                                             });
                                         }}
@@ -343,7 +438,41 @@ export default function AttendancePage() {
                       </PopoverContent>
                   </Popover>
 
-                {/* Select filters... */}
+                <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+                  <SelectTrigger className="w-full sm:w-auto md:w-[180px]">
+                    <SelectValue placeholder="Ubicación" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas las Ubicaciones</SelectItem>
+                    <SelectItem value="Oficina">Oficina</SelectItem>
+                    <SelectItem value="Remoto">Remoto</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+                  <SelectTrigger className="w-full sm:w-auto md:w-[180px]">
+                    <SelectValue placeholder="Departamento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los Deptos.</SelectItem>
+                    {allDepartments.map(dept => (
+                         <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                 <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+                    <SelectTrigger className="w-full sm:w-auto md:w-[180px]">
+                        <SelectValue placeholder="Empleado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Todos los Empleados</SelectItem>
+                        {availableEmployees.map(emp => (
+                            <SelectItem key={emp.id} value={emp.name}>{emp.name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+
               </div>
               <div className="sm:ml-auto">
                  <AttendanceReportDialog attendanceLog={filteredLog} />
@@ -408,4 +537,4 @@ export default function AttendancePage() {
       </Card>
     </div>
   )
-}
+}s
