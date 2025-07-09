@@ -422,7 +422,7 @@ export default function AttendancePage() {
                                                 const toDate = toValue ? parse(toValue, 'yyyy-MM-dd', new Date()) : undefined;
                                                 const validToDate = (toDate && !isNaN(toDate.getTime())) ? toDate : undefined;
                                                 
-                                                return { from: prev.from, to: validToDate };
+                                                return { ...prev, to: validToDate };
                                             });
                                         }}
                                     />

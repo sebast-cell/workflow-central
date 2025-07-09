@@ -41,9 +41,9 @@ export default function ReportGenerator({ formAction }: { formAction: (prevState
                         <SelectValue placeholder="Selecciona un tipo de informe" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="attendance">Asistencia</SelectItem>
-                        <SelectItem value="absences">Ausencias y Tiempo Libre</SelectItem>
-                        <SelectItem value="project costs">Costos de Proyecto</SelectItem>
+                        <SelectItem value="Asistencia">Asistencia</SelectItem>
+                        <SelectItem value="Ausencias y Tiempo Libre">Ausencias y Tiempo Libre</SelectItem>
+                        <SelectItem value="Costos de Proyecto">Costos de Proyecto</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
