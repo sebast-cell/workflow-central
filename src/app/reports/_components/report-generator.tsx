@@ -36,7 +36,7 @@ export default function ReportGenerator({ formAction }: { formAction: (prevState
           <CardContent className="space-y-4">
             <div className="space-y-2">
                 <Label htmlFor="reportType">Tipo de Informe</Label>
-                <Select name="reportType" defaultValue="attendance">
+                <Select name="reportType" defaultValue="Asistencia">
                     <SelectTrigger id="reportType">
                         <SelectValue placeholder="Selecciona un tipo de informe" />
                     </SelectTrigger>
@@ -61,7 +61,7 @@ export default function ReportGenerator({ formAction }: { formAction: (prevState
             </div>
              <div className="space-y-2">
                 <Label htmlFor="format">Formato</Label>
-                <Select name="format" defaultValue="pdf">
+                <Select name="format" defaultValue="PDF">
                     <SelectTrigger id="format">
                         <SelectValue placeholder="Seleccionar formato" />
                     </SelectTrigger>
@@ -110,3 +110,5 @@ export default function ReportGenerator({ formAction }: { formAction: (prevState
     </div>
   );
 }
+
+    
