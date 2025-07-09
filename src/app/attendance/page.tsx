@@ -422,6 +422,7 @@ export default function AttendancePage() {
                                                 if(prev?.from) {
                                                     return { ...prev, to: validToDate };
                                                 }
+                                                // If 'from' is not set, don't set 'to' either
                                                 return prev;
                                             });
                                         }}
@@ -540,5 +541,3 @@ export default function AttendancePage() {
     </div>
   )
 }
-
-    

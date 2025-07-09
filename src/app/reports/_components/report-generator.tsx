@@ -110,5 +110,3 @@ export default function ReportGenerator({ formAction }: { formAction: (prevState
     </div>
   );
 }
-
-    
