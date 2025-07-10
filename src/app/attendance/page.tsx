@@ -537,4 +537,4 @@ export default function AttendancePage() {
       </Card>
     </div>
   )
-}s
+}
