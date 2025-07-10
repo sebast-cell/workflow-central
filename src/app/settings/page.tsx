@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -78,7 +77,7 @@ const CenterDialogContent = ({
     const [centerData, setCenterData] = useState<Center | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const places = useMapsLibrary('places');
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
+    const apiKey = process.env.NEXT_PUBLIC_Maps_API_KEY || "";
 
     useEffect(() => {
         if (mode === 'edit' && center) {
@@ -219,7 +218,7 @@ const CenterDialog = ({
     center: Center | null;
     onSubmit: (data: Center) => void;
 }) => {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
+    const apiKey = process.env.NEXT_PUBLIC_Maps_API_KEY || "";
     
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -249,7 +248,7 @@ const CentersTabContent = () => {
     const [newDepartmentName, setNewDepartmentName] = useState("");
 
     const [authError, setAuthError] = useState(false);
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
+    const apiKey = process.env.NEXT_PUBLIC_Maps_API_KEY || "";
 
     const fetchData = async () => {
         setIsLoading(true);
@@ -258,8 +257,8 @@ const CentersTabContent = () => {
                 listSettings('centers'),
                 listSettings('departments'),
             ]);
-            setCenters(centersData);
-            setDepartments(departmentsData);
+            setCenters(centersData as Center[]);
+            setDepartments(departmentsData as Department[]);
         } catch (error) {
             console.error("Failed to load settings data", error);
             toast({ variant: 'destructive', title: "Error", description: "No se pudieron cargar los datos de configuración." });

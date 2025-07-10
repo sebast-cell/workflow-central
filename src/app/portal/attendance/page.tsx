@@ -7,7 +7,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { format, startOfWeek, addDays, isSameDay, isToday } from 'date-fns'; // 👈 Se ha añadido 'isToday'
+import { format, startOfWeek, addDays, isSameDay, isToday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Coffee, ArrowRight, ArrowLeft, MapPin, Calendar as CalendarIcon } from 'lucide-react';
 import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps';
