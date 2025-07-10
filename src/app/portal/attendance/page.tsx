@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { format, startOfWeek, addDays, isSameDay, isToday } from 'date-fns';
+import { format, startOfWeek, addDays, isSameDay, isToday, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Coffee, ArrowRight, ArrowLeft, MapPin, Calendar as CalendarIcon } from 'lucide-react';
 import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps';
@@ -15,36 +15,9 @@ import React from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useDayRender, type DayProps } from 'react-day-picker';
+import { type AttendanceLog as ApiAttendanceLog, listAttendanceLogs, createAttendanceLog } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
 
-
-// Add geolocation to event type
-type ClockInEvent = {
-  id: number;
-  date: Date;
-  time: string;
-  type: string;
-  location: string;
-  lat: number;
-  lng: number;
-  project?: string;
-  task?: string;
-};
-
-// Mock data for clock-in events with geolocation
-const events: ClockInEvent[] = [
-  { id: 1, date: new Date(2024, 7, 19), time: "09:01", type: "Entrada", location: "Oficina Central", lat: 40.416775, lng: -3.703790, project: "Rediseño Web", task: "Componentes UI" },
-  { id: 2, date: new Date(2024, 7, 19), time: "13:00", type: "Descanso", location: "Oficina Central", lat: 40.416775, lng: -3.703790 },
-  { id: 3, date: new Date(2024, 7, 19), time: "14:02", type: "Entrada", location: "Cliente - Soltech", lat: 40.421, lng: -3.705, project: "Rediseño Web", task: "Reunión de seguimiento" },
-  { id: 4, date: new Date(2024, 7, 19), time: "17:30", type: "Salida", location: "Cliente - Soltech", lat: 40.421, lng: -3.705, project: "Rediseño Web", task: "Finalizar informe" },
-  { id: 5, date: new Date(2024, 7, 20), time: "09:05", type: "Entrada", location: "Remoto - Casa", lat: 40.43, lng: -3.69, project: "App Móvil", task: "Bugfixing" },
-  { id: 6, date: new Date(2024, 7, 20), time: "17:35", type: "Salida", location: "Remoto - Casa", lat: 40.43, lng: -3.69, project: "App Móvil", task: "Subir cambios" },
-  { id: 7, date: new Date(2024, 7, 21), time: "08:58", type: "Entrada", location: "Oficina Central", lat: 40.416775, lng: -3.703790, project: "Campaña Marketing", task: "Planificación" },
-  { id: 8, date: new Date(2024, 7, 21), time: "12:30", type: "Descanso", location: "Oficina Central", lat: 40.416775, lng: -3.703790 },
-  { id: 9, date: new Date(2024, 7, 21), time: "13:30", type: "Entrada", location: "Oficina Central", lat: 40.416775, lng: -3.703790, project: "Campaña Marketing", task: "Creación de contenido" },
-  { id: 10, date: new Date(2024, 7, 21), time: "18:00", type: "Salida", location: "Oficina Central", lat: 40.416775, lng: -3.703790, project: "Campaña Marketing", task: "Revisión final" },
-  { id: 11, date: new Date(new Date().setDate(new Date().getDate())), time: "09:00", type: "Entrada", location: "Oficina Central", lat: 40.416775, lng: -3.703790, project: "Interno", task: "Reunión equipo" },
-  { id: 12, date: new Date(new Date().setDate(new Date().getDate())), time: "17:00", type: "Salida", location: "Oficina Central", lat: 40.416775, lng: -3.703790, project: "Interno", task: "Organización" },
-];
 
 const getEventTypeBadge = (type: string) => {
     switch (type) {
@@ -93,10 +66,72 @@ const getTimelineIcon = (type: string) => {
 
 
 export default function EmployeeAttendancePage() {
+    const { toast } = useToast();
     const [currentDate, setCurrentDate] = useState(new Date());
-    const [openEventId, setOpenEventId] = useState<number | null>(null);
+    const [openEventId, setOpenEventId] = useState<string | null>(null);
+    const [events, setEvents] = useState<ApiAttendanceLog[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     const apiKey = process.env.NEXT_PUBLIC_Maps_API_KEY || "";
+    
+    // In a real app, this would come from an auth context
+    const FAKE_EMPLOYEE = {
+        id: "1",
+        name: "Olivia Martin",
+        department: "Ingeniería"
+    };
+
+    const fetchEvents = async () => {
+        try {
+            setIsLoading(true);
+            const logs = await listAttendanceLogs();
+            // Filter for the current user for this portal view
+            setEvents(logs.filter(log => log.employeeId === FAKE_EMPLOYEE.id));
+        } catch (error) {
+            toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los registros de fichaje." });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchEvents();
+    }, []);
+
+    const handleClockIn = (type: 'Entrada' | 'Salida' | 'Descanso') => {
+        if (!navigator.geolocation) {
+          toast({ variant: "destructive", title: "Error", description: "Tu navegador no soporta la geolocalización." });
+          return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const { latitude, longitude } = position.coords;
+            const newLog: Omit<ApiAttendanceLog, 'id'> = {
+                employeeId: FAKE_EMPLOYEE.id,
+                employeeName: FAKE_EMPLOYEE.name,
+                department: FAKE_EMPLOYEE.department,
+                timestamp: new Date().toISOString(),
+                type: type,
+                location: 'Fichaje Móvil', // Or use a reverse geocoding API
+                lat: latitude,
+                lng: longitude,
+            };
+
+            try {
+                await createAttendanceLog(newLog);
+                toast({ title: "Fichaje Exitoso", description: `Se ha registrado tu ${type.toLowerCase()}.` });
+                fetchEvents(); // Refresh data
+            } catch (error) {
+                 toast({ variant: "destructive", title: "Error al Fichar", description: "No se pudo guardar el registro." });
+            }
+          },
+          () => {
+             toast({ variant: "destructive", title: "Error de Ubicación", description: "No se pudo obtener tu ubicación." });
+          }
+        );
+    };
+
 
     const handleDateChange = (date: Date | undefined) => {
         if (date) {
@@ -119,8 +154,8 @@ export default function EmployeeAttendancePage() {
     const week = Array.from({ length: 7 }).map((_, i) => addDays(startOfWeek(currentDate, { weekStartsOn }), i));
     
     const dailyEvents = useMemo(() => 
-        events.filter(e => isSameDay(e.date, currentDate)).sort((a,b) => a.time.localeCompare(b.time)),
-        [currentDate]
+        events.filter(e => isSameDay(parseISO(e.timestamp), currentDate)).sort((a,b) => a.timestamp.localeCompare(b.timestamp)),
+        [currentDate, events]
     );
 
     const DayWithDot = (props: DayProps) => {
@@ -128,8 +163,8 @@ export default function EmployeeAttendancePage() {
         const dayRender = useDayRender(props.date, props.displayMonth, buttonRef);
         
         const hasEvent = useMemo(() => 
-            events.some(e => isSameDay(e.date, props.date)),
-        [props.date]);
+            events.some(e => isSameDay(parseISO(e.timestamp), props.date)),
+        [props.date, events]);
 
         if (dayRender.isHidden) {
             return <></>;
@@ -153,9 +188,16 @@ export default function EmployeeAttendancePage() {
 
     return (
         <div className="space-y-8">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Mi Calendario de Fichajes</h1>
-                <p className="text-muted-foreground">Consulta tus registros de entrada y salida diarios, semanales y mensuales.</p>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">Mi Calendario de Fichajes</h1>
+                    <p className="text-muted-foreground">Consulta tus registros de entrada y salida diarios, semanales y mensuales.</p>
+                </div>
+                 <div className="flex gap-2">
+                    <Button onClick={() => handleClockIn('Entrada')} variant="active">Marcar Entrada</Button>
+                    <Button onClick={() => handleClockIn('Salida')} variant="destructive">Marcar Salida</Button>
+                    <Button onClick={() => handleClockIn('Descanso')} variant="warning">Descanso</Button>
+                </div>
             </div>
 
             <Tabs defaultValue="day">
@@ -202,11 +244,11 @@ export default function EmployeeAttendancePage() {
                                                         className="cursor-pointer hover:bg-muted/50"
                                                         onClick={() => setOpenEventId(prevId => prevId === event.id ? null : event.id)}
                                                     >
-                                                        <TableCell className="font-medium">{event.time}</TableCell>
+                                                        <TableCell className="font-medium">{format(parseISO(event.timestamp), 'HH:mm')}</TableCell>
                                                         <TableCell>{getEventTypeBadge(event.type)}</TableCell>
                                                         <TableCell>
                                                             <div>{event.location}</div>
-                                                            <div className="text-xs text-muted-foreground">Lat: {event.lat.toFixed(4)}, Lon: {event.lng.toFixed(4)}</div>
+                                                            {event.lat && <div className="text-xs text-muted-foreground">Lat: {event.lat.toFixed(4)}, Lon: {event.lng?.toFixed(4)}</div>}
                                                         </TableCell>
                                                         <TableCell>{event.project || '-'}</TableCell>
                                                         <TableCell>{event.task || '-'}</TableCell>
@@ -217,7 +259,7 @@ export default function EmployeeAttendancePage() {
                                                                 <div className="p-4 bg-background">
                                                                     <h4 className="font-semibold mb-2">Ubicación del Fichaje</h4>
                                                                     <div className="h-[300px] w-full rounded-md overflow-hidden border">
-                                                                        {apiKey ? (
+                                                                        {apiKey && event.lat && event.lng ? (
                                                                             <APIProvider apiKey={apiKey}>
                                                                                 <Map
                                                                                     center={{ lat: event.lat, lng: event.lng }}
@@ -233,7 +275,7 @@ export default function EmployeeAttendancePage() {
                                                                             </APIProvider>
                                                                         ) : (
                                                                             <div className="flex items-center justify-center h-full bg-muted">
-                                                                                <p className="text-sm text-muted-foreground">Clave de API de Google Maps no configurada.</p>
+                                                                                <p className="text-sm text-muted-foreground">Datos de mapa no disponibles.</p>
                                                                             </div>
                                                                         )}
                                                                     </div>
@@ -283,10 +325,10 @@ export default function EmployeeAttendancePage() {
                                             <p className="mt-1 text-xl font-semibold">{format(day, "d")}</p>
                                         </div>
                                         <div className="p-3 space-y-3 min-h-[140px]">
-                                            {events.filter(e => isSameDay(e.date, day)).sort((a,b) => a.time.localeCompare(b.time)).map(event => (
+                                            {events.filter(e => isSameDay(parseISO(e.timestamp), day)).sort((a,b) => a.timestamp.localeCompare(b.timestamp)).map(event => (
                                                 <div key={event.id} className="flex items-center gap-2">
                                                    {getEventTypeIcon(event.type)}
-                                                   <span className="font-semibold text-foreground tabular-nums">{event.time}</span>
+                                                   <span className="font-semibold text-foreground tabular-nums">{format(parseISO(event.timestamp), 'HH:mm')}</span>
                                                 </div>
                                             ))}
                                         </div>
@@ -313,6 +355,7 @@ export default function EmployeeAttendancePage() {
                                     onMonthChange={setCurrentDate}
                                     className="rounded-lg border p-3"
                                     components={{ Day: DayWithDot }}
+                                    disabled={isLoading}
                                 />
                              </div>
                              <div className="flex-1">
@@ -328,7 +371,7 @@ export default function EmployeeAttendancePage() {
                                                 </div>
                                                 <div className="flex-1 pt-1.5">
                                                     <div className="flex items-baseline justify-between">
-                                                        <p className="font-semibold text-foreground">{event.time}</p>
+                                                        <p className="font-semibold text-foreground">{format(parseISO(event.timestamp), 'HH:mm')}</p>
                                                         <p className="text-sm text-muted-foreground">{event.location}</p>
                                                     </div>
                                                     {event.project && (

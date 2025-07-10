@@ -10,6 +10,20 @@ const apiClient = axios.create({
 
 
 // -------- TYPE DEFINITIONS -------- //
+export type AttendanceLog = {
+    id: string;
+    employeeId: string;
+    employeeName: string; // denormalized for easier display
+    department: string; // denormalized for easier display
+    timestamp: string; // ISO 8601
+    type: 'Entrada' | 'Salida' | 'Descanso';
+    location: string;
+    lat?: number;
+    lng?: number;
+    project?: string;
+    task?: string;
+}
+
 export type Incentive = {
   id: string; // UUID
   name: string;
@@ -213,6 +227,18 @@ export const getAssignedToName = (objective: Objective): string => {
 
 
 // -------- API FUNCTIONS -------- //
+
+// -- Attendance --
+export const listAttendanceLogs = async (): Promise<AttendanceLog[]> => {
+    const response = await apiClient.get('/api/attendance');
+    return response.data;
+};
+
+export const createAttendanceLog = async (logData: Omit<AttendanceLog, 'id'>): Promise<AttendanceLog> => {
+    const response = await apiClient.post('/api/attendance', logData);
+    return response.data;
+};
+
 
 // -- Generic Settings Loader --
 export const listSettings = async <T>(setting: string): Promise<T[]> => {

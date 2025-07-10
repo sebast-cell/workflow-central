@@ -11,7 +11,7 @@ import { Briefcase, Coffee, Globe, Home, UserX, Calendar as CalendarIcon, Filter
 import { AttendanceReportDialog } from "./_components/attendance-report-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { format, parse, isWithinInterval, startOfDay } from 'date-fns';
+import { format, parse, isWithinInterval, startOfDay, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { type DateRange } from 'react-day-picker';
@@ -19,10 +19,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { type Employee as ApiEmployee, type Department } from '@/lib/api';
+import { type Employee as ApiEmployee, type Department, type AttendanceLog as ApiAttendanceLog, listEmployees, listSettings, listAttendanceLogs } from '@/lib/api';
 import { Skeleton } from '@/components/ui/skeleton';
 
-type AttendanceLog = {
+type LocalAttendanceLog = {
     date: Date;
     time: string;
     employee: string;
@@ -31,39 +31,11 @@ type AttendanceLog = {
     department: string;
 };
 
-const attendanceLog: AttendanceLog[] = [
-  { date: new Date(2024, 7, 26), time: "09:01 AM", employee: "Olivia Martin", status: "Entrada Marcada", location: "Oficina", department: "Ingeniería" },
-  { date: new Date(2024, 7, 26), time: "09:03 AM", employee: "Jackson Lee", status: "Entrada Marcada", location: "Remoto", department: "Diseño" },
-  { date: new Date(2024, 7, 26), time: "11:30 AM", employee: "Isabella Nguyen", status: "En Descanso", location: "Oficina", department: "Marketing" },
-  { date: new Date(2024, 7, 26), time: "12:15 PM", employee: "Isabella Nguyen", status: "Entrada Marcada", location: "Oficina", department: "Marketing" },
-  { date: new Date(2024, 7, 26), time: "05:05 PM", employee: "Olivia Martin", status: "Salida Marcada", location: "Oficina", department: "Ingeniería" },
-  { date: new Date(2024, 7, 25), time: "09:00 AM", employee: "Sophia Davis", status: "Entrada Marcada", location: "Oficina", department: "Ventas" },
-  { date: new Date(2024, 7, 25), time: "02:00 PM", employee: "William Kim", status: "Entrada Marcada", location: "Oficina", department: "Ingeniería" },
-  { date: new Date(2024, 7, 25), time: "05:30 PM", employee: "Sophia Davis", status: "Salida Marcada", location: "Oficina", department: "Ventas" },
-  { date: new Date(2024, 7, 24), time: "08:55 AM", employee: "Liam Garcia", status: "Entrada Marcada", location: "Remoto", department: "RRHH" },
-  { date: new Date(2024, 7, 24), time: "04:50 PM", employee: "Liam Garcia", status: "Salida Marcada", location: "Remoto", department: "RRHH" },
-];
-
 const absencesData = [
   { employee: "William Kim", type: "De Vacaciones", from: new Date(2024, 7, 26), to: new Date(2024, 7, 30) },
   { employee: "Liam Garcia", type: "De Vacaciones", from: new Date(2024, 7, 23), to: new Date(2024, 7, 24) },
 ];
 
-const mockEmployees: ApiEmployee[] = [
-    { id: "1", name: "Olivia Martin", email: "olivia.martin@example.com", department: "Ingeniería", role: "Frontend Developer", status: "Activo", schedule: "9-5", hireDate: "2023-01-15", phone: "123-456-7890", avatar: "OM" },
-    { id: "2", name: "Jackson Lee", email: "jackson.lee@example.com", department: "Diseño", role: "UI/UX Designer", status: "Activo", schedule: "10-6", hireDate: "2022-06-01", phone: "123-456-7891", avatar: "JL" },
-    { id: "3", name: "Isabella Nguyen", email: "isabella.nguyen@example.com", department: "Marketing", role: "Marketing Manager", status: "Activo", schedule: "9-5", hireDate: "2021-03-20", phone: "123-456-7892", avatar: "IN" },
-    { id: "4", name: "William Kim", email: "william.kim@example.com", department: "Ingeniería", role: "Backend Developer", status: "De Licencia", schedule: "9-5", hireDate: "2023-08-10", phone: "123-456-7893", avatar: "WK" },
-    { id: "5", name: "Sophia Davis", email: "sophia.davis@example.com", department: "Ventas", role: "Sales Rep", status: "Activo", schedule: "Flexible", hireDate: "2023-05-22", phone: "123-456-7894", avatar: "SD" },
-    { id: "6", name: "Liam Garcia", email: "liam.garcia@example.com", department: "RRHH", role: "HR Specialist", status: "Activo", schedule: "9-5", hireDate: "2023-02-15", phone: "123-456-7895", avatar: "LG" }
-];
-const mockDepartments: Department[] = [
-    { id: "1", name: "Ingeniería" },
-    { id: "2", name: "Diseño" },
-    { id: "3", name: "Marketing" },
-    { id: "4", name: "Ventas" },
-    { id: "5", name: "RRHH" },
-];
 
 function parseAMPM(timeStr: string) {
     const [time, modifier] = timeStr.split(' ');
@@ -71,7 +43,7 @@ function parseAMPM(timeStr: string) {
     if (hours === '12') {
         hours = '00';
     }
-    if (modifier.toUpperCase() === 'PM') {
+    if (modifier && modifier.toUpperCase() === 'PM') {
         hours = String(parseInt(hours, 10) + 12);
     }
     return new Date(1970, 0, 1, Number(hours), Number(minutes));
@@ -100,19 +72,55 @@ const HusinCardContent = ({ employees }: { employees: ApiEmployee[] }) => (
   );
 
 export default function AttendancePage() {
-    const [employees, setEmployees] = useState<ApiEmployee[]>(mockEmployees);
-    const [departments, setDepartments] = useState<Department[]>(mockDepartments);
-    const [isLoading, setIsLoading] = useState(false); // Set to false, using mock data
+    const [employees, setEmployees] = useState<ApiEmployee[]>([]);
+    const [departments, setDepartments] = useState<Department[]>([]);
+    const [attendanceLog, setAttendanceLog] = useState<LocalAttendanceLog[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                setIsLoading(true);
+                const [employeesData, departmentsData, logsData] = await Promise.all([
+                    listEmployees(),
+                    listSettings<Department>('departments'),
+                    listAttendanceLogs()
+                ]);
+                setEmployees(employeesData);
+                setDepartments(departmentsData);
+                
+                const formattedLogs: LocalAttendanceLog[] = logsData.map(log => {
+                    const logDate = parseISO(log.timestamp);
+                    return {
+                        date: logDate,
+                        time: format(logDate, 'hh:mm a'),
+                        employee: log.employeeName,
+                        status: log.type,
+                        location: log.location,
+                        department: log.department
+                    };
+                });
+                setAttendanceLog(formattedLogs);
+
+            } catch (error) {
+                console.error("Failed to fetch attendance data", error);
+                // Optionally set an error state here
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchData();
+    }, []);
 
     const [dateRange, setDateRange] = useState<DateRange | undefined>({
-      from: new Date(2024, 7, 24),
-      to: new Date(2024, 7, 26),
+      from: new Date(new Date().setDate(new Date().getDate() - 30)),
+      to: new Date(),
     });
     const [selectedLocation, setSelectedLocation] = useState<string>('all');
     const [selectedDepartment, setSelectedDepartment] = useState<string>('all');
     const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 5;
+    const itemsPerPage = 10;
 
     const availableEmployees = useMemo(() => {
         if (selectedDepartment === 'all') {
@@ -132,7 +140,7 @@ export default function AttendancePage() {
     }, [dateRange, selectedLocation, selectedDepartment, selectedEmployee]);
 
     const husinStats = useMemo(() => {
-        const today = new Date(2024, 7, 26);
+        const today = new Date();
         const todayNormalized = startOfDay(today);
 
         const stats = {
@@ -142,6 +150,8 @@ export default function AttendancePage() {
             onVacation: { count: 0, list: [] as ApiEmployee[] },
             absent: { count: 0, list: [] as ApiEmployee[] },
         };
+
+        if (isLoading) return stats;
 
         const employeesOnLeaveToday = new Set<string>();
         absencesData.forEach(absence => {
@@ -173,14 +183,14 @@ export default function AttendancePage() {
             presentEmployees.add(log.employee);
 
             switch (log.status) {
-                case "Entrada Marcada":
+                case "Entrada":
                     if (log.location === "Oficina") {
                         stats.inOffice.list.push(employee);
                     } else {
                         stats.remote.list.push(employee);
                     }
                     break;
-                case "En Descanso":
+                case "Descanso":
                     stats.onBreak.list.push(employee);
                     break;
             }
@@ -195,14 +205,14 @@ export default function AttendancePage() {
         stats.absent.count = stats.absent.list.length;
 
         return stats;
-    }, [employees]);
+    }, [employees, attendanceLog, isLoading]);
 
     const filteredLog = useMemo(() => {
         const startDate = dateRange?.from ? startOfDay(dateRange.from) : null;
         const endDate = dateRange?.to ? startOfDay(dateRange.to) : startDate;
 
         return attendanceLog.filter(log => {
-            const locationMatch = selectedLocation === 'all' || log.location === selectedLocation;
+            const locationMatch = selectedLocation === 'all' || log.location.toLowerCase().includes(selectedLocation.toLowerCase());
             const departmentMatch = selectedDepartment === 'all' || log.department === selectedDepartment;
             const employeeMatch = selectedEmployee === 'all' || log.employee === selectedEmployee;
 
@@ -214,7 +224,7 @@ export default function AttendancePage() {
 
             return dateMatch && locationMatch && departmentMatch && employeeMatch;
         });
-    }, [dateRange, selectedLocation, selectedDepartment, selectedEmployee]);
+    }, [dateRange, selectedLocation, selectedDepartment, selectedEmployee, attendanceLog]);
 
     const { paginatedLog, totalPages } = useMemo(() => {
         const total = Math.ceil(filteredLog.length / itemsPerPage);
@@ -227,9 +237,9 @@ export default function AttendancePage() {
 
     const getStatusVariant = (status: string) => {
       switch (status) {
-        case "Entrada Marcada": return "active";
-        case "Salida Marcada": return "destructive";
-        case "En Descanso": return "warning";
+        case "Entrada": return "active";
+        case "Salida": return "destructive";
+        case "Descanso": return "warning";
         default: return "secondary";
       }
     };
@@ -498,7 +508,7 @@ export default function AttendancePage() {
 
               </div>
               <div className="sm:ml-auto">
-                 <AttendanceReportDialog attendanceLog={filteredLog} />
+                 <AttendanceReportDialog attendanceLog={[]} />
               </div>
           </div>
         </CardHeader>
