@@ -272,7 +272,7 @@ const CentersTabContent = () => {
         const handleAuthError = () => setAuthError(true);
         window.addEventListener('gm_authFailure', handleAuthError);
         return () => window.removeEventListener('gm_authFailure', handleAuthError);
-    }, []);
+    }, [toast]);
 
     const openAddCenterDialog = () => {
         setDialogCenterMode('add');
@@ -291,14 +291,14 @@ const CentersTabContent = () => {
         if (dialogCenterMode === 'add') {
             setCenters(prev => [...prev, centerData]);
         } else if (dialogCenterMode === 'edit' && selectedCenter) {
-            setCenters(prev => prev.map(c => (c.name === selectedCenter.name ? centerData : c)));
+            setCenters(prev => prev.map(c => (c.id === selectedCenter.id ? centerData : c)));
         }
         setIsCenterDialogOpen(false);
     };
 
-    const handleDeleteCenter = (centerName: string) => {
+    const handleDeleteCenter = (centerId: string) => {
         // TODO: In real app, call deleteSetting API
-        setCenters(prev => prev.filter(c => c.name !== centerName));
+        setCenters(prev => prev.filter(c => c.id !== centerId));
     };
 
     const openAddDeptDialog = () => {
@@ -320,18 +320,18 @@ const CentersTabContent = () => {
         if (!newDepartmentName) return;
         // TODO: In real app, call createSetting or updateSetting API
         if (dialogDeptMode === 'add') {
-            setDepartments(prev => [...prev, { name: newDepartmentName }]);
+            setDepartments(prev => [...prev, { id: uuidv4(), name: newDepartmentName }]);
         } else if (dialogDeptMode === 'edit' && selectedDepartment) {
-            setDepartments(prev => prev.map(d => (d.name === selectedDepartment.name ? { name: newDepartmentName } : d)));
+            setDepartments(prev => prev.map(d => (d.id === selectedDepartment.id ? { ...d, name: newDepartmentName } : d)));
         }
 
         setNewDepartmentName("");
         setIsDeptDialogOpen(false);
     };
     
-    const handleDeleteDepartment = (departmentName: string) => {
+    const handleDeleteDepartment = (departmentId: string) => {
         // TODO: In real app, call deleteSetting API
-        setDepartments(prev => prev.filter(d => d.name !== departmentName));
+        setDepartments(prev => prev.filter(d => d.id !== departmentId));
     };
 
     if (isLoading) {
@@ -358,8 +358,8 @@ const CentersTabContent = () => {
                 <Button onClick={openAddCenterDialog} disabled={authError}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Centro</Button>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                {centers.map((center, index) => (
-                    <div key={index} className="flex items-center justify-between rounded-xl border p-4">
+                {centers.map((center) => (
+                    <div key={center.id} className="flex items-center justify-between rounded-xl border p-4">
                         <div>
                             <h3 className="font-semibold">{center.name}</h3>
                             <p className="text-sm text-muted-foreground">{center.address}</p>
@@ -371,7 +371,7 @@ const CentersTabContent = () => {
                         </div>
                         <div className="flex items-center">
                             <Button variant="ghost" size="sm" onClick={() => openEditCenterDialog(center)} disabled={authError}>Editar</Button>
-                            <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDeleteCenter(center.name)}>
+                            <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDeleteCenter(center.id)}>
                                 <Trash2 className="h-4 w-4" />
                             </Button>
                         </div>
@@ -409,12 +409,12 @@ const CentersTabContent = () => {
                     </Dialog>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {departments.map((dept, index) => (
-                        <div key={index} className="flex items-center justify-between rounded-xl border p-4">
+                    {departments.map((dept) => (
+                        <div key={dept.id} className="flex items-center justify-between rounded-xl border p-4">
                             <h3 className="font-semibold">{dept.name}</h3>
                             <div className="flex items-center">
                                 <Button variant="ghost" size="sm" onClick={() => openEditDeptDialog(dept)}>Editar</Button>
-                                <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDeleteDepartment(dept.name)}>
+                                <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDeleteDepartment(dept.id)}>
                                     <Trash2 className="h-4 w-4" />
                                 </Button>
                             </div>
@@ -452,12 +452,12 @@ const SettingsTabs = () => {
     const [isBreakDialogOpen, setIsBreakDialogOpen] = useState(false);
     const [dialogBreakMode, setDialogBreakMode] = useState<'add' | 'edit'>('add');
     const [selectedBreak, setSelectedBreak] = useState<Break | null>(null);
-    const [breakFormData, setBreakFormData] = useState<Break>({ name: "", remunerated: false, limit: 30, isAutomatic: false, intervalStart: "", intervalEnd: "", notifyStart: false, notifyEnd: false, assignedTo: [] });
+    const [breakFormData, setBreakFormData] = useState<Break>({ id: '', name: "", remunerated: false, limit: 30, isAutomatic: false, intervalStart: "", intervalEnd: "", notifyStart: false, notifyEnd: false, assignedTo: [] });
     
     const [isClockInTypeDialogOpen, setIsClockInTypeDialogOpen] = useState(false);
     const [dialogClockInTypeMode, setDialogClockInTypeMode] = useState<'add' | 'edit'>('add');
     const [selectedClockInType, setSelectedClockInType] = useState<ClockInType | null>(null);
-    const [clockInTypeFormData, setClockInTypeFormData] = useState<ClockInType>({ name: "", color: "bg-blue-500", assignment: 'all', assignedTo: [] });
+    const [clockInTypeFormData, setClockInTypeFormData] = useState<ClockInType>({ id: '', name: "", color: "bg-blue-500", assignment: 'all', assignedTo: [] });
     
     const [isShiftDialogOpen, setIsShiftDialogOpen] = useState(false);
     const [dialogShiftMode, setDialogShiftMode] = useState<'add' | 'edit'>('add');
@@ -542,7 +542,7 @@ const SettingsTabs = () => {
         };
         
         fetchEmployeesAndIncentives();
-    }, []);
+    }, [toast]);
 
     const allSchedules = ['Horario Fijo', 'Horario Flexible', ...shifts.map(s => s.name)];
     
@@ -600,16 +600,16 @@ const SettingsTabs = () => {
     };
     
     // Break Handlers
-    const openAddBreakDialog = () => { setIsBreakDialogOpen(true); setDialogBreakMode('add'); setBreakFormData({ name: "", remunerated: false, limit: 30, isAutomatic: false, intervalStart: "", intervalEnd: "", notifyStart: false, notifyEnd: false, assignedTo: [] }); };
+    const openAddBreakDialog = () => { setIsBreakDialogOpen(true); setDialogBreakMode('add'); setBreakFormData({ id: uuidv4(), name: "", remunerated: false, limit: 30, isAutomatic: false, intervalStart: "", intervalEnd: "", notifyStart: false, notifyEnd: false, assignedTo: [] }); };
     const openEditBreakDialog = (br: Break) => { setIsBreakDialogOpen(true); setDialogBreakMode('edit'); setSelectedBreak(br); setBreakFormData(br); };
     const handleBreakFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: API call */ setIsBreakDialogOpen(false); };
-    const handleDeleteBreak = (breakName: string) => { setBreaks(p => p.filter(b => b.name !== breakName)); /* TODO: API call */ };
+    const handleDeleteBreak = (breakId: string) => { setBreaks(p => p.filter(b => b.id !== breakId)); /* TODO: API call */ };
 
     // ClockIn Type Handlers
-    const openAddClockInTypeDialog = () => { setIsClockInTypeDialogOpen(true); setDialogClockInTypeMode('add'); setClockInTypeFormData({ name: "", color: "bg-blue-500", assignment: 'all', assignedTo: [] }); };
+    const openAddClockInTypeDialog = () => { setIsClockInTypeDialogOpen(true); setDialogClockInTypeMode('add'); setClockInTypeFormData({ id: uuidv4(), name: "", color: "bg-blue-500", assignment: 'all', assignedTo: [] }); };
     const openEditClockInTypeDialog = (type: ClockInType) => { setIsClockInTypeDialogOpen(true); setDialogClockInTypeMode('edit'); setSelectedClockInType(type); setClockInTypeFormData(type); };
     const handleClockInTypeFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: API call */ setIsClockInTypeDialogOpen(false); };
-    const handleDeleteClockInType = (typeName: string) => { setClockInTypes(p => p.filter(t => t.name !== typeName)); /* TODO: API call */ };
+    const handleDeleteClockInType = (typeId: string) => { setClockInTypes(p => p.filter(t => t.id !== typeId)); /* TODO: API call */ };
     
     // Schedule & Shift Handlers
     const openAddShiftDialog = () => { setIsShiftDialogOpen(true); setDialogShiftMode('add'); setShiftFormData({ name: "09:00", start: "09:00", end: "17:00" }); };
@@ -812,7 +812,7 @@ const SettingsTabs = () => {
                                  <TableHeader><TableRow><TableHead>Nombre</TableHead><TableHead>Tipo</TableHead><TableHead>Duración</TableHead><TableHead>Asignación</TableHead><TableHead><span className="sr-only">Acciones</span></TableHead></TableRow></TableHeader>
                                  <TableBody>
                                      {breaks.map(br => (
-                                         <TableRow key={br.name}>
+                                         <TableRow key={br.id}>
                                              <TableCell className="font-medium">{br.name}</TableCell>
                                              <TableCell>{br.remunerated ? 'Remunerado' : 'No Remunerado'}</TableCell>
                                              <TableCell>{br.limit} min</TableCell>
@@ -821,7 +821,7 @@ const SettingsTabs = () => {
                                              </TableCell>
                                              <TableCell className="text-right">
                                                  <Button variant="ghost" size="sm" onClick={() => openEditBreakDialog(br)}>Editar</Button>
-                                                 <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDeleteBreak(br.name)}>
+                                                 <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDeleteBreak(br.id)}>
                                                      <Trash2 className="h-4 w-4" />
                                                  </Button>
                                              </TableCell>
