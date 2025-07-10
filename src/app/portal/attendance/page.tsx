@@ -145,7 +145,7 @@ export default function EmployeeAttendancePage() {
                     {...dayRender.buttonProps}
                 />
                 {hasEvent && !dayRender.today && (
-                     <span className="absolute bottom-1.5 h-1.5 w-1.5 rounded-full bg-primary" />
+                    <span className="absolute bottom-1.5 left-1/2 -translate-x-1/2 h-1.5 w-1.5 rounded-full bg-primary" />
                 )}
             </div>
         )
