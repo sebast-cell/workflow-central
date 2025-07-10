@@ -25,6 +25,8 @@ interface SidebarContextType {
   onOpenChange: (open: boolean) => void
   togglePin: () => void
   toggleSidebar: () => void
+  openMobile: boolean
+  setOpenMobile: (open: boolean) => void
 }
 
 const SidebarContext = React.createContext<SidebarContextType | null>(null)
@@ -75,7 +77,7 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const contextValue = {
+  const contextValue: SidebarContextType = {
     isOpen: isMobile ? true : isOpen,
     isPinned,
     isMobile,

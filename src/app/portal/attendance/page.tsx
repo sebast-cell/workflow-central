@@ -7,7 +7,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { format, startOfWeek, addDays, isSameDay } from 'date-fns';
+import { format, startOfWeek, addDays, isSameDay, isToday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Coffee, ArrowRight, ArrowLeft, MapPin, Calendar as CalendarIcon } from 'lucide-react';
 import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps';
@@ -96,7 +96,7 @@ export default function EmployeeAttendancePage() {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [openEventId, setOpenEventId] = useState<number | null>(null);
 
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
+    const apiKey = process.env.NEXT_PUBLIC_Maps_API_KEY || "";
 
     const handleDateChange = (date: Date | undefined) => {
         if (date) {
@@ -139,15 +139,15 @@ export default function EmployeeAttendancePage() {
         }
         
         return (
-             <div className="relative">
+            <div className="relative flex h-full items-center justify-center">
                 <button
                     ref={buttonRef}
                     {...dayRender.buttonProps}
                 />
-                {hasEvent && !dayRender.selected && !dayRender.today &&(
+                {hasEvent && !isToday(props.date) && (
                     <span className="absolute bottom-1.5 left-1/2 -translate-x-1/2 h-1.5 w-1.5 rounded-full bg-primary" />
                 )}
-             </div>
+            </div>
         )
     }
 
