@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from "recharts"
-import { ArrowUpRight, CheckCircle, Clock, Users, Zap } from "lucide-react"
+import { ArrowUpRight, CheckCircle, Clock, Users, Zap, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { listEmployees, type Employee } from '@/lib/api';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -70,6 +70,25 @@ export default function Dashboard() {
   const activeEmployeesCount = employees ? employees.filter(e => e.status === 'Activo').length : 0;
   const teamSummary = employees ? employees.slice(0, 4) : [];
 
+  if (isLoading) {
+    return (
+        <div className="space-y-8">
+            <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+             <Card>
+                <CardHeader>
+                    <Skeleton className="h-8 w-1/2" />
+                    <Skeleton className="h-4 w-3/4 mt-2" />
+                </CardHeader>
+                <CardContent>
+                    <Skeleton className="h-40 w-full" />
+                </CardContent>
+            </Card>
+        </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-8">
       <div>
@@ -85,7 +104,7 @@ export default function Dashboard() {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                {isLoading ? <Skeleton className="h-7 w-24" /> : <div className="text-2xl font-bold">{activeEmployeesCount} / {employees?.length || 0}</div>}
+                <div className="text-2xl font-bold">{activeEmployeesCount} / {employees?.length || 0}</div>
                 <p className="text-xs text-muted-foreground">+2 desde la última hora</p>
               </CardContent>
             </>
@@ -198,16 +217,7 @@ export default function Dashboard() {
             <Table>
               <TableHeader><TableRow><TableHead>Empleado</TableHead><TableHead>Departamento</TableHead><TableHead className="hidden sm:table-cell">Estado</TableHead><TableHead className="text-right">Horario</TableHead></TableRow></TableHeader>
               <TableBody>
-                {isLoading ? (
-                  Array.from({ length: 4 }).map((_, index) => (
-                    <TableRow key={index}>
-                      <TableCell><div className="flex items-center gap-3"><Skeleton className="h-10 w-10 rounded-full" /><div className="space-y-2"><Skeleton className="h-4 w-32" /><Skeleton className="h-3 w-48" /></div></div></TableCell>
-                      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                      <TableCell className="hidden sm:table-cell"><Skeleton className="h-6 w-20 rounded-lg" /></TableCell>
-                      <TableCell className="text-right"><Skeleton className="h-4 w-28 ml-auto" /></TableCell>
-                    </TableRow>
-                  ))
-                ) : (
+                {teamSummary.length > 0 ? (
                   teamSummary.map((member) => (
                       <TableRow key={member.id} className="hover:bg-muted/50 cursor-pointer" onClick={() => window.location.href = '/employees'}>
                       <TableCell>
@@ -229,8 +239,7 @@ export default function Dashboard() {
                       <TableCell className="text-right">{member.schedule}</TableCell>
                       </TableRow>
                   ))
-                )}
-                { !isLoading && teamSummary.length === 0 && (
+                ) : (
                     <TableRow>
                         <TableCell colSpan={4} className="h-24 text-center">
                             No hay empleados para mostrar. Comienza añadiendo uno en la sección de Empleados.
@@ -244,3 +253,5 @@ export default function Dashboard() {
     </div>
   );
 }
+
+    
