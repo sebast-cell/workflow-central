@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Briefcase, Coffee, Globe, Home, UserX, Calendar as CalendarIcon, Filter } from "lucide-react";
+import { Briefcase, Coffee, Globe, Home, UserX, Calendar as CalendarIcon, Filter, Loader2 } from "lucide-react";
 import { AttendanceReportDialog } from "./_components/attendance-report-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -19,16 +19,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-// La línea de import que daba error, ahora está aquí en el lugar correcto.
 import { listEmployees, listSettings, type Employee as ApiEmployee, type Department } from '@/lib/api';
 import { Skeleton } from '@/components/ui/skeleton';
-
-
-type Employee = {
-    id: number;
-    name: string;
-    department: string;
-};
 
 type AttendanceLog = {
     date: Date;
@@ -39,23 +31,7 @@ type AttendanceLog = {
     department: string;
 };
 
-const employees: Employee[] = [
-  { id: 1, name: "Olivia Martin", department: "Ingeniería" },
-  { id: 2, name: "Jackson Lee", department: "Diseño" },
-  { id: 3, name: "Isabella Nguyen", department: "Marketing" },
-  { id: 4, name: "William Kim", department: "Ingeniería" },
-  { id: 5, name: "Sophia Davis", department: "Ventas" },
-  { id: 6, name: "Liam Garcia", department: "RRHH" },
-  { id: 7, name: "Lucas Brown", department: "Ingeniería" },
-  { id: 8, name: "Mia Miller", department: "Diseño" },
-  { id: 9, name: "Benjamin Wilson", department: "Marketing" },
-  { id: 10, name: "Charlotte Moore", department: "Ventas" },
-  { id: 11, name: "Henry Taylor", department: "RRHH" },
-  { id: 12, name: "Amelia Anderson", department: "Ingeniería" },
-];
-
-const allDepartments = ["Ingeniería", "Diseño", "Marketing", "Ventas", "RRHH"];
-
+// Mock data remains for demonstration of attendance log itself
 const attendanceLog: AttendanceLog[] = [
   { date: new Date(2024, 7, 26), time: "09:01 AM", employee: "Olivia Martin", status: "Entrada Marcada", location: "Oficina", department: "Ingeniería" },
   { date: new Date(2024, 7, 26), time: "09:03 AM", employee: "Jackson Lee", status: "Entrada Marcada", location: "Remoto", department: "Diseño" },
@@ -74,10 +50,6 @@ const absencesData = [
   { employee: "Liam Garcia", type: "De Vacaciones", from: new Date(2024, 7, 23), to: new Date(2024, 7, 24) },
 ];
 
-// ... (El resto del código sigue igual, no es necesario mostrarlo todo)
-// Simplemente copia y pega el bloque entero que te he dado.
-// El resto del archivo a partir de aquí no cambia.
-// ...
 
 function parseAMPM(timeStr: string) {
     const [time, modifier] = timeStr.split(' ');
@@ -92,6 +64,10 @@ function parseAMPM(timeStr: string) {
 }
 
 export default function AttendancePage() {
+    const [employees, setEmployees] = useState<ApiEmployee[]>([]);
+    const [departments, setDepartments] = useState<Department[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
     const [dateRange, setDateRange] = useState<DateRange | undefined>({
       from: new Date(2024, 7, 24),
       to: new Date(2024, 7, 26),
@@ -102,12 +78,31 @@ export default function AttendancePage() {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5;
 
+    useEffect(() => {
+        const fetchData = async () => {
+            setIsLoading(true);
+            try {
+                const [employeesData, departmentsData] = await Promise.all([
+                    listEmployees(),
+                    listSettings<Department>('departments'),
+                ]);
+                setEmployees(employeesData);
+                setDepartments(departmentsData);
+            } catch (error) {
+                console.error("Failed to fetch data for attendance page:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchData();
+    }, []);
+
     const availableEmployees = useMemo(() => {
         if (selectedDepartment === 'all') {
             return employees;
         }
         return employees.filter(emp => emp.department === selectedDepartment);
-    }, [selectedDepartment]);
+    }, [selectedDepartment, employees]);
 
     useEffect(() => {
         if (selectedEmployee !== 'all' && !availableEmployees.some(e => e.name === selectedEmployee)) {
@@ -124,12 +119,14 @@ export default function AttendancePage() {
         const todayNormalized = startOfDay(today);
 
         const stats = {
-            inOffice: { count: 0, list: [] as Employee[] },
-            remote: { count: 0, list: [] as Employee[] },
-            onBreak: { count: 0, list: [] as Employee[] },
-            onVacation: { count: 0, list: [] as Employee[] },
-            absent: { count: 0, list: [] as Employee[] },
+            inOffice: { count: 0, list: [] as ApiEmployee[] },
+            remote: { count: 0, list: [] as ApiEmployee[] },
+            onBreak: { count: 0, list: [] as ApiEmployee[] },
+            onVacation: { count: 0, list: [] as ApiEmployee[] },
+            absent: { count: 0, list: [] as ApiEmployee[] },
         };
+
+        if (isLoading) return stats;
 
         const employeesOnLeaveToday = new Set<string>();
         absencesData.forEach(absence => {
@@ -183,7 +180,7 @@ export default function AttendancePage() {
         stats.absent.count = stats.absent.list.length;
 
         return stats;
-    }, []);
+    }, [employees, isLoading]);
 
     const filteredLog = useMemo(() => {
         const startDate = dateRange?.from ? startOfDay(dateRange.from) : null;
@@ -222,7 +219,7 @@ export default function AttendancePage() {
       }
     };
 
-  const HusinCardContent = ({ employees }: { employees: Employee[] }) => (
+  const HusinCardContent = ({ employees }: { employees: ApiEmployee[] }) => (
     <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
       <div className="p-3 space-y-2 max-h-48 overflow-y-auto">
         {employees.length > 0 ? (
@@ -231,11 +228,7 @@ export default function AttendancePage() {
               <Avatar className="h-6 w-6">
                 <AvatarImage src={`https://placehold.co/40x40.png`} data-ai-hint="people avatar" alt={emp.name} />
                 <AvatarFallback className="text-xs">
-                  {emp.name
-                    .split(' ')
-                    .map((n) => n[0])
-                    .join('')
-                    .slice(0, 2)}
+                  {emp.avatar}
                 </AvatarFallback>
               </Avatar>
               <span>{emp.name}</span>
@@ -247,6 +240,25 @@ export default function AttendancePage() {
       </div>
     </div>
   );
+
+  if (isLoading) {
+    return (
+        <div className="space-y-8">
+            <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+             <Card>
+                <CardHeader>
+                    <Skeleton className="h-8 w-1/2" />
+                    <Skeleton className="h-4 w-3/4 mt-2" />
+                </CardHeader>
+                <CardContent>
+                    <Skeleton className="h-40 w-full" />
+                </CardContent>
+            </Card>
+        </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -465,8 +477,8 @@ export default function AttendancePage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos los Deptos.</SelectItem>
-                    {allDepartments.map(dept => (
-                         <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                    {departments.map(dept => (
+                         <SelectItem key={dept.id} value={dept.name}>{dept.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
