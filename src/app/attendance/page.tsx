@@ -416,14 +416,10 @@ export default function AttendancePage() {
                                         onChange={(e) => {
                                             const toValue = e.target.value;
                                             setDateRange(prev => {
+                                                if (!prev?.from) return prev;
                                                 const toDate = toValue ? parse(toValue, 'yyyy-MM-dd', new Date()) : undefined;
                                                 const validToDate = (toDate && !isNaN(toDate.getTime())) ? toDate : undefined;
-                                                
-                                                if(prev?.from) {
-                                                    return { ...prev, to: validToDate };
-                                                }
-                                                // If 'from' is not set, don't set 'to' either
-                                                return prev;
+                                                return { ...prev, to: validToDate };
                                             });
                                         }}
                                     />
