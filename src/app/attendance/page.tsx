@@ -19,7 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { listEmployees, listSettings, type Employee as ApiEmployee, type Department } from '@/lib/api';
+import { type Employee as ApiEmployee, type Department } from '@/lib/api';
 import { Skeleton } from '@/components/ui/skeleton';
 
 type AttendanceLog = {
@@ -31,7 +31,6 @@ type AttendanceLog = {
     department: string;
 };
 
-// Mock data remains for demonstration of attendance log itself
 const attendanceLog: AttendanceLog[] = [
   { date: new Date(2024, 7, 26), time: "09:01 AM", employee: "Olivia Martin", status: "Entrada Marcada", location: "Oficina", department: "Ingeniería" },
   { date: new Date(2024, 7, 26), time: "09:03 AM", employee: "Jackson Lee", status: "Entrada Marcada", location: "Remoto", department: "Diseño" },
@@ -50,6 +49,21 @@ const absencesData = [
   { employee: "Liam Garcia", type: "De Vacaciones", from: new Date(2024, 7, 23), to: new Date(2024, 7, 24) },
 ];
 
+const mockEmployees: ApiEmployee[] = [
+    { id: "1", name: "Olivia Martin", email: "olivia.martin@example.com", department: "Ingeniería", role: "Frontend Developer", status: "Activo", schedule: "9-5", hireDate: "2023-01-15", phone: "123-456-7890", avatar: "OM" },
+    { id: "2", name: "Jackson Lee", email: "jackson.lee@example.com", department: "Diseño", role: "UI/UX Designer", status: "Activo", schedule: "10-6", hireDate: "2022-06-01", phone: "123-456-7891", avatar: "JL" },
+    { id: "3", name: "Isabella Nguyen", email: "isabella.nguyen@example.com", department: "Marketing", role: "Marketing Manager", status: "Activo", schedule: "9-5", hireDate: "2021-03-20", phone: "123-456-7892", avatar: "IN" },
+    { id: "4", name: "William Kim", email: "william.kim@example.com", department: "Ingeniería", role: "Backend Developer", status: "De Licencia", schedule: "9-5", hireDate: "2023-08-10", phone: "123-456-7893", avatar: "WK" },
+    { id: "5", name: "Sophia Davis", email: "sophia.davis@example.com", department: "Ventas", role: "Sales Rep", status: "Activo", schedule: "Flexible", hireDate: "2023-05-22", phone: "123-456-7894", avatar: "SD" },
+    { id: "6", name: "Liam Garcia", email: "liam.garcia@example.com", department: "RRHH", role: "HR Specialist", status: "Activo", schedule: "9-5", hireDate: "2023-02-15", phone: "123-456-7895", avatar: "LG" }
+];
+const mockDepartments: Department[] = [
+    { id: "1", name: "Ingeniería" },
+    { id: "2", name: "Diseño" },
+    { id: "3", name: "Marketing" },
+    { id: "4", name: "Ventas" },
+    { id: "5", name: "RRHH" },
+];
 
 function parseAMPM(timeStr: string) {
     const [time, modifier] = timeStr.split(' ');
@@ -64,9 +78,9 @@ function parseAMPM(timeStr: string) {
 }
 
 export default function AttendancePage() {
-    const [employees, setEmployees] = useState<ApiEmployee[]>([]);
-    const [departments, setDepartments] = useState<Department[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [employees, setEmployees] = useState<ApiEmployee[]>(mockEmployees);
+    const [departments, setDepartments] = useState<Department[]>(mockDepartments);
+    const [isLoading, setIsLoading] = useState(false);
 
     const [dateRange, setDateRange] = useState<DateRange | undefined>({
       from: new Date(2024, 7, 24),
@@ -77,25 +91,6 @@ export default function AttendancePage() {
     const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5;
-
-    useEffect(() => {
-        const fetchData = async () => {
-            setIsLoading(true);
-            try {
-                const [employeesData, departmentsData] = await Promise.all([
-                    listEmployees(),
-                    listSettings<Department>('departments'),
-                ]);
-                setEmployees(employeesData);
-                setDepartments(departmentsData);
-            } catch (error) {
-                console.error("Failed to fetch data for attendance page:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchData();
-    }, []);
 
     const availableEmployees = useMemo(() => {
         if (selectedDepartment === 'all') {
@@ -125,8 +120,6 @@ export default function AttendancePage() {
             onVacation: { count: 0, list: [] as ApiEmployee[] },
             absent: { count: 0, list: [] as ApiEmployee[] },
         };
-
-        if (isLoading) return stats;
 
         const employeesOnLeaveToday = new Set<string>();
         absencesData.forEach(absence => {
@@ -180,7 +173,7 @@ export default function AttendancePage() {
         stats.absent.count = stats.absent.list.length;
 
         return stats;
-    }, [employees, isLoading]);
+    }, [employees]);
 
     const filteredLog = useMemo(() => {
         const startDate = dateRange?.from ? startOfDay(dateRange.from) : null;
@@ -240,25 +233,6 @@ export default function AttendancePage() {
       </div>
     </div>
   );
-
-  if (isLoading) {
-    return (
-        <div className="space-y-8">
-            <div className="flex justify-center items-center h-64">
-                <Loader2 className="h-8 w-8 animate-spin" />
-            </div>
-             <Card>
-                <CardHeader>
-                    <Skeleton className="h-8 w-1/2" />
-                    <Skeleton className="h-4 w-3/4 mt-2" />
-                </CardHeader>
-                <CardContent>
-                    <Skeleton className="h-40 w-full" />
-                </CardContent>
-            </Card>
-        </div>
-    );
-  }
 
   return (
     <div className="space-y-8">
@@ -560,3 +534,5 @@ export default function AttendancePage() {
     </div>
   )
 }
+
+    

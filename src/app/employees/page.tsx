@@ -21,44 +21,29 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 
+const mockEmployees: Employee[] = [
+    { id: "1", name: "Olivia Martin", email: "olivia.martin@example.com", department: "Ingeniería", role: "Frontend Developer", status: "Activo", schedule: "9-5", hireDate: "2023-01-15", phone: "123-456-7890", avatar: "OM" },
+    { id: "2", name: "Jackson Lee", email: "jackson.lee@example.com", department: "Diseño", role: "UI/UX Designer", status: "Activo", schedule: "10-6", hireDate: "2022-06-01", phone: "123-456-7891", avatar: "JL" },
+    { id: "3", name: "Isabella Nguyen", email: "isabella.nguyen@example.com", department: "Marketing", role: "Marketing Manager", status: "Activo", schedule: "9-5", hireDate: "2021-03-20", phone: "123-456-7892", avatar: "IN" },
+    { id: "4", name: "William Kim", email: "william.kim@example.com", department: "Ingeniería", role: "Backend Developer", status: "De Licencia", schedule: "9-5", hireDate: "2023-08-10", phone: "123-456-7893", avatar: "WK" },
+    { id: "5", name: "Sophia Davis", email: "sophia.davis@example.com", department: "Ventas", role: "Sales Rep", status: "Activo", schedule: "Flexible", hireDate: "2023-05-22", phone: "123-456-7894", avatar: "SD" }
+];
 
-function EmployeesPageSkeleton() {
-  return (
-    <div className="space-y-8">
-      <div>
-        <Skeleton className="h-9 w-1/3" />
-        <Skeleton className="h-5 w-1/2 mt-2" />
-      </div>
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row items-center gap-4">
-            <Skeleton className="h-10 flex-1 w-full" />
-            <div className="flex gap-2 w-full sm:w-auto">
-              <Skeleton className="h-10 w-full sm:w-[180px]" />
-              <Skeleton className="h-10 w-full sm:w-auto px-6" />
-              <Skeleton className="h-10 w-full sm:w-auto px-8" />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-16 w-full" />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
+const mockDepartments: Department[] = [
+    { id: "1", name: "Ingeniería" },
+    { id: "2", name: "Diseño" },
+    { id: "3", name: "Marketing" },
+    { id: "4", name: "Ventas" },
+    { id: "5", name: "RRHH" },
+];
 
 
 export default function EmployeesPage() {
   const { toast } = useToast();
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>(mockEmployees);
+  const [departments, setDepartments] = useState<Department[]>(mockDepartments);
   
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add');
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
@@ -75,26 +60,6 @@ export default function EmployeesPage() {
     hireDate: format(new Date(), 'yyyy-MM-dd'),
     phone: "",
   });
-
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const [employeesData, departmentsData] = await Promise.all([
-          listEmployees(),
-          listSettings<Department>('departments'),
-        ]);
-        setEmployees(employeesData);
-        setDepartments(departmentsData);
-      } catch (error) {
-        console.error("Failed to fetch data:", error);
-        toast({ variant: 'destructive', title: "Error", description: "No se pudieron cargar los datos." });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchData();
-  }, [toast]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -123,49 +88,35 @@ export default function EmployeesPage() {
     e.preventDefault();
     if (!formData.name || !formData.email) return;
 
-    try {
-      if (dialogMode === 'add') {
-        const newEmployee = await createEmployee(formData as Omit<Employee, 'id' | 'status' | 'avatar'>);
-        setEmployees(prev => [...prev, newEmployee]);
-        toast({ title: "Empleado añadido", description: `${newEmployee.name} ha sido añadido al equipo.` });
-      } else if (dialogMode === 'edit' && selectedEmployee) {
-        const updated = await updateEmployee(selectedEmployee.id, formData);
+    // This is where you would call the API. For now, we'll just update the local state.
+    if (dialogMode === 'add') {
+      const newEmployee = {
+          id: (employees.length + 1).toString(),
+          status: "Activo",
+          avatar: formData.name.split(' ').map(n => n[0]).join('').toUpperCase(),
+          ...formData
+      } as Employee;
+      setEmployees(prev => [...prev, newEmployee]);
+      toast({ title: "Empleado añadido", description: `${newEmployee.name} ha sido añadido al equipo.` });
+    } else if (dialogMode === 'edit' && selectedEmployee) {
+        const updated = { ...selectedEmployee, ...formData };
         setEmployees(prev => prev.map(emp => (emp.id === selectedEmployee.id ? updated : emp)));
         toast({ title: "Empleado actualizado", description: `Los datos de ${updated.name} han sido guardados.` });
-      }
-      setIsDialogOpen(false);
-    } catch (error) {
-      console.error("Failed to save employee:", error);
-      toast({ variant: 'destructive', title: "Error", description: "No se pudo guardar el empleado." });
     }
+    setIsDialogOpen(false);
   };
 
   const handleToggleStatus = async (employee: Employee) => {
     const newStatus = employee.status === "Activo" ? "Deshabilitado" : "Activo";
-    try {
-        const updated = await fetch(`/api/employees/${employee.id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: newStatus }),
-        }).then(res => res.json());
-
-        setEmployees(prev => prev.map(emp => (emp.id === employee.id ? updated : emp)));
-        toast({ title: "Estado actualizado", description: `${employee.name} ahora está ${newStatus.toLowerCase()}.` });
-    } catch (error) {
-        console.error("Failed to toggle status:", error);
-        toast({ variant: 'destructive', title: "Error", description: "No se pudo actualizar el estado." });
-    }
+    // This is a local state update. In a real app, this would be an API call.
+    setEmployees(prev => prev.map(emp => (emp.id === employee.id ? {...emp, status: newStatus} : emp)));
+    toast({ title: "Estado actualizado", description: `${employee.name} ahora está ${newStatus.toLowerCase()}.` });
   };
 
   const handleDeleteEmployee = async (employeeId: string) => {
-    try {
-        await deleteEmployee(employeeId);
-        setEmployees(prev => prev.filter(emp => emp.id !== employeeId));
-        toast({ title: "Empleado eliminado" });
-    } catch (error) {
-        console.error("Failed to delete employee:", error);
-        toast({ variant: 'destructive', title: "Error", description: "No se pudo eliminar al empleado." });
-    }
+    // This is a local state update. In a real app, this would be an API call.
+    setEmployees(prev => prev.filter(emp => emp.id !== employeeId));
+    toast({ title: "Empleado eliminado" });
   };
   
   const getStatusBadgeVariant = (status: string): VariantProps<typeof badgeVariants>["variant"] => {
@@ -185,11 +136,6 @@ export default function EmployeesPage() {
         return matchesSearch && matchesDept;
     });
   }, [employees, searchTerm, departmentFilter]);
-
-
-  if (isLoading) {
-    return <EmployeesPageSkeleton />;
-  }
 
   return (
     <div className="space-y-8">
@@ -376,3 +322,5 @@ export default function EmployeesPage() {
     </div>
   )
 }
+
+    

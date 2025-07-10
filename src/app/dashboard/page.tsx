@@ -10,8 +10,16 @@ import { Badge } from "@/components/ui/badge"
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from "recharts"
 import { ArrowUpRight, CheckCircle, Clock, Users, Zap, Loader2 } from "lucide-react"
 import Link from "next/link"
-import { listEmployees, type Employee } from '@/lib/api';
+import type { Employee } from '@/lib/api';
 import { Skeleton } from '@/components/ui/skeleton';
+
+const mockEmployees: Employee[] = [
+    { id: "1", name: "Olivia Martin", email: "olivia.martin@example.com", department: "Ingeniería", role: "Frontend Developer", status: "Activo", schedule: "9-5", hireDate: "2023-01-15", phone: "123-456-7890", avatar: "OM" },
+    { id: "2", name: "Jackson Lee", email: "jackson.lee@example.com", department: "Diseño", role: "UI/UX Designer", status: "Activo", schedule: "10-6", hireDate: "2022-06-01", phone: "123-456-7891", avatar: "JL" },
+    { id: "3", name: "Isabella Nguyen", email: "isabella.nguyen@example.com", department: "Marketing", role: "Marketing Manager", status: "Activo", schedule: "9-5", hireDate: "2021-03-20", phone: "123-456-7892", avatar: "IN" },
+    { id: "4", name: "William Kim", email: "william.kim@example.com", department: "Ingeniería", role: "Backend Developer", status: "De Licencia", schedule: "9-5", hireDate: "2023-08-10", phone: "123-456-7893", avatar: "WK" },
+    { id: "5", name: "Sophia Davis", email: "sophia.davis@example.com", department: "Ventas", role: "Sales Rep", status: "Activo", schedule: "Flexible", hireDate: "2023-05-22", phone: "123-456-7894", avatar: "SD" }
+];
 
 const recentActivities = [
   { name: "Olivia Martin", activity: "marcó entrada", time: "hace 5m", avatar: "OM", link: "/attendance" },
@@ -48,50 +56,9 @@ const chartData = [
   { name: "Dom", hours: 10 },
 ]
 
-function DashboardSkeleton() {
-    return (
-        <div className="flex flex-col gap-8">
-            <div>
-                <Skeleton className="h-9 w-1/2" />
-                <Skeleton className="h-5 w-3/4 mt-2" />
-            </div>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Skeleton className="h-28" />
-                <Skeleton className="h-28" />
-                <Skeleton className="h-28" />
-                <Skeleton className="h-28" />
-            </div>
-            <div className="grid gap-8 lg:grid-cols-2">
-                <Skeleton className="h-80" />
-                <Skeleton className="h-80" />
-            </div>
-            <Skeleton className="h-96" />
-        </div>
-    )
-}
-
-
 export default function Dashboard() {
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const employeesData = await listEmployees();
-        setEmployees(employeesData);
-      } catch (error) {
-        console.error("Failed to fetch employees for dashboard:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
-
-  if (isLoading) {
-    return <DashboardSkeleton />;
-  }
+  const [employees, setEmployees] = useState<Employee[]>(mockEmployees);
+  const [isLoading, setIsLoading] = useState(false); // Set to false as we use mock data
 
   const activeEmployeesCount = employees.filter(e => e.status === 'Activo').length;
   const teamSummary = employees.slice(0, 4);
@@ -260,3 +227,5 @@ export default function Dashboard() {
     </div>
   );
 }
+
+    
