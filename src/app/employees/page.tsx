@@ -21,30 +21,14 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const mockEmployees: Employee[] = [
-    { id: "1", name: "Olivia Martin", email: "olivia.martin@example.com", department: "Ingeniería", role: "Frontend Developer", status: "Activo", schedule: "9-5", hireDate: "2023-01-15", phone: "123-456-7890", avatar: "OM" },
-    { id: "2", name: "Jackson Lee", email: "jackson.lee@example.com", department: "Diseño", role: "UI/UX Designer", status: "Activo", schedule: "10-6", hireDate: "2022-06-01", phone: "123-456-7891", avatar: "JL" },
-    { id: "3", name: "Isabella Nguyen", email: "isabella.nguyen@example.com", department: "Marketing", role: "Marketing Manager", status: "Activo", schedule: "9-5", hireDate: "2021-03-20", phone: "123-456-7892", avatar: "IN" },
-    { id: "4", name: "William Kim", email: "william.kim@example.com", department: "Ingeniería", role: "Backend Developer", status: "De Licencia", schedule: "9-5", hireDate: "2023-08-10", phone: "123-456-7893", avatar: "WK" },
-    { id: "5", name: "Sophia Davis", email: "sophia.davis@example.com", department: "Ventas", role: "Sales Rep", status: "Activo", schedule: "Flexible", hireDate: "2023-05-22", phone: "123-456-7894", avatar: "SD" }
-];
-
-const mockDepartments: Department[] = [
-    { id: "1", name: "Ingeniería" },
-    { id: "2", name: "Diseño" },
-    { id: "3", name: "Marketing" },
-    { id: "4", name: "Ventas" },
-    { id: "5", name: "RRHH" },
-];
-
-
 export default function EmployeesPage() {
   const { toast } = useToast();
-  const [employees, setEmployees] = useState<Employee[]>(mockEmployees);
-  const [departments, setDepartments] = useState<Department[]>(mockDepartments);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
   
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add');
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
@@ -60,6 +44,30 @@ export default function EmployeesPage() {
     hireDate: format(new Date(), 'yyyy-MM-dd'),
     phone: "",
   });
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+        const [employeesData, departmentsData] = await Promise.all([
+            listEmployees(),
+            listSettings<Department>('departments')
+        ]);
+        setEmployees(employeesData);
+        setDepartments(departmentsData);
+    } catch (error) {
+        toast({
+            variant: "destructive",
+            title: "Error al cargar datos",
+            description: "No se pudieron obtener los empleados o departamentos.",
+        });
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -88,35 +96,52 @@ export default function EmployeesPage() {
     e.preventDefault();
     if (!formData.name || !formData.email) return;
 
-    // This is where you would call the API. For now, we'll just update the local state.
-    if (dialogMode === 'add') {
-      const newEmployee = {
-          id: (employees.length + 1).toString(),
-          status: "Activo",
-          avatar: formData.name.split(' ').map(n => n[0]).join('').toUpperCase(),
-          ...formData
-      } as Employee;
-      setEmployees(prev => [...prev, newEmployee]);
-      toast({ title: "Empleado añadido", description: `${newEmployee.name} ha sido añadido al equipo.` });
-    } else if (dialogMode === 'edit' && selectedEmployee) {
-        const updated = { ...selectedEmployee, ...formData };
-        setEmployees(prev => prev.map(emp => (emp.id === selectedEmployee.id ? updated : emp)));
-        toast({ title: "Empleado actualizado", description: `Los datos de ${updated.name} han sido guardados.` });
+    setIsSubmitting(true);
+    try {
+        if (dialogMode === 'add') {
+            const newEmployeeData = {
+                name: formData.name,
+                email: formData.email,
+                department: formData.department || '',
+                role: formData.role || '',
+                schedule: formData.schedule || '',
+                hireDate: formData.hireDate || '',
+                phone: formData.phone || '',
+            };
+            await createEmployee(newEmployeeData);
+            toast({ title: "Empleado añadido", description: `${newEmployeeData.name} ha sido añadido al equipo.` });
+        } else if (dialogMode === 'edit' && selectedEmployee) {
+            await updateEmployee(selectedEmployee.id, formData);
+            toast({ title: "Empleado actualizado", description: `Los datos de ${formData.name} han sido guardados.` });
+        }
+        await fetchData(); // Refresh data from server
+        setIsDialogOpen(false);
+    } catch (error) {
+        toast({ variant: "destructive", title: "Error al guardar", description: "No se pudo guardar el empleado." });
+    } finally {
+        setIsSubmitting(false);
     }
-    setIsDialogOpen(false);
   };
 
   const handleToggleStatus = async (employee: Employee) => {
     const newStatus = employee.status === "Activo" ? "Deshabilitado" : "Activo";
-    // This is a local state update. In a real app, this would be an API call.
-    setEmployees(prev => prev.map(emp => (emp.id === employee.id ? {...emp, status: newStatus} : emp)));
-    toast({ title: "Estado actualizado", description: `${employee.name} ahora está ${newStatus.toLowerCase()}.` });
+    try {
+        await updateEmployee(employee.id, { status: newStatus });
+        await fetchData();
+        toast({ title: "Estado actualizado", description: `${employee.name} ahora está ${newStatus.toLowerCase()}.` });
+    } catch (error) {
+        toast({ variant: "destructive", title: "Error al actualizar", description: "No se pudo cambiar el estado del empleado." });
+    }
   };
 
   const handleDeleteEmployee = async (employeeId: string) => {
-    // This is a local state update. In a real app, this would be an API call.
-    setEmployees(prev => prev.filter(emp => emp.id !== employeeId));
-    toast({ title: "Empleado eliminado" });
+    try {
+        await deleteEmployee(employeeId);
+        await fetchData();
+        toast({ title: "Empleado eliminado" });
+    } catch (error) {
+        toast({ variant: "destructive", title: "Error al eliminar", description: "No se pudo eliminar al empleado." });
+    }
   };
   
   const getStatusBadgeVariant = (status: string): VariantProps<typeof badgeVariants>["variant"] => {
@@ -136,6 +161,31 @@ export default function EmployeesPage() {
         return matchesSearch && matchesDept;
     });
   }, [employees, searchTerm, departmentFilter]);
+  
+  if (isLoading) {
+    return (
+        <div className="space-y-8">
+            <Skeleton className="h-12 w-1/3" />
+            <Card>
+                <CardHeader>
+                    <div className="flex flex-col sm:flex-row items-center gap-4">
+                        <Skeleton className="h-10 flex-1 w-full" />
+                        <div className="flex gap-2 w-full sm:w-auto">
+                            <Skeleton className="h-10 w-full sm:w-[180px]" />
+                            <Skeleton className="h-10 w-full sm:w-auto px-6" />
+                            <Skeleton className="h-10 w-full sm:w-auto px-6" />
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-2">
+                        {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -163,7 +213,7 @@ export default function EmployeesPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos los Deptos.</SelectItem>
-                  {departments.map(dept => <SelectItem key={dept.name} value={dept.name}>{dept.name}</SelectItem>)}
+                  {departments.map(dept => <SelectItem key={dept.id} value={dept.name}>{dept.name}</SelectItem>)}
                 </SelectContent>
               </Select>
               <Button variant="outline" className="w-full sm:w-auto">
@@ -286,7 +336,7 @@ export default function EmployeesPage() {
                               <SelectValue placeholder="Seleccionar" />
                             </SelectTrigger>
                             <SelectContent>
-                              {departments.map(d => <SelectItem key={d.name} value={d.name}>{d.name}</SelectItem>)}
+                              {departments.map(d => <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>)}
                             </SelectContent>
                           </Select>
                         </div>
@@ -304,7 +354,10 @@ export default function EmployeesPage() {
                         </div>
                       </div>
                       <DialogFooter>
-                        <Button type="submit">{dialogMode === 'add' ? 'Añadir Empleado' : 'Guardar Cambios'}</Button>
+                        <Button type="submit" disabled={isSubmitting}>
+                          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          {dialogMode === 'add' ? 'Añadir Empleado' : 'Guardar Cambios'}
+                        </Button>
                       </DialogFooter>
                     </form>
                 </TabsContent>
@@ -322,3 +375,5 @@ export default function EmployeesPage() {
     </div>
   )
 }
+
+    
