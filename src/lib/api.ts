@@ -195,6 +195,20 @@ export type VacationPolicy = {
     assignedTo: string[];
 };
 
+export type AbsenceRequest = {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  absenceTypeId: string;
+  absenceTypeName: string;
+  startDate: string; // ISO Date string
+  endDate: string;   // ISO Date string
+  status: 'Pendiente' | 'Aprobado' | 'Rechazado';
+  reason?: string;
+  requestedAt: string; // ISO DateTime string
+};
+
+
 // -------- HELPER FUNCTIONS -------- //
 
 // This function resolves the name for an objective's assigned_to field
@@ -213,6 +227,22 @@ export const getAssignedToName = (objective: Objective, employees: Employee[], d
 
 
 // -------- API FUNCTIONS -------- //
+
+// -- Absence Requests --
+export const listAbsenceRequests = async (): Promise<AbsenceRequest[]> => {
+    const response = await apiClient.get('/api/absences');
+    return response.data;
+};
+
+export const createAbsenceRequest = async (requestData: Omit<AbsenceRequest, 'id' | 'requestedAt' | 'status'>): Promise<AbsenceRequest> => {
+    const response = await apiClient.post('/api/absences', requestData);
+    return response.data;
+};
+
+export const updateAbsenceRequestStatus = async (id: string, status: AbsenceRequest['status']): Promise<AbsenceRequest> => {
+    const response = await apiClient.patch(`/api/absences/${id}`, { status });
+    return response.data;
+};
 
 // -- Attendance --
 export const listAttendanceLogs = async (): Promise<AttendanceLog[]> => {

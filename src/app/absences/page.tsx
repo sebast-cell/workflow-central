@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Download, PlusCircle } from "lucide-react";
+import { Download, PlusCircle, Loader2, CheckCircle, XCircle, Clock } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -15,17 +15,64 @@ import { DateRange } from "react-day-picker";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { Calendar as CalendarIcon } from "lucide-react"
-import { format } from "date-fns";
-
-const requests = [
-  { employee: "Liam Johnson", type: "Vacaciones", dates: "19 Ago - 23 Ago, 2024", status: "Aprobado" },
-  { employee: "Emma Wilson", type: "Licencia Médica", dates: "12 Ago, 2024", status: "Aprobado" },
-  { employee: "Noah Brown", type: "Vacaciones", dates: "02 Sep - 06 Sep, 2024", status: "Pendiente" },
-  { employee: "Ava Smith", type: "Día Personal", dates: "15 Ago, 2024", status: "Rechazado" },
-];
+import { format, parseISO } from "date-fns";
+import { es } from "date-fns/locale";
+import type { Employee, AbsenceRequest, AbsenceType } from "@/lib/api";
+import { listAbsenceRequests, listEmployees, listSettings, updateAbsenceRequestStatus } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AbsencesPage() {
+  const { toast } = useToast();
+  const [requests, setRequests] = useState<AbsenceRequest[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [absenceTypes, setAbsenceTypes] = useState<AbsenceType[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+        const [requestsData, employeesData, absenceTypesData] = await Promise.all([
+            listAbsenceRequests(),
+            listEmployees(),
+            listSettings<AbsenceType>('absenceTypes'),
+        ]);
+        setRequests(requestsData);
+        setEmployees(employeesData);
+        setAbsenceTypes(absenceTypesData);
+    } catch (error) {
+        toast({
+            variant: "destructive",
+            title: "Error al cargar datos",
+            description: "No se pudieron obtener los datos de ausencias.",
+        });
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleStatusChange = async (requestId: string, status: AbsenceRequest['status']) => {
+    try {
+        await updateAbsenceRequestStatus(requestId, status);
+        toast({
+            title: "Estado actualizado",
+            description: `La solicitud ha sido marcada como ${status.toLowerCase()}.`
+        });
+        fetchData(); // Refresh data
+    } catch (error) {
+         toast({
+            variant: "destructive",
+            title: "Error al actualizar",
+            description: "No se pudo cambiar el estado de la solicitud.",
+        });
+    }
+  };
+
 
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -106,9 +153,9 @@ export default function AbsencesPage() {
                                         <SelectValue placeholder="Seleccionar empleado" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="liam">Liam Johnson</SelectItem>
-                                        <SelectItem value="emma">Emma Wilson</SelectItem>
-                                        <SelectItem value="noah">Noah Brown</SelectItem>
+                                        {employees.map(emp => (
+                                          <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -119,9 +166,9 @@ export default function AbsencesPage() {
                                         <SelectValue placeholder="Seleccionar tipo" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="vacation">Vacaciones</SelectItem>
-                                        <SelectItem value="sick-leave">Licencia por Enfermedad</SelectItem>
-                                        <SelectItem value="personal-day">Día Personal</SelectItem>
+                                        {absenceTypes.map(type => (
+                                          <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -190,22 +237,45 @@ export default function AbsencesPage() {
                 <TableHead>Empleado</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Fechas</TableHead>
-                <TableHead className="text-right">Estado</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {requests.map((request, index) => (
-                <TableRow key={index}>
-                  <TableCell className="font-medium">{request.employee}</TableCell>
-                  <TableCell>{request.type}</TableCell>
-                  <TableCell>{request.dates}</TableCell>
-                  <TableCell className="text-right">
-                    <Badge variant={getStatusVariant(request.status)}>
-                      {request.status}
-                    </Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {isLoading ? (
+                <TableRow><TableCell colSpan={5} className="text-center h-24"><Loader2 className="animate-spin"/></TableCell></TableRow>
+              ) : requests.length > 0 ? (
+                  requests.map((request) => (
+                    <TableRow key={request.id}>
+                      <TableCell className="font-medium">{request.employeeName}</TableCell>
+                      <TableCell>{request.absenceTypeName}</TableCell>
+                      <TableCell>{format(parseISO(request.startDate), 'd MMM', { locale: es })} - {format(parseISO(request.endDate), 'd MMM, yyyy', { locale: es })}</TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusVariant(request.status)}>
+                          {request.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {request.status === 'Pendiente' ? (
+                          <div className="flex gap-2 justify-end">
+                            <Button variant="ghost" size="sm" className="text-accent" onClick={() => handleStatusChange(request.id, 'Aprobado')}>
+                              <CheckCircle className="mr-2 h-4 w-4" />
+                              Aprobar
+                            </Button>
+                             <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleStatusChange(request.id, 'Rechazado')}>
+                              <XCircle className="mr-2 h-4 w-4" />
+                              Rechazar
+                            </Button>
+                          </div>
+                        ) : (
+                           <span className="text-muted-foreground text-sm">Gestionado</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+              ) : (
+                <TableRow><TableCell colSpan={5} className="text-center h-24">No hay solicitudes.</TableCell></TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>

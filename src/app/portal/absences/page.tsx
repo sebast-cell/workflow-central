@@ -18,8 +18,9 @@ import { Calendar as CalendarIcon, PlusCircle, Loader2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { type Holiday, type CalendarData, listSettings } from '@/lib/api';
+import { type Holiday, type CalendarData, type AbsenceType, type AbsenceRequest, listSettings, createAbsenceRequest, listAbsenceRequests } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import { es } from 'date-fns/locale';
 
 const balances = [
     { type: "Vacaciones", used: 8, total: 20 },
@@ -27,12 +28,10 @@ const balances = [
     { type: "Licencia por Enfermedad", used: 3, total: 10 },
 ];
 
-const requests = [
-    { type: "Vacaciones", dates: "19 Ago - 23 Ago, 2024", status: "Aprobado" },
-    { type: "Licencia por Enfermedad", dates: "12 Ago, 2024", status: "Aprobado" },
-    { type: "Día Personal", dates: "02 Sep, 2024", status: "Pendiente" },
-    { type: "Vacaciones", dates: "15 Jul - 17 Jul, 2024", status: "Rechazado" },
-];
+const FAKE_EMPLOYEE = {
+    id: "1",
+    name: "Olivia Martin"
+};
 
 export default function EmployeeAbsencesPage() {
     const { toast } = useToast();
@@ -41,44 +40,90 @@ export default function EmployeeAbsencesPage() {
         from: new Date(),
         to: addDays(new Date(), 4),
     });
-
+    
     const [holidays, setHolidays] = useState<Holiday[]>([]);
+    const [absenceTypes, setAbsenceTypes] = useState<AbsenceType[]>([]);
+    const [requests, setRequests] = useState<AbsenceRequest[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    const [formData, setFormData] = useState<{absenceTypeId: string, reason?: string}>({ absenceTypeId: '' });
+
+    const fetchData = async () => {
+        setIsLoading(true);
+        try {
+            const [allCalendars, absenceTypesData, requestsData] = await Promise.all([
+                listSettings<CalendarData>('calendars'),
+                listSettings<AbsenceType>('absenceTypes'),
+                listAbsenceRequests(),
+            ]);
+
+            if (allCalendars.length > 0) {
+                setHolidays(allCalendars[0].holidays || []);
+            }
+            setAbsenceTypes(absenceTypesData.filter(t => !t.isDisabled));
+            setRequests(requestsData.filter(r => r.employeeId === FAKE_EMPLOYEE.id));
+
+        } catch (error) {
+            console.error("Failed to load data from DB", error);
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "No se pudieron cargar los datos de ausencias.",
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchCalendarData = async () => {
-            setIsLoading(true);
-            try {
-                // In a real app, you would determine which calendar belongs to the user.
-                // For this demo, we'll just fetch all calendars and use the first one we find.
-                const allCalendars = await listSettings<CalendarData>('calendars');
-                if (allCalendars.length > 0) {
-                    setHolidays(allCalendars[0].holidays || []);
-                }
-            } catch (error) {
-                console.error("Failed to load calendars from DB", error);
-                toast({
-                    variant: "destructive",
-                    title: "Error",
-                    description: "No se pudieron cargar los datos del calendario laboral.",
-                });
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchCalendarData();
+        fetchData();
     }, [toast]);
 
-    // Mock dates for the calendar display
-    const approvedAbsences = [
-        new Date(2024, 7, 12), // Aug 12
-        new Date(2024, 7, 19), // Aug 19
-        new Date(2024, 7, 20),
-        new Date(2024, 7, 21),
-        new Date(2024, 7, 22),
-        new Date(2024, 7, 23),
-    ];
+    const handleRequestSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!dateRange?.from || !formData.absenceTypeId) {
+            toast({ variant: 'destructive', title: 'Faltan datos', description: 'Por favor, selecciona un tipo y un rango de fechas.'});
+            return;
+        }
+
+        setIsSubmitting(true);
+        const selectedType = absenceTypes.find(t => t.id === formData.absenceTypeId);
+
+        try {
+            const payload = {
+                employeeId: FAKE_EMPLOYEE.id,
+                employeeName: FAKE_EMPLOYEE.name,
+                absenceTypeId: formData.absenceTypeId,
+                absenceTypeName: selectedType?.name || 'Desconocido',
+                startDate: format(dateRange.from, 'yyyy-MM-dd'),
+                endDate: format(dateRange.to || dateRange.from, 'yyyy-MM-dd'),
+                reason: formData.reason,
+            };
+            await createAbsenceRequest(payload);
+            toast({ title: "Solicitud enviada", description: "Tu solicitud ha sido enviada para su aprobación." });
+            await fetchData();
+            setIsDialogOpen(false);
+            setFormData({ absenceTypeId: '', reason: ''});
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo enviar la solicitud.'});
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+    
+    const approvedAbsences = requests
+        .filter(r => r.status === 'Aprobado')
+        .flatMap(r => {
+            const dates = [];
+            let currentDate = parseISO(r.startDate);
+            const endDate = parseISO(r.endDate);
+            while(currentDate <= endDate) {
+                dates.push(new Date(currentDate));
+                currentDate = addDays(currentDate, 1);
+            }
+            return dates;
+        });
 
     const holidayDates = holidays.map(h => parseISO(h.date));
     
@@ -136,18 +181,18 @@ export default function EmployeeAbsencesPage() {
                             Selecciona el tipo de ausencia y las fechas.
                         </DialogDescription>
                     </DialogHeader>
+                    <form onSubmit={handleRequestSubmit}>
                     <div className="grid gap-4 py-4">
                         <div className="space-y-2">
                             <Label htmlFor="absence-type">Tipo de Ausencia</Label>
-                            <Select>
+                            <Select name="absenceTypeId" value={formData.absenceTypeId} onValueChange={(value) => setFormData(prev => ({ ...prev, absenceTypeId: value }))} required>
                                 <SelectTrigger id="absence-type">
                                     <SelectValue placeholder="Seleccionar tipo" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="vacation">Vacaciones</SelectItem>
-                                    <SelectItem value="sick-leave">Licencia por Enfermedad</SelectItem>
-                                    <SelectItem value="personal-day">Día Personal</SelectItem>
-                                    <SelectItem value="other">Otro (especificar en motivo)</SelectItem>
+                                    {absenceTypes.map(type => (
+                                        <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -167,11 +212,11 @@ export default function EmployeeAbsencesPage() {
                                     {dateRange?.from ? (
                                     dateRange.to ? (
                                         <>
-                                        {format(dateRange.from, "LLL dd, y")} -{" "}
-                                        {format(dateRange.to, "LLL dd, y")}
+                                        {format(dateRange.from, "d MMMM, yyyy", { locale: es })} -{" "}
+                                        {format(dateRange.to, "d MMMM, yyyy", { locale: es })}
                                         </>
                                     ) : (
-                                        format(dateRange.from, "LLL dd, y")
+                                        format(dateRange.from, "d MMMM, yyyy", { locale: es })
                                     )
                                     ) : (
                                     <span>Selecciona un rango de fechas</span>
@@ -193,13 +238,17 @@ export default function EmployeeAbsencesPage() {
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="reason">Motivo (opcional)</Label>
-                            <Textarea id="reason" placeholder="Escribe un breve motivo para tu solicitud..."/>
+                            <Textarea id="reason" placeholder="Escribe un breve motivo para tu solicitud..." value={formData.reason} onChange={(e) => setFormData(prev => ({ ...prev, reason: e.target.value }))} />
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
-                        <Button onClick={() => setIsDialogOpen(false)}>Enviar Solicitud</Button>
+                        <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
+                        <Button type="submit" disabled={isSubmitting}>
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Enviar Solicitud
+                        </Button>
                     </DialogFooter>
+                    </form>
                 </DialogContent>
             </Dialog>
         </div>
@@ -234,22 +283,28 @@ export default function EmployeeAbsencesPage() {
                         </TableRow>
                         </TableHeader>
                         <TableBody>
-                        {requests.map((request, index) => (
-                            <TableRow key={index}>
-                            <TableCell className="font-medium">{request.type}</TableCell>
-                            <TableCell>{request.dates}</TableCell>
-                            <TableCell className="text-right">
-                                <Badge
-                                className={cn(
-                                    request.status === "Aprobado" && "bg-accent text-accent-foreground",
-                                    request.status === "Pendiente" && "bg-warning text-warning-foreground",
-                                    request.status === "Rechazado" && "bg-destructive text-destructive-foreground",
-                                    "border-transparent"
-                                )}
-                                >{request.status}</Badge>
-                            </TableCell>
-                            </TableRow>
-                        ))}
+                        {isLoading ? (
+                            <TableRow><TableCell colSpan={3} className="h-24 text-center"><Loader2 className="animate-spin"/></TableCell></TableRow>
+                        ) : requests.length > 0 ? (
+                            requests.map((request) => (
+                                <TableRow key={request.id}>
+                                <TableCell className="font-medium">{request.absenceTypeName}</TableCell>
+                                <TableCell>{format(parseISO(request.startDate), 'd MMM', { locale: es })} - {format(parseISO(request.endDate), 'd MMM, yyyy', { locale: es })}</TableCell>
+                                <TableCell className="text-right">
+                                    <Badge
+                                    className={cn(
+                                        request.status === "Aprobado" && "bg-accent text-accent-foreground",
+                                        request.status === "Pendiente" && "bg-warning text-warning-foreground",
+                                        request.status === "Rechazado" && "bg-destructive text-destructive-foreground",
+                                        "border-transparent"
+                                    )}
+                                    >{request.status}</Badge>
+                                </TableCell>
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow><TableCell colSpan={3} className="h-24 text-center">No tienes solicitudes.</TableCell></TableRow>
+                        )}
                         </TableBody>
                     </Table>
                 </CardContent>
@@ -282,7 +337,7 @@ export default function EmployeeAbsencesPage() {
                         </div>
                         <div className="flex items-center gap-2">
                             <div className="h-4 w-4 rounded-full bg-accent" />
-                            <span>Ausencia/Vacaciones</span>
+                            <span>Ausencia Aprobada</span>
                         </div>
                     </div>
                 </CardContent>
