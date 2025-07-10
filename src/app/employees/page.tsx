@@ -19,6 +19,39 @@ import type { Employee, Department } from "@/lib/api";
 import { listEmployees, createEmployee, updateEmployee, deleteEmployee, listSettings } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { Skeleton } from "@/components/ui/skeleton";
+
+
+function EmployeesPageSkeleton() {
+  return (
+    <div className="space-y-8">
+      <div>
+        <Skeleton className="h-9 w-1/3" />
+        <Skeleton className="h-5 w-1/2 mt-2" />
+      </div>
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <Skeleton className="h-10 flex-1 w-full" />
+            <div className="flex gap-2 w-full sm:w-auto">
+              <Skeleton className="h-10 w-full sm:w-[180px]" />
+              <Skeleton className="h-10 w-full sm:w-auto px-6" />
+              <Skeleton className="h-10 w-full sm:w-auto px-8" />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-16 w-full" />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
 
 export default function EmployeesPage() {
   const { toast } = useToast();
@@ -43,26 +76,25 @@ export default function EmployeesPage() {
     phone: "",
   });
 
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      const [employeesData, departmentsData] = await Promise.all([
-        listEmployees(),
-        listSettings<Department>('departments'),
-      ]);
-      setEmployees(employeesData);
-      setDepartments(departmentsData);
-    } catch (error) {
-      console.error("Failed to fetch data:", error);
-      toast({ variant: 'destructive', title: "Error", description: "No se pudieron cargar los datos." });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const [employeesData, departmentsData] = await Promise.all([
+          listEmployees(),
+          listSettings<Department>('departments'),
+        ]);
+        setEmployees(employeesData);
+        setDepartments(departmentsData);
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
+        toast({ variant: 'destructive', title: "Error", description: "No se pudieron cargar los datos." });
+      } finally {
+        setIsLoading(false);
+      }
+    };
     fetchData();
-  }, []);
+  }, [toast]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -146,7 +178,6 @@ export default function EmployeesPage() {
   }
 
   const filteredEmployees = useMemo(() => {
-    if (!employees) return [];
     return employees.filter(employee => {
         const matchesSearch = employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                               employee.email.toLowerCase().includes(searchTerm.toLowerCase());
@@ -157,7 +188,7 @@ export default function EmployeesPage() {
 
 
   if (isLoading) {
-    return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+    return <EmployeesPageSkeleton />;
   }
 
   return (
@@ -345,5 +376,3 @@ export default function EmployeesPage() {
     </div>
   )
 }
-
-    

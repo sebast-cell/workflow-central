@@ -48,13 +48,35 @@ const chartData = [
   { name: "Dom", hours: 10 },
 ]
 
+function DashboardSkeleton() {
+    return (
+        <div className="flex flex-col gap-8">
+            <div>
+                <Skeleton className="h-9 w-1/2" />
+                <Skeleton className="h-5 w-3/4 mt-2" />
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <Skeleton className="h-28" />
+                <Skeleton className="h-28" />
+                <Skeleton className="h-28" />
+                <Skeleton className="h-28" />
+            </div>
+            <div className="grid gap-8 lg:grid-cols-2">
+                <Skeleton className="h-80" />
+                <Skeleton className="h-80" />
+            </div>
+            <Skeleton className="h-96" />
+        </div>
+    )
+}
+
+
 export default function Dashboard() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
-      setIsLoading(true);
       try {
         const employeesData = await listEmployees();
         setEmployees(employeesData);
@@ -67,27 +89,12 @@ export default function Dashboard() {
     fetchData();
   }, []);
 
-  const activeEmployeesCount = employees ? employees.filter(e => e.status === 'Activo').length : 0;
-  const teamSummary = employees ? employees.slice(0, 4) : [];
-
   if (isLoading) {
-    return (
-        <div className="space-y-8">
-            <div className="flex justify-center items-center h-64">
-                <Loader2 className="h-8 w-8 animate-spin" />
-            </div>
-             <Card>
-                <CardHeader>
-                    <Skeleton className="h-8 w-1/2" />
-                    <Skeleton className="h-4 w-3/4 mt-2" />
-                </CardHeader>
-                <CardContent>
-                    <Skeleton className="h-40 w-full" />
-                </CardContent>
-            </Card>
-        </div>
-    );
+    return <DashboardSkeleton />;
   }
+
+  const activeEmployeesCount = employees.filter(e => e.status === 'Activo').length;
+  const teamSummary = employees.slice(0, 4);
 
   return (
     <div className="flex flex-col gap-8">
@@ -104,7 +111,7 @@ export default function Dashboard() {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{activeEmployeesCount} / {employees?.length || 0}</div>
+                <div className="text-2xl font-bold">{activeEmployeesCount} / {employees.length || 0}</div>
                 <p className="text-xs text-muted-foreground">+2 desde la última hora</p>
               </CardContent>
             </>
@@ -253,5 +260,3 @@ export default function Dashboard() {
     </div>
   );
 }
-
-    
