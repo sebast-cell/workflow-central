@@ -146,6 +146,7 @@ export default function EmployeesPage() {
   }
 
   const filteredEmployees = useMemo(() => {
+    if (!employees) return [];
     return employees.filter(employee => {
         const matchesSearch = employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                               employee.email.toLowerCase().includes(searchTerm.toLowerCase());
@@ -213,7 +214,7 @@ export default function EmployeesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredEmployees.map((employee) => (
+              {filteredEmployees.length > 0 ? filteredEmployees.map((employee) => (
                 <TableRow key={employee.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
@@ -257,7 +258,13 @@ export default function EmployeesPage() {
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              ))}
+              )) : (
+                <TableRow>
+                    <TableCell colSpan={5} className="h-24 text-center">
+                        No se encontraron empleados. ¡Añade el primero para empezar!
+                    </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>

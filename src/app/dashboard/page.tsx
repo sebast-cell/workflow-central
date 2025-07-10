@@ -67,8 +67,8 @@ export default function Dashboard() {
     fetchData();
   }, []);
 
-  const activeEmployeesCount = employees.filter(e => e.status === 'Activo').length;
-  const teamSummary = employees.slice(0, 4);
+  const activeEmployeesCount = employees ? employees.filter(e => e.status === 'Activo').length : 0;
+  const teamSummary = employees ? employees.slice(0, 4) : [];
 
   return (
     <div className="flex flex-col gap-8">
@@ -85,7 +85,7 @@ export default function Dashboard() {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                {isLoading ? <Skeleton className="h-7 w-24" /> : <div className="text-2xl font-bold">{activeEmployeesCount} / {employees.length}</div>}
+                {isLoading ? <Skeleton className="h-7 w-24" /> : <div className="text-2xl font-bold">{activeEmployeesCount} / {employees?.length || 0}</div>}
                 <p className="text-xs text-muted-foreground">+2 desde la última hora</p>
               </CardContent>
             </>
