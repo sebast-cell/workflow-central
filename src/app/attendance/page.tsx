@@ -77,10 +77,32 @@ function parseAMPM(timeStr: string) {
     return new Date(1970, 0, 1, Number(hours), Number(minutes));
 }
 
+const HusinCardContent = ({ employees }: { employees: ApiEmployee[] }) => (
+    <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
+      <div className="p-3 space-y-2 max-h-48 overflow-y-auto">
+        {employees.length > 0 ? (
+          employees.map((emp) => (
+            <div key={emp.id} className="flex items-center gap-2 text-sm">
+              <Avatar className="h-6 w-6">
+                <AvatarImage src={`https://placehold.co/40x40.png`} data-ai-hint="people avatar" alt={emp.name} />
+                <AvatarFallback className="text-xs">
+                  {emp.avatar}
+                </AvatarFallback>
+              </Avatar>
+              <span>{emp.name}</span>
+            </div>
+          ))
+        ) : (
+          <p className="text-xs text-muted-foreground text-center py-2">No hay empleados.</p>
+        )}
+      </div>
+    </div>
+  );
+
 export default function AttendancePage() {
-    const [employees, setEmployees] = useState<ApiEmployee[]>(mockEmployees);
-    const [departments, setDepartments] = useState<Department[]>(mockDepartments);
-    const [isLoading, setIsLoading] = useState(false);
+    const [employees, setEmployees] = useState<ApiEmployee[]>([]);
+    const [departments, setDepartments] = useState<Department[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     const [dateRange, setDateRange] = useState<DateRange | undefined>({
       from: new Date(2024, 7, 24),
@@ -91,6 +113,15 @@ export default function AttendancePage() {
     const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5;
+
+    useEffect(() => {
+        // Simulate fetching data with a delay to show loading state
+        setTimeout(() => {
+            setEmployees(mockEmployees);
+            setDepartments(mockDepartments);
+            setIsLoading(false);
+        }, 500);
+    }, []);
 
     const availableEmployees = useMemo(() => {
         if (selectedDepartment === 'all') {
@@ -110,6 +141,8 @@ export default function AttendancePage() {
     }, [dateRange, selectedLocation, selectedDepartment, selectedEmployee]);
 
     const husinStats = useMemo(() => {
+        if (isLoading) return null;
+
         const today = new Date(2024, 7, 26);
         const todayNormalized = startOfDay(today);
 
@@ -173,7 +206,7 @@ export default function AttendancePage() {
         stats.absent.count = stats.absent.list.length;
 
         return stats;
-    }, [employees]);
+    }, [employees, isLoading]);
 
     const filteredLog = useMemo(() => {
         const startDate = dateRange?.from ? startOfDay(dateRange.from) : null;
@@ -211,28 +244,33 @@ export default function AttendancePage() {
         default: return "secondary";
       }
     };
-
-  const HusinCardContent = ({ employees }: { employees: ApiEmployee[] }) => (
-    <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
-      <div className="p-3 space-y-2 max-h-48 overflow-y-auto">
-        {employees.length > 0 ? (
-          employees.map((emp) => (
-            <div key={emp.id} className="flex items-center gap-2 text-sm">
-              <Avatar className="h-6 w-6">
-                <AvatarImage src={`https://placehold.co/40x40.png`} data-ai-hint="people avatar" alt={emp.name} />
-                <AvatarFallback className="text-xs">
-                  {emp.avatar}
-                </AvatarFallback>
-              </Avatar>
-              <span>{emp.name}</span>
+    
+  if (isLoading) {
+    return (
+        <div className="space-y-8">
+            <Skeleton className="h-10 w-1/2" />
+            <div className="space-y-4">
+                 <Skeleton className="h-8 w-1/4" />
+                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+                    <Skeleton className="h-24" />
+                    <Skeleton className="h-24" />
+                    <Skeleton className="h-24" />
+                    <Skeleton className="h-24" />
+                    <Skeleton className="h-24" />
+                 </div>
             </div>
-          ))
-        ) : (
-          <p className="text-xs text-muted-foreground text-center py-2">No hay empleados.</p>
-        )}
-      </div>
-    </div>
-  );
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-8 w-1/3" />
+                    <Skeleton className="h-4 w-2/3" />
+                </CardHeader>
+                <CardContent>
+                    <Skeleton className="h-40 w-full" />
+                </CardContent>
+            </Card>
+        </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -253,12 +291,12 @@ export default function AttendancePage() {
                                 <Home className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">{husinStats.inOffice.count}</div>
+                                <div className="text-2xl font-bold">{husinStats?.inOffice.count}</div>
                             </CardContent>
                         </Card>
                     </CollapsibleTrigger>
                     <CollapsibleContent className="absolute z-10 w-full">
-                        <HusinCardContent employees={husinStats.inOffice.list} />
+                        <HusinCardContent employees={husinStats?.inOffice.list || []} />
                     </CollapsibleContent>
                 </Collapsible>
             </div>
@@ -272,12 +310,12 @@ export default function AttendancePage() {
                                 <Globe className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">{husinStats.remote.count}</div>
+                                <div className="text-2xl font-bold">{husinStats?.remote.count}</div>
                             </CardContent>
                         </Card>
                     </CollapsibleTrigger>
                     <CollapsibleContent className="absolute z-10 w-full">
-                        <HusinCardContent employees={husinStats.remote.list} />
+                        <HusinCardContent employees={husinStats?.remote.list || []} />
                     </CollapsibleContent>
                 </Collapsible>
             </div>
@@ -291,12 +329,12 @@ export default function AttendancePage() {
                                 <Coffee className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">{husinStats.onBreak.count}</div>
+                                <div className="text-2xl font-bold">{husinStats?.onBreak.count}</div>
                             </CardContent>
                         </Card>
                     </CollapsibleTrigger>
                     <CollapsibleContent className="absolute z-10 w-full">
-                        <HusinCardContent employees={husinStats.onBreak.list} />
+                        <HusinCardContent employees={husinStats?.onBreak.list || []} />
                     </CollapsibleContent>
                 </Collapsible>
             </div>
@@ -310,12 +348,12 @@ export default function AttendancePage() {
                             <Briefcase className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{husinStats.onVacation.count}</div>
+                            <div className="text-2xl font-bold">{husinStats?.onVacation.count}</div>
                         </CardContent>
                         </Card>
                     </CollapsibleTrigger>
                     <CollapsibleContent className="absolute z-10 w-full">
-                        <HusinCardContent employees={husinStats.onVacation.list} />
+                        <HusinCardContent employees={husinStats?.onVacation.list || []} />
                     </CollapsibleContent>
                 </Collapsible>
             </div>
@@ -329,12 +367,12 @@ export default function AttendancePage() {
                             <UserX className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{husinStats.absent.count}</div>
+                            <div className="text-2xl font-bold">{husinStats?.absent.count}</div>
                         </CardContent>
                         </Card>
                     </CollapsibleTrigger>
                     <CollapsibleContent className="absolute z-10 w-full">
-                        <HusinCardContent employees={husinStats.absent.list} />
+                        <HusinCardContent employees={husinStats?.absent.list || []} />
                     </CollapsibleContent>
                 </Collapsible>
             </div>
@@ -534,5 +572,3 @@ export default function AttendancePage() {
     </div>
   )
 }
-
-    
