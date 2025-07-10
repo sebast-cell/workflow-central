@@ -13,24 +13,39 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { type Objective, type Task, listObjectives, listTasks, createTask } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
-// Mock Data
-const mockObjectives: Objective[] = [
-    { id: 'obj1', project_id: '1', title: 'Crear wireframes', description: 'Diseñar los wireframes de alta fidelidad', type: 'individual', assigned_to: '2', is_incentivized: false, start_date: '2024-08-01', end_date: '2024-08-15', weight: 20 },
-    { id: 'obj2', project_id: '1', title: 'Desarrollar componentes UI', description: 'Implementar la librería de componentes en React', type: 'equipo', assigned_to: '1', is_incentivized: true, incentive_id: 'inc1', start_date: '2024-08-16', end_date: '2024-09-15', weight: 40 },
-];
-const mockTasks: Task[] = [
-    { id: 'task1', objective_id: 'obj1', title: 'Diseñar página de inicio', completed: true, is_incentivized: false },
-    { id: 'task2', objective_id: 'obj1', title: 'Diseñar página de producto', completed: false, is_incentivized: false },
-    { id: 'task3', objective_id: 'obj2', title: 'Crear componente Botón', completed: true, is_incentivized: false },
-];
-
 export default function EmployeeTasksPage() {
     const { toast } = useToast();
-    const [tasks, setTasks] = useState<Task[]>(mockTasks);
-    const [myObjectives, setMyObjectives] = useState<Objective[]>(mockObjectives);
-    const [isLoading, setIsLoading] = useState(false); // Using mock data
+    const [tasks, setTasks] = useState<Task[]>([]);
+    const [myObjectives, setMyObjectives] = useState<Objective[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [newTaskData, setNewTaskData] = useState({ title: '', objective_id: ''});
+
+    // In a real app, this would come from an auth context
+    const FAKE_EMPLOYEE_ID = "2"; 
+
+    const fetchData = async () => {
+        setIsLoading(true);
+        try {
+            const [allObjectives, allTasks] = await Promise.all([listObjectives(), listTasks()]);
+            const employeeObjectives = allObjectives.filter(o => o.type === 'individual' && o.assigned_to === FAKE_EMPLOYEE_ID);
+            
+            setMyObjectives(employeeObjectives);
+            // Show all tasks related to my objectives
+            const myTaskIds = new Set(employeeObjectives.map(o => o.id));
+            setTasks(allTasks.filter(t => myTaskIds.has(t.objective_id)));
+
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error', description: 'No se pudieron cargar tus tareas y objetivos.'})
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    useEffect(() => {
+        fetchData();
+    }, []);
 
     const handleCreateTask = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -39,22 +54,33 @@ export default function EmployeeTasksPage() {
             return;
         }
 
-        const newTaskPayload: Task = {
-            id: `task${tasks.length + 1}`,
-            title: newTaskData.title,
-            objective_id: newTaskData.objective_id,
-            completed: false,
-            is_incentivized: false,
-        };
-
-        setTasks(prev => [...prev, newTaskPayload]);
-        setNewTaskData({ title: '', objective_id: '' });
-        setIsDialogOpen(false);
-        toast({ title: "Tarea creada", description: "La nueva tarea ha sido añadida." });
+        setIsSubmitting(true);
+        try {
+            const newTaskPayload: Omit<Task, 'id'> = {
+                title: newTaskData.title,
+                objective_id: newTaskData.objective_id,
+                completed: false,
+                is_incentivized: false,
+            };
+            const savedTask = await createTask(newTaskPayload);
+            setTasks(prev => [...prev, savedTask]);
+            setNewTaskData({ title: '', objective_id: '' });
+            setIsDialogOpen(false);
+            toast({ title: "Tarea creada", description: "La nueva tarea ha sido añadida." });
+        } catch (error) {
+            toast({ variant: 'destructive', title: "Error", description: "No se pudo crear la tarea." });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleToggleTask = async (taskId: string, completed: boolean) => {
+        // Optimistic update
         setTasks(prev => prev.map(t => t.id === taskId ? { ...t, completed } : t));
+        
+        // In a real app, you would have an updateTask API call here.
+        // Since we don't have one, we'll just show a toast.
+        toast({ title: "Estado de la tarea actualizado."});
     };
 
     return (
@@ -109,7 +135,10 @@ export default function EmployeeTasksPage() {
                                 </div>
                             </div>
                             <DialogFooter>
-                                <Button type="submit">Guardar Tarea</Button>
+                                <Button type="submit" disabled={isSubmitting}>
+                                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                                    Guardar Tarea
+                                </Button>
                             </DialogFooter>
                         </form>
                     </DialogContent>
@@ -172,5 +201,3 @@ export default function EmployeeTasksPage() {
         </div>
     )
 }
-
-    

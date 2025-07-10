@@ -202,14 +202,20 @@ const departmentCache = new Map<string, Department>();
 // Function to pre-fill caches
 const populateCaches = async () => {
     if (employeeCache.size === 0) {
-        const employees = await listEmployees();
-        employees.forEach(e => employeeCache.set(e.id, e));
+        try {
+            const employees = await listEmployees();
+            employees.forEach(e => employeeCache.set(e.id, e));
+        } catch(e) { console.error("Could not populate employee cache", e)}
     }
     if (departmentCache.size === 0) {
-        const departments = await listSettings<Department>('departments');
-        departments.forEach(d => departmentCache.set(d.id, d));
+        try {
+            const departments = await listSettings<Department>('departments');
+            departments.forEach(d => departmentCache.set(d.id, d));
+        } catch(e) { console.error("Could not populate department cache", e)}
     }
 };
+// Call it once
+populateCaches();
 
 // This function resolves the name for an objective's assigned_to field
 export const getAssignedToName = (objective: Objective): string => {

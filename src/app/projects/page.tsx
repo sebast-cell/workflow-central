@@ -14,25 +14,37 @@ import { type Project, listProjects, createProject } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const mockProjects: Project[] = [
-    { id: "1", name: "Rediseño del Sitio Web", description: "Modernizar la interfaz de usuario y la experiencia del sitio web corporativo." },
-    { id: "2", name: "Lanzamiento de App Móvil Q3", description: "Desarrollar y lanzar la aplicación móvil para iOS y Android." },
-    { id: "3", name: "Campaña de Marketing de Verano", description: "Ejecutar campaña multicanal para aumentar las ventas de verano." },
-    { id: "4", name: "Migración a Nueva Infraestructura", description: "Mover todos los servicios a la nueva arquitectura en la nube." },
-    { id: "5", name: "Programa de Certificación Interna", description: "Crear un programa de certificación para el equipo de desarrollo." },
-];
-
-
 export default function ProjectsPage() {
   const { toast } = useToast();
-  const [projects, setProjects] = useState<Project[]>(mockProjects);
-  const [isLoading, setIsLoading] = useState(false); // Using mock data
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [newProjectData, setNewProjectData] = useState({
     name: "",
     description: "",
   });
+
+  const fetchProjects = async () => {
+    setIsLoading(true);
+    try {
+        const data = await listProjects();
+        setProjects(data);
+    } catch (error) {
+        toast({
+            variant: "destructive",
+            title: "Error al cargar proyectos",
+            description: "No se pudieron obtener los proyectos.",
+        });
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
@@ -43,16 +55,22 @@ export default function ProjectsPage() {
     e.preventDefault();
     if (!newProjectData.name) return;
 
-    // This is a local update for the mock data
-    const newProject: Project = {
-        id: (projects.length + 1).toString(),
-        name: newProjectData.name,
-        description: newProjectData.description,
-    };
-    setProjects(prev => [...prev, newProject]);
-    setIsDialogOpen(false);
-    setNewProjectData({ name: "", description: "" });
-    toast({ title: "Proyecto creado", description: `El proyecto "${newProject.name}" ha sido creado.` });
+    setIsSubmitting(true);
+    try {
+        const newProject = await createProject(newProjectData);
+        setProjects(prev => [...prev, newProject]);
+        setIsDialogOpen(false);
+        setNewProjectData({ name: "", description: "" });
+        toast({ title: "Proyecto creado", description: `El proyecto "${newProject.name}" ha sido creado.` });
+    } catch (error) {
+        toast({
+            variant: "destructive",
+            title: "Error al crear proyecto",
+            description: "No se pudo guardar el proyecto.",
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
   };
 
   return (
@@ -88,7 +106,10 @@ export default function ProjectsPage() {
                 </div>
               </div>
               <DialogFooter>
-                <Button type="submit">Crear Proyecto</Button>
+                <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Crear Proyecto
+                </Button>
               </DialogFooter>
             </form>
           </DialogContent>

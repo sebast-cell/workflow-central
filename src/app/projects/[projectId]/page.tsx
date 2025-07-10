@@ -15,32 +15,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { type Project, type Objective, type Task, type Incentive, getAssignedToName } from "@/lib/api";
+import { type Project, type Objective, type Task, type Incentive, getAssignedToName, listProjects, listObjectives, listTasks, listIncentives } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-
-// Mock data to ensure stability
-const mockProjects: Project[] = [
-    { id: "1", name: "Rediseño del Sitio Web", description: "Modernizar la interfaz de usuario y la experiencia del sitio web corporativo." },
-    { id: "2", name: "Lanzamiento de App Móvil Q3", description: "Desarrollar y lanzar la aplicación móvil para iOS y Android." },
-    { id: "3", name: "Campaña de Marketing de Verano", description: "Ejecutar campaña multicanal para aumentar las ventas de verano." },
-];
-const mockObjectives: Objective[] = [
-    { id: 'obj1', project_id: '1', title: 'Crear wireframes', description: 'Diseñar los wireframes de alta fidelidad', type: 'individual', assigned_to: '2', is_incentivized: false, start_date: '2024-08-01', end_date: '2024-08-15', weight: 20 },
-    { id: 'obj2', project_id: '1', title: 'Desarrollar componentes UI', description: 'Implementar la librería de componentes en React', type: 'equipo', assigned_to: '1', is_incentivized: true, incentive_id: 'inc1', start_date: '2024-08-16', end_date: '2024-09-15', weight: 40 },
-    { id: 'obj3', project_id: '2', title: 'Definir MVP', description: 'Definir el alcance mínimo viable para el lanzamiento inicial', type: 'empresa', assigned_to: 'company', is_incentivized: false, start_date: '2024-08-01', end_date: '2024-08-10', weight: 10 },
-];
-const mockTasks: Task[] = [
-    { id: 'task1', objective_id: 'obj1', title: 'Diseñar página de inicio', completed: true, is_incentivized: false },
-    { id: 'task2', objective_id: 'obj1', title: 'Diseñar página de producto', completed: false, is_incentivized: false },
-    { id: 'task3', objective_id: 'obj2', title: 'Crear componente Botón', completed: true, is_incentivized: false },
-    { id: 'task4', objective_id: 'obj2', title: 'Crear componente Tarjeta', completed: true, is_incentivized: false },
-    { id: 'task5', objective_id: 'obj2', title: 'Crear componente Navegación', completed: false, is_incentivized: false },
-];
-const mockIncentives: Incentive[] = [
-    { id: 'inc1', name: 'Bono Trimestral', type: 'económico', value: '500€', period: 'trimestral', active: true, company_id: '1', condition_expression: { modality: 'proportional' } },
-];
-
 
 export default function ProjectDetailsPage() {
     const { toast } = useToast();
@@ -55,17 +32,40 @@ export default function ProjectDetailsPage() {
     const [isObjectiveDialogOpen, setIsObjectiveDialogOpen] = useState(false);
     
     useEffect(() => {
-        // Using mock data instead of fetching
-        setIsLoading(true);
-        const currentProject = mockProjects.find(p => p.id === projectId) || null;
-        const objectivesForProject = mockObjectives.filter(o => o.project_id === projectId);
+        if (!projectId) return;
         
-        setProject(currentProject);
-        setProjectObjectives(objectivesForProject);
-        setTasks(mockTasks);
-        setIncentives(mockIncentives);
-        setIsLoading(false);
-    }, [projectId]);
+        const fetchData = async () => {
+            setIsLoading(true);
+            try {
+                // This will be slow if there's a lot of data. In a real app, you'd fetch only what's needed.
+                const [allProjects, allObjectives, allTasks, allIncentives] = await Promise.all([
+                    listProjects(),
+                    listObjectives(),
+                    listTasks(),
+                    listIncentives()
+                ]);
+                
+                const currentProject = allProjects.find(p => p.id === projectId) || null;
+                const objectivesForProject = allObjectives.filter(o => o.project_id === projectId);
+                
+                setProject(currentProject);
+                setProjectObjectives(objectivesForProject);
+                setTasks(allTasks); // We need all tasks to calculate progress for any objective
+                setIncentives(allIncentives);
+
+            } catch (error) {
+                toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: "No se pudieron cargar los datos del proyecto.",
+                });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchData();
+    }, [projectId, toast]);
     
     const handleAddObjective = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();

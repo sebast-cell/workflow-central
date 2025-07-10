@@ -16,20 +16,6 @@ type ObjectiveWithIncentive = Objective & {
     isLoadingIncentive: boolean;
 };
 
-// Mock Data
-const mockObjectives: Objective[] = [
-    { id: 'obj1', project_id: '1', title: 'Crear wireframes', description: 'Diseñar los wireframes de alta fidelidad', type: 'individual', assigned_to: '2', is_incentivized: false, start_date: '2024-08-01', end_date: '2024-08-15', weight: 20 },
-    { id: 'obj2', project_id: '1', title: 'Desarrollar componentes UI', description: 'Implementar la librería de componentes en React', type: 'equipo', assigned_to: '1', is_incentivized: true, incentive_id: 'inc1', start_date: '2024-08-16', end_date: '2024-09-15', weight: 40 },
-];
-const mockTasks: Task[] = [
-    { id: 'task1', objective_id: 'obj1', title: 'Diseñar página de inicio', completed: true, is_incentivized: false },
-    { id: 'task2', objective_id: 'obj1', title: 'Diseñar página de producto', completed: false, is_incentivized: false },
-    { id: 'task3', objective_id: 'obj2', title: 'Crear componente Botón', completed: true, is_incentivized: false },
-];
-const mockIncentives: Incentive[] = [
-    { id: 'inc1', name: 'Bono Trimestral', type: 'económico', value: '500€', period: 'trimestral', active: true, company_id: '1', condition_expression: { modality: 'proportional' } },
-];
-
 
 export default function EmployeePerformancePage() {
     const { toast } = useToast();
@@ -38,44 +24,50 @@ export default function EmployeePerformancePage() {
     const [incentives, setIncentives] = useState<Incentive[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
+    // In a real app, this would come from an auth context
+    const FAKE_EMPLOYEE_ID = "2"; // Corresponds to Jackson Lee in mock data
+
     const fetchIncentiveDataForObjective = async (objective: Objective) => {
         if (!objective.is_incentivized) return;
 
         setMyObjectives(prev => prev.map(o => o.id === objective.id ? { ...o, isLoadingIncentive: true } : o));
         
-        // Simulate API call
-        setTimeout(() => {
-             const progress = getObjectiveProgress(objective.id).progress / 100;
-             const incentive = mockIncentives.find(i => i.id === objective.incentive_id);
-             let result = null;
-             if (incentive) {
-                 const value = parseFloat(incentive.value);
-                 if(incentive.condition_expression?.modality === 'proportional') {
-                    result = { result: value * progress, message: `Proporcional (${(progress * 100).toFixed(0)}%)` };
-                 } else {
-                    result = { result: progress >= 1 ? value : 0, message: progress >=1 ? "Completo" : "No cumplido" };
-                 }
-             }
-             setMyObjectives(prev => prev.map(o => o.id === objective.id ? { ...o, incentiveResult: result, isLoadingIncentive: false } : o));
-        }, 500);
+        try {
+            const result = await calculateIncentiveForObjective(objective.id);
+            setMyObjectives(prev => prev.map(o => o.id === objective.id ? { ...o, incentiveResult: result, isLoadingIncentive: false } : o));
+        } catch (error) {
+             setMyObjectives(prev => prev.map(o => o.id === objective.id ? { ...o, isLoadingIncentive: false } : o));
+             toast({ variant: "destructive", title: "Error", description: `No se pudo calcular el incentivo para ${objective.title}`});
+        }
     };
 
-    const fetchData = () => {
+    const fetchData = async () => {
         setIsLoading(true);
-        // Simulate fetching data
-        setTimeout(() => {
-            const demoObjectives = mockObjectives.slice(0, 3);
-            setMyObjectives(demoObjectives.map(o => ({...o, isLoadingIncentive: false })));
-            setTasks(mockTasks);
-            setIncentives(mockIncentives);
-            setIsLoading(false);
+        try {
+             const [ allObjectives, allTasks, allIncentives] = await Promise.all([
+                listObjectives(),
+                listTasks(),
+                listIncentives(),
+             ]);
 
-            demoObjectives.forEach(obj => {
+             // Filter objectives assigned to the current employee
+             const employeeObjectives = allObjectives.filter(o => o.type === 'individual' && o.assigned_to === FAKE_EMPLOYEE_ID);
+             
+             setMyObjectives(employeeObjectives.map(o => ({...o, isLoadingIncentive: false })));
+             setTasks(allTasks);
+             setIncentives(allIncentives);
+             
+             employeeObjectives.forEach(obj => {
                 if(obj.is_incentivized) {
                     fetchIncentiveDataForObjective(obj);
                 }
             });
-        }, 300);
+
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error', description: 'No se pudieron cargar tus datos de desempeño.'});
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     useEffect(() => {
@@ -203,5 +195,3 @@ export default function EmployeePerformancePage() {
         </div>
     )
 }
-
-    
