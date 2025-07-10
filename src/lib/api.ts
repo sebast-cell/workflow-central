@@ -180,6 +180,38 @@ export type VacationPolicy = {
     assignedTo: string[];
 };
 
+// -------- HELPER FUNCTIONS -------- //
+// A simple cache to avoid fetching the same data multiple times
+const employeeCache = new Map<string, Employee>();
+const departmentCache = new Map<string, Department>();
+
+// Function to pre-fill caches
+const populateCaches = async () => {
+    if (employeeCache.size === 0) {
+        const employees = await listEmployees();
+        employees.forEach(e => employeeCache.set(e.id, e));
+    }
+    if (departmentCache.size === 0) {
+        const departments = await listSettings<Department>('departments');
+        departments.forEach(d => departmentCache.set(d.id, d));
+    }
+};
+
+// This function resolves the name for an objective's assigned_to field
+export const getAssignedToName = (objective: Objective): string => {
+    if (objective.type === 'individual') {
+        const employee = employeeCache.get(objective.assigned_to);
+        return employee ? employee.name : "Empleado no encontrado";
+    }
+    if (objective.type === 'equipo') {
+        const department = departmentCache.get(objective.assigned_to);
+        return department ? department.name : "Equipo no encontrado";
+    }
+    if (objective.type === 'empresa') return "Toda la empresa";
+    return "Desconocido";
+};
+
+
 // -------- API FUNCTIONS -------- //
 
 // -- Generic Settings Loader --

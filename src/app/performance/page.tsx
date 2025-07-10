@@ -14,7 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Progress } from "@/components/ui/progress";
-import { type Objective, type Task, type Incentive, type Project, type Department, type Employee, listObjectives, listTasks, listIncentives, listProjects, createObjective, calculateIncentiveForObjective, createTask, listSettings, listEmployees } from "@/lib/api";
+import { type Objective, type Task, type Incentive, type Project, type Department, type Employee, listObjectives, listTasks, listIncentives, listProjects, createObjective, calculateIncentiveForObjective, createTask, listSettings, listEmployees, getAssignedToName } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
@@ -180,19 +180,6 @@ export default function PerformancePage() {
         setTasks(updateTasks);
     };
 
-    const getAssignedToName = (objective: Objective) => {
-        if (objective.type === 'individual') {
-            const employee = employees.find(e => e.id === objective.assigned_to);
-            return employee ? employee.name : "Empleado no encontrado";
-        }
-         if (objective.type === 'equipo') {
-            const department = departments.find(d => d.id === objective.assigned_to);
-            return department ? department.name : "Equipo no encontrado";
-        }
-        if (objective.type === 'empresa') return "Toda la empresa";
-        return "Desconocido";
-    };
-    
     const getObjectiveProgress = (objectiveId: string) => {
         const relevantTasks = tasks.filter(t => t.objective_id === objectiveId);
         if (relevantTasks.length === 0) return { progress: 0, completed: 0, total: 0 };

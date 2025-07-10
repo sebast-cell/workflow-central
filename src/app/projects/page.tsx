@@ -39,7 +39,7 @@ export default function ProjectsPage() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [toast]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;

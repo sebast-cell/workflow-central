@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { type Project, type Objective, type Task, type Incentive, listProjects, listObjectives, listTasks, listIncentives } from "@/lib/api";
+import { type Project, type Objective, type Task, type Incentive, listProjects, listObjectives, listTasks, listIncentives, getAssignedToName } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -202,7 +202,7 @@ export default function ProjectDetailsPage() {
                                             )}
                                         </div>
                                     </TableCell>
-                                    <TableCell><Badge variant="outline">{obj.assigned_to}</Badge></TableCell>
+                                    <TableCell><Badge variant="outline">{getAssignedToName(obj)}</Badge></TableCell>
                                     <TableCell>
                                         <div className="flex items-center gap-2">
                                             <Progress value={progress} className="w-24" />
