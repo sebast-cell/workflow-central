@@ -38,7 +38,7 @@ const mockTasks: Task[] = [
     { id: 'task5', objective_id: 'obj2', title: 'Crear componente Navegación', completed: false, is_incentivized: false },
 ];
 const mockIncentives: Incentive[] = [
-    { id: 'inc1', name: 'Bono Trimestral', type: 'económico', value: '500€', period: 'trimestral', active: true, company_id: '1' },
+    { id: 'inc1', name: 'Bono Trimestral', type: 'económico', value: '500€', period: 'trimestral', active: true, company_id: '1', condition_expression: { modality: 'proportional' } },
 ];
 
 
@@ -231,5 +231,3 @@ export default function ProjectDetailsPage() {
         </div>
     )
 }
-
-    
