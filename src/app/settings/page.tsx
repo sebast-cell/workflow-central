@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -19,7 +20,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { DateRange } from "react-day-picker";
@@ -29,6 +30,68 @@ import { Badge } from "@/components/ui/badge";
 import { type Employee, type Center, type Department, type Role, type Break, type ClockInType, type Shift, type FlexibleSchedule, type FixedSchedule, type AbsenceType, type Holiday, type CalendarData, type VacationPolicy, type Incentive, listIncentives, createIncentive, listSettings, createSetting, updateSetting, deleteSetting, listEmployees } from "@/lib/api";
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from "@/hooks/use-toast";
+
+// --- Mock Data ---
+const mockEmployees: Employee[] = [
+    { id: "1", name: "Olivia Martin", email: "olivia.martin@example.com", department: "Ingeniería", role: "Frontend Developer", status: "Activo", schedule: "9-5", hireDate: "2023-01-15", phone: "123-456-7890", avatar: "OM" },
+    { id: "2", name: "Jackson Lee", email: "jackson.lee@example.com", department: "Diseño", role: "UI/UX Designer", status: "Activo", schedule: "10-6", hireDate: "2022-06-01", phone: "123-456-7891", avatar: "JL" },
+];
+
+const mockDepartments: Department[] = [
+    { id: "1", name: "Ingeniería" },
+    { id: "2", name: "Diseño" },
+    { id: "3", name: "Marketing" },
+];
+
+const mockCenters: Center[] = [
+    { id: 'center1', name: 'Oficina Central', address: 'Calle Gran Vía, 1, Madrid', radius: 100, lat: 40.416775, lng: -3.703790, timezone: 'Europe/Madrid' }
+];
+
+const mockRoles: Role[] = [
+    { id: 'role1', name: 'Admin', description: 'Acceso total', permissions: ['manage_employees', 'manage_settings'] },
+    { id: 'role2', name: 'Manager', description: 'Gestiona equipos y proyectos', permissions: ['manage_projects'] }
+];
+
+const mockBreaks: Break[] = [
+    { id: 'break1', name: 'Pausa para comer', remunerated: false, limit: 60, isAutomatic: true, intervalStart: "13:00", intervalEnd: "15:00", notifyStart: true, notifyEnd: true, assignedTo: [] },
+    { id: 'break2', name: 'Pausa café', remunerated: true, limit: 15, isAutomatic: false, notifyStart: false, notifyEnd: false, assignedTo: [] }
+];
+
+const mockClockInTypes: ClockInType[] = [
+    { id: 'clockin1', name: 'Trabajo en Oficina', color: 'bg-blue-500', assignment: 'all', assignedTo: [] },
+    { id: 'clockin2', name: 'Trabajo Remoto', color: 'bg-green-500', assignment: 'all', assignedTo: [] },
+];
+
+const mockShifts: Shift[] = [
+    { id: 'shift1', name: 'Turno de Mañana', start: '08:00', end: '16:00' },
+    { id: 'shift2', name: 'Turno de Tarde', start: '15:00', end: '23:00' },
+];
+
+const mockFlexibleSchedules: FlexibleSchedule[] = [
+    { id: 'flex1', name: 'Flexible Semanal', workDays: ['L', 'M', 'X', 'J', 'V'], hoursPerDay: 8, noWeeklyHours: false },
+];
+
+const mockFixedSchedules: FixedSchedule[] = [
+    { id: 'fixed1', name: 'Fijo Estándar', workDays: ['L', 'M', 'X', 'J', 'V'], ranges: [{ id: 'range1', start: '09:00', end: '17:00' }], isNightShift: false },
+];
+
+const mockAbsenceTypes: AbsenceType[] = [
+    { id: 'absence1', name: 'Enfermedad', color: 'bg-orange-500', remunerated: true, unit: 'days', requiresApproval: true, allowAttachment: true, isDisabled: false, assignment: 'all', assignedTo: [] },
+    { id: 'absence2', name: 'Cita Médica', color: 'bg-purple-500', remunerated: true, unit: 'hours', requiresApproval: false, allowAttachment: false, isDisabled: false, assignment: 'all', assignedTo: [] },
+];
+
+const mockCalendars: CalendarData[] = [
+    { id: 'cal1', name: 'Calendario Laboral 2024', holidays: [{ id: 'h1', name: 'Año Nuevo', date: '2024-01-01' }] }
+];
+
+const mockVacationPolicies: VacationPolicy[] = [
+    { id: 'vac1', name: 'Política Estándar', unit: 'days', amount: 22, countBy: 'workdays', limitRequests: false, blockPeriods: false, blockedPeriods: [], assignment: 'all', assignedTo: [] }
+];
+
+const mockIncentives: Incentive[] = [
+    { id: 'inc1', name: 'Bono Trimestral', type: 'económico', value: '500€', period: 'trimestral', active: true, company_id: '1', condition_expression: { modality: 'proportional' } },
+];
+// --- End Mock Data ---
 
 
 const allPermissions = [
@@ -235,9 +298,9 @@ const CenterDialog = ({
 
 const CentersTabContent = () => {
     const { toast } = useToast();
-    const [centers, setCenters] = useState<Center[]>([]);
-    const [departments, setDepartments] = useState<Department[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [centers, setCenters] = useState<Center[]>(mockCenters);
+    const [departments, setDepartments] = useState<Department[]>(mockDepartments);
+    const [isLoading, setIsLoading] = useState(false);
 
     const [isCenterDialogOpen, setIsCenterDialogOpen] = useState(false);
     const [dialogCenterMode, setDialogCenterMode] = useState<'add' | 'edit'>('add');
@@ -250,13 +313,8 @@ const CentersTabContent = () => {
 
     const [authError, setAuthError] = useState(false);
     const apiKey = process.env.NEXT_PUBLIC_Maps_API_KEY || "";
-
-    const fetchData = async () => {
-        setIsLoading(false); // Using mock data
-    };
     
     useEffect(() => {
-        fetchData();
         const handleAuthError = () => setAuthError(true);
         window.addEventListener('gm_authFailure', handleAuthError);
         return () => window.removeEventListener('gm_authFailure', handleAuthError);
@@ -413,17 +471,17 @@ const CentersTabContent = () => {
 const SettingsTabs = () => {
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState<Record<string, boolean>>({});
-    const [roles, setRoles] = useState<Role[]>([]);
-    const [breaks, setBreaks] = useState<Break[]>([]);
-    const [clockInTypes, setClockInTypes] = useState<ClockInType[]>([]);
-    const [employees, setEmployees] = useState<Employee[]>([]);
-    const [shifts, setShifts] = useState<Shift[]>([]);
-    const [flexibleSchedules, setFlexibleSchedules] = useState<FlexibleSchedule[]>([]);
-    const [fixedSchedules, setFixedSchedules] = useState<FixedSchedule[]>([]);
-    const [absenceTypes, setAbsenceTypes] = useState<AbsenceType[]>([]);
-    const [calendars, setCalendars] = useState<CalendarData[]>([]);
-    const [vacationPolicies, setVacationPolicies] = useState<VacationPolicy[]>([]);
-    const [incentives, setIncentives] = useState<Incentive[]>([]);
+    const [roles, setRoles] = useState<Role[]>(mockRoles);
+    const [breaks, setBreaks] = useState<Break[]>(mockBreaks);
+    const [clockInTypes, setClockInTypes] = useState<ClockInType[]>(mockClockInTypes);
+    const [employees, setEmployees] = useState<Employee[]>(mockEmployees);
+    const [shifts, setShifts] = useState<Shift[]>(mockShifts);
+    const [flexibleSchedules, setFlexibleSchedules] = useState<FlexibleSchedule[]>(mockFlexibleSchedules);
+    const [fixedSchedules, setFixedSchedules] = useState<FixedSchedule[]>(mockFixedSchedules);
+    const [absenceTypes, setAbsenceTypes] = useState<AbsenceType[]>(mockAbsenceTypes);
+    const [calendars, setCalendars] = useState<CalendarData[]>(mockCalendars);
+    const [vacationPolicies, setVacationPolicies] = useState<VacationPolicy[]>(mockVacationPolicies);
+    const [incentives, setIncentives] = useState<Incentive[]>(mockIncentives);
     
     // Dialog states
     const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
@@ -514,56 +572,142 @@ const SettingsTabs = () => {
     // Break Handlers
     const openAddBreakDialog = () => { setIsBreakDialogOpen(true); setDialogBreakMode('add'); setBreakFormData({ id: uuidv4(), name: "", remunerated: false, limit: 30, isAutomatic: false, intervalStart: "", intervalEnd: "", notifyStart: false, notifyEnd: false, assignedTo: [] }); };
     const openEditBreakDialog = (br: Break) => { setIsBreakDialogOpen(true); setDialogBreakMode('edit'); setSelectedBreak(br); setBreakFormData(br); };
-    const handleBreakFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: Mock */ setIsBreakDialogOpen(false); };
+    const handleBreakFormSubmit = (e: React.FormEvent) => { 
+        e.preventDefault();
+        if (dialogBreakMode === 'add') {
+            setBreaks(prev => [...prev, breakFormData]);
+        } else if (selectedBreak) {
+            setBreaks(prev => prev.map(b => b.id === selectedBreak.id ? breakFormData : b));
+        }
+        setIsBreakDialogOpen(false); 
+    };
     const handleDeleteBreak = (breakId: string) => { setBreaks(p => p.filter(b => b.id !== breakId)); };
 
     // ClockIn Type Handlers
     const openAddClockInTypeDialog = () => { setIsClockInTypeDialogOpen(true); setDialogClockInTypeMode('add'); setClockInTypeFormData({ id: uuidv4(), name: "", color: "bg-blue-500", assignment: 'all', assignedTo: [] }); };
     const openEditClockInTypeDialog = (type: ClockInType) => { setIsClockInTypeDialogOpen(true); setDialogClockInTypeMode('edit'); setSelectedClockInType(type); setClockInTypeFormData(type); };
-    const handleClockInTypeFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: Mock */ setIsClockInTypeDialogOpen(false); };
+    const handleClockInTypeFormSubmit = (e: React.FormEvent) => { 
+        e.preventDefault(); 
+        if (dialogClockInTypeMode === 'add') {
+            setClockInTypes(prev => [...prev, clockInTypeFormData]);
+        } else if (selectedClockInType) {
+            setClockInTypes(prev => prev.map(c => c.id === selectedClockInType.id ? clockInTypeFormData : c));
+        }
+        setIsClockInTypeDialogOpen(false); 
+    };
     const handleDeleteClockInType = (typeId: string) => { setClockInTypes(p => p.filter(t => t.id !== typeId)); };
     
     // Schedule & Shift Handlers
-    const openAddShiftDialog = () => { setIsShiftDialogOpen(true); setDialogShiftMode('add'); setShiftFormData({ name: "09:00", start: "09:00", end: "17:00" }); };
+    const openAddShiftDialog = () => { setIsShiftDialogOpen(true); setDialogShiftMode('add'); setShiftFormData({ name: "", start: "09:00", end: "17:00" }); };
     const openEditShiftDialog = (shift: Shift) => { setIsShiftDialogOpen(true); setDialogShiftMode('edit'); setSelectedShift(shift); setShiftFormData(shift); };
-    const handleShiftFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: Mock */ setIsShiftDialogOpen(false); };
+    const handleShiftFormSubmit = (e: React.FormEvent) => { 
+        e.preventDefault();
+        const newShift = { id: uuidv4(), ...shiftFormData };
+        if (dialogShiftMode === 'add') {
+            setShifts(prev => [...prev, newShift]);
+        } else if (selectedShift) {
+            setShifts(prev => prev.map(s => s.id === selectedShift.id ? { ...newShift, id: s.id } : s));
+        }
+        setIsShiftDialogOpen(false); 
+    };
     const handleDeleteShift = (shiftId: string) => { setShifts(p => p.filter(s => s.id !== shiftId)); };
 
     const openAddFlexibleScheduleDialog = () => { setIsFlexibleScheduleDialogOpen(true); setDialogFlexibleScheduleMode('add'); setFlexibleScheduleFormData({ name: "", workDays: [], hoursPerDay: 8, noWeeklyHours: false }); };
     const openEditFlexibleScheduleDialog = (schedule: FlexibleSchedule) => { setIsFlexibleScheduleDialogOpen(true); setDialogFlexibleScheduleMode('edit'); setSelectedFlexibleSchedule(schedule); setFlexibleScheduleFormData(schedule); };
-    const handleFlexibleScheduleFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: Mock */ setIsFlexibleScheduleDialogOpen(false); };
+    const handleFlexibleScheduleFormSubmit = (e: React.FormEvent) => { 
+        e.preventDefault();
+        const newSchedule = { id: uuidv4(), ...flexibleScheduleFormData };
+        if (dialogFlexibleScheduleMode === 'add') {
+            setFlexibleSchedules(prev => [...prev, newSchedule]);
+        } else if (selectedFlexibleSchedule) {
+            setFlexibleSchedules(prev => prev.map(s => s.id === selectedFlexibleSchedule.id ? { ...newSchedule, id: s.id } : s));
+        }
+        setIsFlexibleScheduleDialogOpen(false); 
+    };
     const handleDeleteFlexibleSchedule = (scheduleId: string) => { setFlexibleSchedules(p => p.filter(s => s.id !== scheduleId)); };
     
     const openAddFixedScheduleDialog = () => { setIsFixedScheduleDialogOpen(true); setDialogFixedScheduleMode('add'); setFixedScheduleFormData({ name: "", workDays: [], ranges: [{ id: Date.now().toString(), start: "09:00", end: "17:00" }], isNightShift: false }); };
     const openEditFixedScheduleDialog = (schedule: FixedSchedule) => { setIsFixedScheduleDialogOpen(true); setDialogFixedScheduleMode('edit'); setSelectedFixedSchedule(schedule); setFixedScheduleFormData(schedule); };
-    const handleFixedScheduleFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: Mock */ setIsFixedScheduleDialogOpen(false); };
+    const handleFixedScheduleFormSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const newSchedule = { id: uuidv4(), ...fixedScheduleFormData };
+        if (dialogFixedScheduleMode === 'add') {
+            setFixedSchedules(prev => [...prev, newSchedule]);
+        } else if (selectedFixedSchedule) {
+            setFixedSchedules(prev => prev.map(s => s.id === selectedFixedSchedule.id ? { ...newSchedule, id: s.id } : s));
+        }
+        setIsFixedScheduleDialogOpen(false);
+    };
     const handleDeleteFixedSchedule = (scheduleId: string) => { setFixedSchedules(p => p.filter(s => s.id !== scheduleId)); };
 
     // Calendar & Holiday Handlers
     const handleSelectCalendar = (id: string) => setSelectedCalendarId(id);
     const handleBackToCalendars = () => setSelectedCalendarId(null);
-    const handleCalendarFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: Mock */ setIsCalendarDialogOpen(false); };
+    const handleCalendarFormSubmit = (e: React.FormEvent) => { 
+        e.preventDefault();
+        if (!newCalendarName) return;
+        setCalendars(prev => [...prev, { id: uuidv4(), name: newCalendarName, holidays: [] }]);
+        setNewCalendarName("");
+        setIsCalendarDialogOpen(false); 
+    };
     const handleDeleteCalendar = (id: string) => { setCalendars(p => p.filter(c => c.id !== id)); };
-    const handleHolidayFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: Mock */ setIsHolidayDialogOpen(false); };
-    const handleDeleteHoliday = (holidayId: string) => { /* TODO: Mock */ };
-    const handleImportHolidays = () => { /* TODO: Mock */ };
+    const handleHolidayFormSubmit = (e: React.FormEvent) => { 
+        e.preventDefault();
+        if (!holidayFormData.name || !holidayFormData.date || !selectedCalendarId) return;
+        const newHoliday: Holiday = { id: uuidv4(), name: holidayFormData.name, date: format(holidayFormData.date, 'yyyy-MM-dd') };
+        setCalendars(prev => prev.map(cal => cal.id === selectedCalendarId ? { ...cal, holidays: [...cal.holidays, newHoliday] } : cal));
+        setHolidayFormData({ name: "", date: undefined });
+        setIsHolidayDialogOpen(false);
+    };
+    const handleDeleteHoliday = (holidayId: string) => {
+        if (!selectedCalendarId) return;
+        setCalendars(prev => prev.map(cal => cal.id === selectedCalendarId ? { ...cal, holidays: cal.holidays.filter(h => h.id !== holidayId) } : cal));
+    };
+    const handleImportHolidays = () => { toast({ title: "Próximamente", description: "La importación de festivos estará disponible pronto." }) };
     
     // Absence Type Handlers
     const openAddAbsenceTypeDialog = () => { setIsAbsenceTypeDialogOpen(true); setDialogAbsenceTypeMode('add'); setAbsenceTypeFormData({ name: '', color: 'bg-blue-500', remunerated: true, unit: 'days', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [], requiresApproval: true, allowAttachment: false, isDisabled: false, assignment: 'all', assignedTo: [] }); };
     const openEditAbsenceTypeDialog = (type: AbsenceType) => { setIsAbsenceTypeDialogOpen(true); setDialogAbsenceTypeMode('edit'); setSelectedAbsenceType(type); setAbsenceTypeFormData({ ...type, blockedPeriods: type.blockedPeriods ?? [] }); };
-    const handleAbsenceTypeFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: Mock */ setIsAbsenceTypeDialogOpen(false); };
+    const handleAbsenceTypeFormSubmit = (e: React.FormEvent) => { 
+        e.preventDefault();
+        const newType = { id: uuidv4(), ...absenceTypeFormData };
+        if (dialogAbsenceTypeMode === 'add') {
+            setAbsenceTypes(prev => [...prev, newType]);
+        } else if (selectedAbsenceType) {
+            setAbsenceTypes(prev => prev.map(t => t.id === selectedAbsenceType.id ? { ...newType, id: t.id } : t));
+        }
+        setIsAbsenceTypeDialogOpen(false); 
+    };
     const handleDeleteAbsenceType = (id: string) => { setAbsenceTypes(p => p.filter(t => t.id !== id)); };
 
     // Vacation Policy Handlers
     const openAddVacationPolicyDialog = () => { setIsVacationPolicyDialogOpen(true); setDialogVacationPolicyMode('add'); setVacationPolicyFormData({ name: '', unit: 'days', amount: 22, countBy: 'workdays', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [], assignment: 'all', assignedTo: [] }); };
     const openEditVacationPolicyDialog = (policy: VacationPolicy) => { setIsVacationPolicyDialogOpen(true); setDialogVacationPolicyMode('edit'); setSelectedVacationPolicy(policy); setVacationPolicyFormData({ ...policy, requestLimit: policy.requestLimit || 0, blockedPeriods: policy.blockedPeriods || [], assignment: policy.assignment || 'all', assignedTo: policy.assignedTo || [] }); };
-    const handleVacationPolicyFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: Mock */ setIsVacationPolicyDialogOpen(false); };
+    const handleVacationPolicyFormSubmit = (e: React.FormEvent) => { 
+        e.preventDefault();
+        const newPolicy = { id: uuidv4(), ...vacationPolicyFormData };
+        if (dialogVacationPolicyMode === 'add') {
+            setVacationPolicies(prev => [...prev, newPolicy]);
+        } else if (selectedVacationPolicy) {
+            setVacationPolicies(prev => prev.map(p => p.id === selectedVacationPolicy.id ? { ...newPolicy, id: p.id } : p));
+        }
+        setIsVacationPolicyDialogOpen(false);
+    };
     const handleDeleteVacationPolicy = (id: string) => { setVacationPolicies(p => p.filter(pol => pol.id !== id)); };
 
     // Incentive Handlers
     const openAddIncentiveDialog = () => { setIsIncentiveDialogOpen(true); setDialogIncentiveMode('add'); setIncentiveFormData({ name: "", type: "económico", value: "", period: "anual", active: true, condition_expression: { modality: 'all-or-nothing' } }); };
     const openEditIncentiveDialog = (incentive: Incentive) => { setIsIncentiveDialogOpen(true); setDialogIncentiveMode('edit'); setSelectedIncentive(incentive); setIncentiveFormData({ ...incentive, condition_expression: incentive.condition_expression || { modality: 'all-or-nothing' } }); };
-    const handleIncentiveFormSubmit = async (e: React.FormEvent) => { e.preventDefault(); /* TODO: Mock */ setIsIncentiveDialogOpen(false); };
+    const handleIncentiveFormSubmit = async (e: React.FormEvent) => { 
+        e.preventDefault();
+        const newIncentive = { id: uuidv4(), company_id: '1', ...incentiveFormData };
+        if (dialogIncentiveMode === 'add') {
+            setIncentives(prev => [...prev, newIncentive]);
+        } else if (selectedIncentive) {
+            setIncentives(prev => prev.map(i => i.id === selectedIncentive.id ? { ...newIncentive, id: i.id } : i));
+        }
+        setIsIncentiveDialogOpen(false); 
+    };
     const handleDeleteIncentive = (id: string) => { setIncentives(p => p.filter(i => i.id !== id)); };
     
     const selectedCalendar = calendars.find(c => c.id === selectedCalendarId);
@@ -710,6 +854,72 @@ const SettingsTabs = () => {
                     <CentersTabContent />
                 </TabsContent>
                 
+                <TabsContent value="schedules" className="m-0 space-y-4">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div><CardTitle>Turnos</CardTitle><CardDescription>Define turnos de trabajo reutilizables.</CardDescription></div>
+                            <Button onClick={openAddShiftDialog}><PlusCircle className="mr-2 h-4 w-4"/> Crear Turno</Button>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader><TableRow><TableHead>Nombre</TableHead><TableHead>Inicio</TableHead><TableHead>Fin</TableHead><TableHead></TableHead></TableRow></TableHeader>
+                                <TableBody>
+                                    {shifts.map(s => (
+                                        <TableRow key={s.id}><TableCell>{s.name}</TableCell><TableCell>{s.start}</TableCell><TableCell>{s.end}</TableCell>
+                                            <TableCell className="text-right">
+                                                <Button variant="ghost" size="sm" onClick={() => openEditShiftDialog(s)}>Editar</Button>
+                                                <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteShift(s.id)}><Trash2 className="h-4 w-4"/></Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div><CardTitle>Horarios Flexibles</CardTitle><CardDescription>Para empleados con flexibilidad de horario.</CardDescription></div>
+                            <Button onClick={openAddFlexibleScheduleDialog}><PlusCircle className="mr-2 h-4 w-4"/> Crear Horario Flexible</Button>
+                        </CardHeader>
+                        <CardContent>
+                           <Table>
+                                <TableHeader><TableRow><TableHead>Nombre</TableHead><TableHead>Días</TableHead><TableHead>Horas/Día</TableHead><TableHead></TableHead></TableRow></TableHeader>
+                                <TableBody>
+                                    {flexibleSchedules.map(s => (
+                                        <TableRow key={s.id}><TableCell>{s.name}</TableCell><TableCell>{s.workDays.join(', ')}</TableCell><TableCell>{s.hoursPerDay}</TableCell>
+                                            <TableCell className="text-right">
+                                                <Button variant="ghost" size="sm" onClick={() => openEditFlexibleScheduleDialog(s)}>Editar</Button>
+                                                <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteFlexibleSchedule(s.id)}><Trash2 className="h-4 w-4"/></Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div><CardTitle>Horarios Fijos</CardTitle><CardDescription>Para empleados con un horario fijo.</CardDescription></div>
+                             <Button onClick={openAddFixedScheduleDialog}><PlusCircle className="mr-2 h-4 w-4"/> Crear Horario Fijo</Button>
+                        </CardHeader>
+                        <CardContent>
+                           <Table>
+                                <TableHeader><TableRow><TableHead>Nombre</TableHead><TableHead>Días</TableHead><TableHead>Rangos</TableHead><TableHead></TableHead></TableRow></TableHeader>
+                                <TableBody>
+                                    {fixedSchedules.map(s => (
+                                        <TableRow key={s.id}><TableCell>{s.name}</TableCell><TableCell>{s.workDays.join(', ')}</TableCell><TableCell>{s.ranges.map(r => `${r.start}-${r.end}`).join('; ')}</TableCell>
+                                            <TableCell className="text-right">
+                                                <Button variant="ghost" size="sm" onClick={() => openEditFixedScheduleDialog(s)}>Editar</Button>
+                                                <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteFixedSchedule(s.id)}><Trash2 className="h-4 w-4"/></Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+                
                 <TabsContent value="breaks" className="m-0">
                      <Card className="bg-gradient-accent-to-card">
                         <CardHeader className="flex flex-row items-center justify-between">
@@ -729,7 +939,7 @@ const SettingsTabs = () => {
                                              <TableCell>{br.remunerated ? 'Remunerado' : 'No Remunerado'}</TableCell>
                                              <TableCell>{br.limit} min</TableCell>
                                              <TableCell>
-                                                 {br.assignedTo.length > 2 ? `${br.assignedTo.slice(0, 2).join(', ')}...` : br.assignedTo.join(', ')}
+                                                 {br.assignedTo.length === 0 ? "Todos" : br.assignedTo.length > 2 ? `${br.assignedTo.slice(0, 2).join(', ')}...` : br.assignedTo.join(', ')}
                                              </TableCell>
                                              <TableCell className="text-right">
                                                  <Button variant="ghost" size="sm" onClick={() => openEditBreakDialog(br)}>Editar</Button>
@@ -751,13 +961,180 @@ const SettingsTabs = () => {
                                     {dialogBreakMode === 'add' ? 'Nuevo Descanso' : 'Editar Descanso'}
                                 </DialogTitle>
                             </DialogHeader>
-                            <form onSubmit={handleBreakFormSubmit}>
-                                {/* Form fields for Breaks */}
+                            <form onSubmit={handleBreakFormSubmit} className="space-y-4 py-4">
+                                <Input value={breakFormData.name} onChange={e => setBreakFormData({...breakFormData, name: e.target.value})} placeholder="Nombre (ej. Pausa para comer)"/>
+                                <Checkbox checked={breakFormData.remunerated} onCheckedChange={c => setBreakFormData({...breakFormData, remunerated: !!c})} id="break-remunerated"/><Label htmlFor="break-remunerated">Remunerado</Label>
+                                <Input type="number" value={breakFormData.limit} onChange={e => setBreakFormData({...breakFormData, limit: Number(e.target.value)})} placeholder="Duración en minutos"/>
+                                <DialogFooter><Button>Guardar</Button></DialogFooter>
                             </form>
                          </DialogContent>
                      </Dialog>
                 </TabsContent>
 
+                <TabsContent value="checkin-types" className="m-0">
+                    <Card className="bg-gradient-accent-to-card">
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div><CardTitle>Tipos de Fichaje</CardTitle><CardDescription>Define y colorea los tipos de fichaje.</CardDescription></div>
+                            <Button onClick={openAddClockInTypeDialog}><PlusCircle className="mr-2 h-4 w-4"/> Crear Tipo</Button>
+                        </CardHeader>
+                        <CardContent>
+                             <Table>
+                                 <TableHeader><TableRow><TableHead>Nombre</TableHead><TableHead>Asignación</TableHead><TableHead></TableHead></TableRow></TableHeader>
+                                 <TableBody>
+                                     {clockInTypes.map(t => (
+                                         <TableRow key={t.id}>
+                                             <TableCell><Badge className={t.color}>{t.name}</Badge></TableCell>
+                                             <TableCell>{t.assignment === 'all' ? 'Todos' : 'Específico'}</TableCell>
+                                             <TableCell className="text-right">
+                                                 <Button variant="ghost" size="sm" onClick={() => openEditClockInTypeDialog(t)}>Editar</Button>
+                                                 <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteClockInType(t.id)}><Trash2 className="h-4 w-4"/></Button>
+                                             </TableCell>
+                                         </TableRow>
+                                     ))}
+                                 </TableBody>
+                             </Table>
+                        </CardContent>
+                    </Card>
+                    <Dialog open={isClockInTypeDialogOpen} onOpenChange={setIsClockInTypeDialogOpen}>
+                         <DialogContent>
+                            <DialogHeader><DialogTitle>{dialogClockInTypeMode === 'add' ? 'Nuevo Tipo de Fichaje' : 'Editar Tipo'}</DialogTitle></DialogHeader>
+                            <form onSubmit={handleClockInTypeFormSubmit} className="space-y-4 py-4">
+                                <Input value={clockInTypeFormData.name} onChange={e => setClockInTypeFormData({...clockInTypeFormData, name: e.target.value})} placeholder="Nombre"/>
+                                <Select value={clockInTypeFormData.color} onValueChange={c => setClockInTypeFormData({...clockInTypeFormData, color: c})}>
+                                    <SelectTrigger><SelectValue/></SelectTrigger>
+                                    <SelectContent>{projectColors.map(c => <SelectItem key={c.value} value={c.value}><div className="flex items-center gap-2"><div className={cn("w-3 h-3 rounded-full", c.value)}/>{c.label}</div></SelectItem>)}</SelectContent>
+                                </Select>
+                                <DialogFooter><Button>Guardar</Button></DialogFooter>
+                            </form>
+                         </DialogContent>
+                    </Dialog>
+                </TabsContent>
+
+                <TabsContent value="calendars" className="m-0">
+                    {selectedCalendarId && selectedCalendar ? (
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between">
+                                <div><CardTitle>{selectedCalendar.name}</CardTitle><CardDescription>Gestiona los festivos del calendario.</CardDescription></div>
+                                <Button variant="ghost" onClick={handleBackToCalendars}><ArrowLeft className="mr-2 h-4 w-4"/> Volver</Button>
+                            </CardHeader>
+                            <CardContent className="grid md:grid-cols-2 gap-8">
+                                <div>
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="font-semibold">Festivos</h3>
+                                        <div className="flex gap-2">
+                                            <Dialog open={isHolidayDialogOpen} onOpenChange={setIsHolidayDialogOpen}>
+                                                <DialogTrigger asChild><Button size="sm"><PlusCircle className="mr-2 h-4 w-4"/>Añadir</Button></DialogTrigger>
+                                                <DialogContent className="sm:max-w-xs">
+                                                    <DialogHeader><DialogTitle>Nuevo Festivo</DialogTitle></DialogHeader>
+                                                    <form onSubmit={handleHolidayFormSubmit} className="space-y-4 py-4">
+                                                        <Input placeholder="Nombre" value={holidayFormData.name} onChange={e => setHolidayFormData({...holidayFormData, name: e.target.value})}/>
+                                                        <Popover>
+                                                            <PopoverTrigger asChild><Button variant="outline" className="w-full justify-start">{holidayFormData.date ? format(holidayFormData.date, "PPP") : "Seleccionar fecha"}</Button></PopoverTrigger>
+                                                            <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={holidayFormData.date} onSelect={d => setHolidayFormData({...holidayFormData, date: d})}/></PopoverContent>
+                                                        </Popover>
+                                                        <DialogFooter><Button>Guardar</Button></DialogFooter>
+                                                    </form>
+                                                </DialogContent>
+                                            </Dialog>
+                                            <Button size="sm" variant="outline" onClick={handleImportHolidays}>Importar</Button>
+                                        </div>
+                                    </div>
+                                    <ScrollArea className="h-72 rounded-md border">
+                                        <Table>
+                                            <TableBody>
+                                                {selectedCalendar.holidays.map(h => (
+                                                    <TableRow key={h.id}>
+                                                        <TableCell>{h.name}</TableCell>
+                                                        <TableCell>{format(new Date(h.date), "dd/MM/yyyy")}</TableCell>
+                                                        <TableCell className="text-right"><Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteHoliday(h.id)}><Trash2 className="h-4 w-4"/></Button></TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </ScrollArea>
+                                </div>
+                                <div>
+                                    <Calendar mode="multiple" selected={holidayDates} className="rounded-md border"/>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between">
+                                <div><CardTitle>Calendarios Laborales</CardTitle><CardDescription>Gestiona los calendarios de festivos.</CardDescription></div>
+                                <Dialog open={isCalendarDialogOpen} onOpenChange={setIsCalendarDialogOpen}>
+                                    <DialogTrigger asChild><Button><PlusCircle className="mr-2 h-4 w-4"/> Nuevo Calendario</Button></DialogTrigger>
+                                    <DialogContent className="sm:max-w-xs">
+                                        <DialogHeader><DialogTitle>Nuevo Calendario</DialogTitle></DialogHeader>
+                                        <form onSubmit={handleCalendarFormSubmit} className="space-y-4 py-4">
+                                            <Input placeholder="Nombre del Calendario" value={newCalendarName} onChange={e => setNewCalendarName(e.target.value)} required/>
+                                            <DialogFooter><Button>Guardar</Button></DialogFooter>
+                                        </form>
+                                    </DialogContent>
+                                </Dialog>
+                            </CardHeader>
+                            <CardContent>
+                                {calendars.map(cal => (
+                                    <div key={cal.id} className="flex items-center justify-between rounded-xl border p-4">
+                                        <h3 className="font-semibold">{cal.name}</h3>
+                                        <div className="flex items-center">
+                                            <Button variant="ghost" size="sm" onClick={() => handleSelectCalendar(cal.id)}>Gestionar</Button>
+                                            <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteCalendar(cal.id)}><Trash2 className="h-4 w-4"/></Button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </CardContent>
+                        </Card>
+                    )}
+                </TabsContent>
+                
+                <TabsContent value="vacations" className="m-0">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div><CardTitle>Políticas de Vacaciones</CardTitle><CardDescription>Define cómo se acumulan y gestionan las vacaciones.</CardDescription></div>
+                            <Button onClick={openAddVacationPolicyDialog}><PlusCircle className="mr-2 h-4 w-4"/> Nueva Política</Button>
+                        </CardHeader>
+                        <CardContent>
+                            {vacationPolicies.map(pol => (
+                                <div key={pol.id} className="flex items-center justify-between rounded-xl border p-4">
+                                    <h3 className="font-semibold">{pol.name} ({pol.amount} {pol.unit})</h3>
+                                    <div className="flex items-center">
+                                        <Button variant="ghost" size="sm" onClick={() => openEditVacationPolicyDialog(pol)}>Editar</Button>
+                                        <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteVacationPolicy(pol.id)}><Trash2 className="h-4 w-4"/></Button>
+                                    </div>
+                                </div>
+                            ))}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+                
+                <TabsContent value="absences" className="m-0">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div><CardTitle>Tipos de Ausencia</CardTitle><CardDescription>Configura los diferentes tipos de ausencias que existen.</CardDescription></div>
+                            <Button onClick={openAddAbsenceTypeDialog}><PlusCircle className="mr-2 h-4 w-4"/> Nuevo Tipo</Button>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader><TableRow><TableHead>Nombre</TableHead><TableHead>Unidad</TableHead><TableHead>Estado</TableHead><TableHead></TableHead></TableRow></TableHeader>
+                                <TableBody>
+                                    {absenceTypes.map(t => (
+                                        <TableRow key={t.id}>
+                                            <TableCell><Badge className={t.color}>{t.name}</Badge></TableCell>
+                                            <TableCell>{t.unit}</TableCell>
+                                            <TableCell>{t.isDisabled ? 'Deshabilitado' : 'Activo'}</TableCell>
+                                            <TableCell className="text-right">
+                                                <Button variant="ghost" size="sm" onClick={() => openEditAbsenceTypeDialog(t)}>Editar</Button>
+                                                <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteAbsenceType(t.id)}><Trash2 className="h-4 w-4"/></Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+                
                 <TabsContent value="incentives" className="space-y-4 m-0">
                     <Card className="bg-gradient-accent-to-card">
                         <CardHeader className="flex flex-row items-center justify-between">
