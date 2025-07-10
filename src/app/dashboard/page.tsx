@@ -10,17 +10,13 @@ import { Badge } from "@/components/ui/badge"
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from "recharts"
 import { ArrowUpRight, CheckCircle, Clock, Users, Zap, Loader2 } from "lucide-react"
 import Link from "next/link"
-import { type Employee, listEmployees } from '@/lib/api';
+import { type Employee, type AttendanceLog, listEmployees, listAttendanceLogs } from '@/lib/api';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import { formatDistanceToNow } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { parseISO } from 'date-fns';
 
-const recentActivities = [
-  { name: "Olivia Martin", activity: "marcó entrada", time: "hace 5m", avatar: "OM", link: "/attendance" },
-  { name: "Jackson Lee", activity: "solicitó tiempo libre", time: "hace 15m", avatar: "JL", link: "/absences" },
-  { name: "Isabella Nguyen", activity: "completó la tarea 'Diseño de UI'", time: "hace 30m", avatar: "IN", link: "/projects" },
-  { name: "William Kim", activity: "está en descanso", time: "hace 45m", avatar: "WK", link: "/attendance" },
-  { name: "Sophia Davis", activity: "marcó salida", time: "hace 1h", avatar: "SD", link: "/attendance" },
-]
 
 const getStatusVariant = (status: string): "active" | "destructive" | "warning" | "secondary" => {
   switch (status) {
@@ -54,25 +50,52 @@ const chartData = [
 export default function Dashboard() {
   const { toast } = useToast();
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchEmployees = async () => {
+    const fetchData = async () => {
         setIsLoading(true);
         try {
-            const data = await listEmployees();
-            setEmployees(data);
+            const [employeesData, logsData] = await Promise.all([
+              listEmployees(),
+              listAttendanceLogs()
+            ]);
+            setEmployees(employeesData);
+
+            // Transform logs into recent activities
+            const transformedActivities = logsData
+              .slice(0, 5) // Get latest 5 logs
+              .map(log => {
+                const employee = employeesData.find(e => e.id === log.employeeId);
+                let activityText = '';
+                switch(log.type) {
+                  case 'Entrada': activityText = 'marcó entrada'; break;
+                  case 'Salida': activityText = 'marcó salida'; break;
+                  case 'Descanso': activityText = 'está en descanso'; break;
+                  default: activityText = 'realizó una acción';
+                }
+                return {
+                  name: log.employeeName,
+                  activity: activityText,
+                  time: formatDistanceToNow(parseISO(log.timestamp), { addSuffix: true, locale: es }),
+                  avatar: employee?.avatar || '?',
+                  link: "/attendance"
+                }
+              });
+            setRecentActivities(transformedActivities);
+
         } catch (error) {
             toast({
                 variant: 'destructive',
-                title: 'Error al cargar empleados',
-                description: 'No se pudieron obtener los datos de los empleados.',
+                title: 'Error al cargar datos',
+                description: 'No se pudieron obtener los datos para el panel.',
             });
         } finally {
             setIsLoading(false);
         }
     };
-    fetchEmployees();
+    fetchData();
   }, [toast]);
 
   const activeEmployeesCount = employees.filter(e => e.status === 'Activo').length;
@@ -185,7 +208,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-1">
-              {recentActivities.map((activity, index) => (
+              {recentActivities.length > 0 ? recentActivities.map((activity, index) => (
                 <Link href={activity.link} key={index}>
                   <div className="flex items-center rounded-lg px-2 py-2 transition-colors hover:bg-muted">
                     <Avatar className="h-9 w-9">
@@ -199,7 +222,9 @@ export default function Dashboard() {
                     <div className="ml-auto font-medium text-xs text-muted-foreground">{activity.time}</div>
                   </div>
                 </Link>
-              ))}
+              )) : (
+                 <div className="text-center text-muted-foreground p-4">No hay actividad reciente.</div>
+              )}
             </div>
           </CardContent>
         </Card>
