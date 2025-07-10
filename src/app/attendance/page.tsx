@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -11,7 +12,7 @@ import { Briefcase, Coffee, Globe, Home, UserX, Calendar as CalendarIcon, Filter
 import { AttendanceReportDialog } from "./_components/attendance-report-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { format, parse, isWithinInterval, startOfDay, parseISO } from 'date-fns';
+import { format, parse, isWithinInterval, startOfDay, parseISO, startOfToday, endOfToday, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { type DateRange } from 'react-day-picker';
@@ -38,15 +39,9 @@ const absencesData = [
 
 
 function parseAMPM(timeStr: string) {
-    const [time, modifier] = timeStr.split(' ');
-    let [hours, minutes] = time.split(':');
-    if (hours === '12') {
-        hours = '00';
-    }
-    if (modifier && modifier.toUpperCase() === 'PM') {
-        hours = String(parseInt(hours, 10) + 12);
-    }
-    return new Date(1970, 0, 1, Number(hours), Number(minutes));
+    // This is a robust parser for AM/PM time, but since we are moving to ISO strings, it may become less relevant
+    const date = parse(timeStr, 'hh:mm a', new Date());
+    return date;
 }
 
 const HusinCardContent = ({ employees }: { employees: ApiEmployee[] }) => (
@@ -74,7 +69,7 @@ const HusinCardContent = ({ employees }: { employees: ApiEmployee[] }) => (
 export default function AttendancePage() {
     const [employees, setEmployees] = useState<ApiEmployee[]>([]);
     const [departments, setDepartments] = useState<Department[]>([]);
-    const [attendanceLog, setAttendanceLog] = useState<LocalAttendanceLog[]>([]);
+    const [attendanceLog, setAttendanceLog] = useState<ApiAttendanceLog[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -88,23 +83,10 @@ export default function AttendancePage() {
                 ]);
                 setEmployees(employeesData);
                 setDepartments(departmentsData);
-                
-                const formattedLogs: LocalAttendanceLog[] = logsData.map(log => {
-                    const logDate = parseISO(log.timestamp);
-                    return {
-                        date: logDate,
-                        time: format(logDate, 'hh:mm a'),
-                        employee: log.employeeName,
-                        status: log.type,
-                        location: log.location,
-                        department: log.department
-                    };
-                });
-                setAttendanceLog(formattedLogs);
+                setAttendanceLog(logsData);
 
             } catch (error) {
                 console.error("Failed to fetch attendance data", error);
-                // Optionally set an error state here
             } finally {
                 setIsLoading(false);
             }
@@ -113,7 +95,7 @@ export default function AttendancePage() {
     }, []);
 
     const [dateRange, setDateRange] = useState<DateRange | undefined>({
-      from: new Date(new Date().setDate(new Date().getDate() - 30)),
+      from: subDays(new Date(), 30),
       to: new Date(),
     });
     const [selectedLocation, setSelectedLocation] = useState<string>('all');
@@ -140,8 +122,7 @@ export default function AttendancePage() {
     }, [dateRange, selectedLocation, selectedDepartment, selectedEmployee]);
 
     const husinStats = useMemo(() => {
-        const today = new Date();
-        const todayNormalized = startOfDay(today);
+        const todayNormalized = startOfToday();
 
         const stats = {
             inOffice: { count: 0, list: [] as ApiEmployee[] },
@@ -153,36 +134,40 @@ export default function AttendancePage() {
 
         if (isLoading) return stats;
 
+        // Employees on vacation today
         const employeesOnLeaveToday = new Set<string>();
         absencesData.forEach(absence => {
             const employee = employees.find(e => e.name === absence.employee);
-            if (employee && isWithinInterval(today, { start: absence.from, end: absence.to })) {
+            if (employee && isWithinInterval(todayNormalized, { start: absence.from, end: absence.to })) {
                 if (absence.type === "De Vacaciones") {
                     stats.onVacation.list.push(employee);
                 }
                 employeesOnLeaveToday.add(absence.employee);
             }
         });
-
-        const todaysLog = attendanceLog.filter(log => startOfDay(log.date).getTime() === todayNormalized.getTime());
-
-        const latestLogs: { [key: string]: any } = {};
-        todaysLog.forEach(log => {
-            if (!employeesOnLeaveToday.has(log.employee)) {
-                if (!latestLogs[log.employee] || parseAMPM(log.time) > parseAMPM(latestLogs[log.employee].time)) {
-                    latestLogs[log.employee] = log;
+        
+        // Latest log for each employee today
+        const todaysLogs = attendanceLog.filter(log => isWithinInterval(parseISO(log.timestamp), { start: startOfToday(), end: endOfToday() }));
+        const latestLogs: { [key: string]: ApiAttendanceLog } = {};
+        
+        todaysLogs.forEach(log => {
+            if (!employeesOnLeaveToday.has(log.employeeName)) {
+                 if (!latestLogs[log.employeeId] || parseISO(log.timestamp) > parseISO(latestLogs[log.employeeId].timestamp)) {
+                    latestLogs[log.employeeId] = log;
                 }
             }
         });
 
         const presentEmployees = new Set<string>();
         Object.values(latestLogs).forEach(log => {
-            const employee = employees.find(e => e.name === log.employee);
+            const employee = employees.find(e => e.id === log.employeeId);
             if (!employee) return;
             
-            presentEmployees.add(log.employee);
+            if (log.type === 'Salida') return; // Don't count clocked out employees as present
 
-            switch (log.status) {
+            presentEmployees.add(log.employeeId);
+
+            switch (log.type) {
                 case "Entrada":
                     if (log.location === "Oficina") {
                         stats.inOffice.list.push(employee);
@@ -196,7 +181,7 @@ export default function AttendancePage() {
             }
         });
 
-        stats.absent.list = employees.filter(emp => !presentEmployees.has(emp.name) && !employeesOnLeaveToday.has(emp.name));
+        stats.absent.list = employees.filter(emp => !presentEmployees.has(emp.id) && !employeesOnLeaveToday.has(emp.name));
 
         stats.inOffice.count = stats.inOffice.list.length;
         stats.remote.count = stats.remote.list.length;
@@ -214,26 +199,33 @@ export default function AttendancePage() {
         return attendanceLog.filter(log => {
             const locationMatch = selectedLocation === 'all' || log.location.toLowerCase().includes(selectedLocation.toLowerCase());
             const departmentMatch = selectedDepartment === 'all' || log.department === selectedDepartment;
-            const employeeMatch = selectedEmployee === 'all' || log.employee === selectedEmployee;
+            const employeeMatch = selectedEmployee === 'all' || log.employeeName === selectedEmployee;
 
+            const logDate = parseISO(log.timestamp);
             const dateMatch = (() => {
                 if (!startDate || !endDate) return true;
-                const currentDate = startOfDay(log.date);
-                return currentDate >= startDate && currentDate <= endDate;
+                return isWithinInterval(logDate, { start: startDate, end: endOfToday() }); // Check if within range
             })();
 
             return dateMatch && locationMatch && departmentMatch && employeeMatch;
         });
     }, [dateRange, selectedLocation, selectedDepartment, selectedEmployee, attendanceLog]);
+    
+    const formattedFilteredLog = useMemo(() => {
+        return filteredLog.map(log => ({
+            ...log,
+            time: format(parseISO(log.timestamp), 'hh:mm a'),
+        })).sort((a, b) => b.timestamp.localeCompare(a.timestamp)); // Sort by most recent
+    }, [filteredLog]);
 
     const { paginatedLog, totalPages } = useMemo(() => {
-        const total = Math.ceil(filteredLog.length / itemsPerPage);
+        const total = Math.ceil(formattedFilteredLog.length / itemsPerPage);
         const startIndex = (currentPage - 1) * itemsPerPage;
         return {
-            paginatedLog: filteredLog.slice(startIndex, startIndex + itemsPerPage),
+            paginatedLog: formattedFilteredLog.slice(startIndex, startIndex + itemsPerPage),
             totalPages: total > 0 ? total : 1,
         };
-    }, [filteredLog, currentPage]);
+    }, [formattedFilteredLog, currentPage]);
 
     const getStatusVariant = (status: string) => {
       switch (status) {
@@ -508,7 +500,7 @@ export default function AttendancePage() {
 
               </div>
               <div className="sm:ml-auto">
-                 <AttendanceReportDialog attendanceLog={[]} />
+                 <AttendanceReportDialog attendanceLog={formattedFilteredLog.map(l => ({time: l.time, employee: l.employeeName, status: l.type, location: l.location }))} />
               </div>
           </div>
         </CardHeader>
@@ -526,10 +518,10 @@ export default function AttendancePage() {
               {paginatedLog.length > 0 ? paginatedLog.map((log, index) => (
                 <TableRow key={index}>
                   <TableCell className="font-medium">{log.time}</TableCell>
-                  <TableCell>{log.employee}</TableCell>
+                  <TableCell>{log.employeeName}</TableCell>
                   <TableCell>
-                    <Badge variant={getStatusVariant(log.status)}>
-                      {log.status}
+                    <Badge variant={getStatusVariant(log.type)}>
+                      {log.type}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">{log.location}</TableCell>

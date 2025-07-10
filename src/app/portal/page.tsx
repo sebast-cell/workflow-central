@@ -1,38 +1,58 @@
+
 'use client';
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Check, Clock, User, ClipboardList, XCircle, Coffee } from "lucide-react";
+import { Calendar, Check, Clock, User, ClipboardList, XCircle, Coffee, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
+import { type AttendanceLog, listAttendanceLogs, createAttendanceLog } from "@/lib/api";
+import { isToday, parseISO } from "date-fns";
+
+// In a real app, this would come from an auth context
+const FAKE_EMPLOYEE = {
+    id: "1", // Corresponds to Olivia Martin in the mock employee data
+    name: "Olivia Martin",
+    department: "Ingeniería"
+};
 
 export default function EmployeeDashboard() {
   const { toast } = useToast();
-  // Main status
-  const [isClockedIn, setIsClockedIn] = useState(true);
-  const [clockInTime, setClockInTime] = useState<Date | null>(new Date(new Date().getTime() - (91 * 60 * 1000))); // Mock: clocked in 91 mins ago
+  const [isLoading, setIsLoading] = useState(true);
   
-  // Break status
-  const [isOnBreak, setIsOnBreak] = useState(false);
-  const [breakStartTime, setBreakStartTime] = useState<Date | null>(null);
-
+  // Status state
+  const [lastEvent, setLastEvent] = useState<AttendanceLog | null>(null);
+  
   // Display state
-  const [duration, setDuration] = useState("1h 31m");
-  const [statusText, setStatusText] = useState("Entrada Marcada");
-  const [statusTime, setStatusTime] = useState(`a las 09:01 AM`);
+  const [duration, setDuration] = useState("");
+  const [statusText, setStatusText] = useState("Sin Fichar");
+  const [statusTime, setStatusTime] = useState("Marca tu entrada para empezar");
+
+  const fetchStatus = async () => {
+    try {
+        const logs = await listAttendanceLogs();
+        const todayLogs = logs
+            .filter(log => log.employeeId === FAKE_EMPLOYEE.id && isToday(parseISO(log.timestamp)))
+            .sort((a,b) => b.timestamp.localeCompare(a.timestamp)); // Most recent first
+
+        setLastEvent(todayLogs[0] || null);
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo cargar tu estado actual.' });
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStatus();
+  }, []);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
 
     const updateDuration = () => {
-        let startTime: Date | null = null;
-        if (isOnBreak && breakStartTime) {
-            startTime = breakStartTime;
-        } else if (isClockedIn && clockInTime) {
-            startTime = clockInTime;
-        }
-
-        if (startTime) {
+        if (lastEvent && (lastEvent.type === 'Entrada' || lastEvent.type === 'Descanso')) {
+            const startTime = parseISO(lastEvent.timestamp);
             const now = new Date();
             const diffMs = now.getTime() - startTime.getTime();
             const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
@@ -40,116 +60,79 @@ export default function EmployeeDashboard() {
             setDuration(`${diffHrs}h ${diffMins}m`);
         }
     };
-
-    if (isClockedIn) {
+    
+    if (lastEvent) {
+      const time = parseISO(lastEvent.timestamp).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: true });
+      switch(lastEvent.type) {
+        case 'Entrada':
+          setStatusText('Entrada Marcada');
+          setStatusTime(`a las ${time}`);
+          break;
+        case 'Descanso':
+          setStatusText('En Descanso');
+          setStatusTime(`a las ${time}`);
+          break;
+        case 'Salida':
+          setStatusText('Salida Marcada');
+          setStatusTime(`a las ${time}`);
+          setDuration('');
+          break;
+      }
       updateDuration();
-      interval = setInterval(updateDuration, 60000);
+      if(lastEvent.type !== 'Salida') {
+        interval = setInterval(updateDuration, 60000);
+      }
     } else {
-      setDuration('');
+        setStatusText("Sin Fichar");
+        setStatusTime("Marca tu entrada para empezar");
+        setDuration('');
     }
 
     return () => clearInterval(interval);
-  }, [isClockedIn, clockInTime, isOnBreak, breakStartTime]);
+  }, [lastEvent]);
 
-  const handleClockInOut = () => {
-    if (isOnBreak) {
-        toast({
-            variant: "destructive",
-            title: "Acción no permitida",
-            description: "Debes finalizar tu descanso antes de marcar la salida.",
-        });
+  const handleClockAction = async (type: 'Entrada' | 'Salida' | 'Descanso') => {
+      if (isLoading) return;
+
+      if (!navigator.geolocation) {
+        toast({ variant: "destructive", title: "Error", description: "Tu navegador no soporta la geolocalización." });
         return;
-    }
-    
-    if (!navigator.geolocation) {
-      toast({
-        variant: "destructive",
-        title: "Error de Geolocalización",
-        description: "Tu navegador no soporta la geolocalización.",
-      });
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const newStatus = !isClockedIn;
-        setIsClockedIn(newStatus);
-        const time = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: true });
-
-        if (newStatus) {
-            // Clocking IN
-            const newClockInTime = new Date();
-            setClockInTime(newClockInTime);
-            setStatusText("Entrada Marcada");
-            setStatusTime(`a las ${time}`);
-            toast({
-              title: "Fichaje Exitoso",
-              description: `Se ha registrado tu entrada.`,
-            });
-        } else {
-            // Clocking OUT
-            setClockInTime(null);
-            setStatusText("Salida Marcada");
-            setStatusTime(`a las ${time}`);
-            toast({
-              title: "Fichaje Exitoso",
-              description: `Se ha registrado tu salida.`,
-            });
-        }
-      },
-      (error) => {
-        let description = "No se pudo obtener tu ubicación. Por favor, activa los permisos en tu navegador.";
-        if (error.code === error.PERMISSION_DENIED) {
-            description = "Has denegado el permiso de ubicación. Por favor, actívalo en la configuración de tu navegador para poder fichar.";
-        }
-        toast({
-          variant: "destructive",
-          title: "Error de Ubicación",
-          description: description,
-        });
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
       }
-    );
+      
+      setIsLoading(true);
+
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          const newLog: Omit<AttendanceLog, 'id'> = {
+              employeeId: FAKE_EMPLOYEE.id,
+              employeeName: FAKE_EMPLOYEE.name,
+              department: FAKE_EMPLOYEE.department,
+              timestamp: new Date().toISOString(),
+              type: type,
+              location: 'Fichaje Móvil',
+              lat: latitude,
+              lng: longitude,
+          };
+
+          try {
+              await createAttendanceLog(newLog);
+              toast({ title: "Fichaje Exitoso", description: `Se ha registrado tu ${type.toLowerCase()}.` });
+              await fetchStatus();
+          } catch (error) {
+               toast({ variant: "destructive", title: "Error al Fichar", description: "No se pudo guardar el registro." });
+               setIsLoading(false);
+          }
+        },
+        () => {
+           toast({ variant: "destructive", title: "Error de Ubicación", description: "No se pudo obtener tu ubicación." });
+           setIsLoading(false);
+        }
+      );
   };
   
-  const handleBreakToggle = () => {
-    if (!isClockedIn) {
-      toast({
-        variant: 'destructive',
-        title: 'Acción no permitida',
-        description: 'Debes marcar tu entrada antes de tomar un descanso.',
-      });
-      return;
-    }
-    
-    const newOnBreakState = !isOnBreak;
-    setIsOnBreak(newOnBreakState);
-
-    if (newOnBreakState) {
-      // Starting break
-      setBreakStartTime(new Date());
-      setStatusText('En Descanso');
-      setStatusTime(`a las ${new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: true })}`);
-      toast({
-        title: 'Descanso iniciado',
-        description: 'Se ha registrado el inicio de tu descanso.',
-      });
-    } else {
-      // Ending break
-      setBreakStartTime(null);
-      setStatusText('Entrada Marcada');
-      setStatusTime(`a las ${clockInTime?.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: true }) || ''}`);
-      toast({
-        title: 'Descanso finalizado',
-        description: '¡De vuelta al trabajo!',
-      });
-    }
-  };
-
+  const isClockedIn = lastEvent && lastEvent.type !== 'Salida';
+  const isOnBreak = lastEvent && lastEvent.type === 'Descanso';
 
   return (
     <div className="space-y-8">
@@ -162,7 +145,7 @@ export default function EmployeeDashboard() {
         <Card className="bg-gradient-accent-to-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Estado Actual</CardTitle>
-            {
+            { isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> :
               isOnBreak ? <Coffee className="h-4 w-4 text-warning" /> :
               isClockedIn ? <Check className="h-4 w-4 text-accent" /> : 
               <XCircle className="h-4 w-4 text-destructive" />
@@ -213,10 +196,12 @@ export default function EmployeeDashboard() {
                 <CardTitle>Acciones Rápidas</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Button onClick={handleClockInOut} variant={isClockedIn ? "destructive" : "active"} disabled={isOnBreak}>
+                <Button onClick={() => handleClockAction(isClockedIn ? 'Salida' : 'Entrada')} variant={isClockedIn ? "destructive" : "active"} disabled={isOnBreak || isLoading}>
+                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
                   {isClockedIn ? 'Marcar Salida' : 'Marcar Entrada'}
                 </Button>
-                <Button onClick={handleBreakToggle} variant="warning" disabled={!isClockedIn}>
+                <Button onClick={() => handleClockAction(isOnBreak ? 'Entrada' : 'Descanso')} variant="warning" disabled={!isClockedIn || isLoading}>
+                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
                   {isOnBreak ? 'Finalizar Descanso' : 'Empezar Descanso'}
                 </Button>
                 <Button asChild variant="secondary">
@@ -235,7 +220,7 @@ export default function EmployeeDashboard() {
             <CardContent className="flex items-center gap-4">
                 <User className="w-10 h-10 text-primary" />
                 <div>
-                    <p className="font-semibold">Empleado</p>
+                    <p className="font-semibold">{FAKE_EMPLOYEE.name}</p>
                     <p className="text-sm text-muted-foreground">empleado@email.com</p>
                     <Button asChild variant="link" className="p-0 h-auto mt-1">
                         <Link href="/portal/profile">Editar Perfil</Link>
