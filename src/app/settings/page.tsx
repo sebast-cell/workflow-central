@@ -504,7 +504,7 @@ const SettingsTabs = () => {
     const [isShiftDialogOpen, setIsShiftDialogOpen] = useState(false);
     const [dialogShiftMode, setDialogShiftMode] = useState<'add' | 'edit'>('add');
     const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
-    const [shiftFormData, setShiftFormData] = useState<Omit<Shift, 'id'>>({ name: "09:00", start: "09:00", end: "17:00" });
+    const [shiftFormData, setShiftFormData] = useState<Omit<Shift, 'id'>>({ name: "", start: "09:00", end: "17:00" });
 
     const [isFlexibleScheduleDialogOpen, setIsFlexibleScheduleDialogOpen] = useState(false);
     const [dialogFlexibleScheduleMode, setDialogFlexibleScheduleMode] = useState<'add' | 'edit'>('add');
@@ -519,9 +519,8 @@ const SettingsTabs = () => {
     const [isAbsenceTypeDialogOpen, setIsAbsenceTypeDialogOpen] = useState(false);
     const [dialogAbsenceTypeMode, setDialogAbsenceTypeMode] = useState<'add' | 'edit'>('add');
     const [selectedAbsenceType, setSelectedAbsenceType] = useState<AbsenceType | null>(null);
-    const [absenceTypeFormData, setAbsenceTypeFormData] = useState<Omit<AbsenceType, 'id' | 'blockedPeriods'> & { blockedPeriods?: { id: string, from: string, to: string }[] }>({ name: '', color: 'bg-blue-500', remunerated: true, unit: 'days', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [], requiresApproval: true, allowAttachment: false, isDisabled: false, assignment: 'all', assignedTo: [] });
+    const [absenceTypeFormData, setAbsenceTypeFormData] = useState<Omit<AbsenceType, 'id'>>({ name: '', color: 'bg-blue-500', remunerated: true, unit: 'days', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [], requiresApproval: true, allowAttachment: false, isDisabled: false, assignment: 'all', assignedTo: [] });
     const [newAbsenceBlockedPeriod, setNewAbsenceBlockedPeriod] = useState<DateRange | undefined>(undefined);
-
 
     const [selectedCalendarId, setSelectedCalendarId] = useState<string | null>(null);
     const [isCalendarDialogOpen, setIsCalendarDialogOpen] = useState(false);
@@ -666,7 +665,7 @@ const SettingsTabs = () => {
     const handleImportHolidays = () => { toast({ title: "Próximamente", description: "La importación de festivos estará disponible pronto." }) };
     
     // Absence Type Handlers
-    const openAddAbsenceTypeDialog = () => { setIsAbsenceTypeDialogOpen(true); setDialogAbsenceTypeMode('add'); setAbsenceTypeFormData({ name: '', color: 'bg-blue-500', remunerated: true, unit: 'days', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [], requiresApproval: true, allowAttachment: false, isDisabled: false, assignment: 'all', assignedTo: [] }); };
+    const openAddAbsenceTypeDialog = () => { setIsAbsenceTypeDialogOpen(true); setDialogAbsenceTypeMode('add'); setAbsenceTypeFormData({ name: '', color: 'bg-blue-500', remunerated: true, unit: 'days', requiresApproval: true, allowAttachment: false, isDisabled: false, assignment: 'all', assignedTo: [] }); };
     const openEditAbsenceTypeDialog = (type: AbsenceType) => { setIsAbsenceTypeDialogOpen(true); setDialogAbsenceTypeMode('edit'); setSelectedAbsenceType(type); setAbsenceTypeFormData({ ...type, blockedPeriods: type.blockedPeriods ?? [] }); };
     const handleAbsenceTypeFormSubmit = (e: React.FormEvent) => { 
         e.preventDefault();
@@ -876,6 +875,19 @@ const SettingsTabs = () => {
                             </Table>
                         </CardContent>
                     </Card>
+                    <Dialog open={isShiftDialogOpen} onOpenChange={setIsShiftDialogOpen}>
+                        <DialogContent>
+                            <DialogHeader><DialogTitle>{dialogShiftMode === 'add' ? 'Nuevo Turno' : 'Editar Turno'}</DialogTitle></DialogHeader>
+                            <form onSubmit={handleShiftFormSubmit} className="space-y-4 py-4">
+                                <Input placeholder="Nombre" value={shiftFormData.name} onChange={e => setShiftFormData({...shiftFormData, name: e.target.value})} />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <Input type="time" placeholder="Hora de inicio" value={shiftFormData.start} onChange={e => setShiftFormData({...shiftFormData, start: e.target.value})} />
+                                    <Input type="time" placeholder="Hora de fin" value={shiftFormData.end} onChange={e => setShiftFormData({...shiftFormData, end: e.target.value})} />
+                                </div>
+                                <DialogFooter><Button>Guardar</Button></DialogFooter>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div><CardTitle>Horarios Flexibles</CardTitle><CardDescription>Para empleados con flexibilidad de horario.</CardDescription></div>
@@ -897,6 +909,25 @@ const SettingsTabs = () => {
                             </Table>
                         </CardContent>
                     </Card>
+                    <Dialog open={isFlexibleScheduleDialogOpen} onOpenChange={setIsFlexibleScheduleDialogOpen}>
+                        <DialogContent>
+                            <DialogHeader><DialogTitle>{dialogFlexibleScheduleMode === 'add' ? 'Nuevo Horario Flexible' : 'Editar Horario Flexible'}</DialogTitle></DialogHeader>
+                             <form onSubmit={handleFlexibleScheduleFormSubmit} className="space-y-4 py-4">
+                                <Input placeholder="Nombre" value={flexibleScheduleFormData.name} onChange={e => setFlexibleScheduleFormData({...flexibleScheduleFormData, name: e.target.value})} />
+                                <div className="flex justify-around p-2 rounded-md border">
+                                    {weekDays.map((day) => (
+                                        <Button key={day} type="button" variant={flexibleScheduleFormData.workDays.includes(day) ? 'secondary' : 'ghost'} size="icon" onClick={() => {
+                                            const currentDays = flexibleScheduleFormData.workDays;
+                                            const newDays = currentDays.includes(day) ? currentDays.filter(d => d !== day) : [...currentDays, day];
+                                            setFlexibleScheduleFormData({...flexibleScheduleFormData, workDays: newDays});
+                                        }}>{day}</Button>
+                                    ))}
+                                </div>
+                                <Input type="number" placeholder="Horas por día" value={flexibleScheduleFormData.hoursPerDay} onChange={e => setFlexibleScheduleFormData({...flexibleScheduleFormData, hoursPerDay: Number(e.target.value)})} />
+                                <DialogFooter><Button>Guardar</Button></DialogFooter>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div><CardTitle>Horarios Fijos</CardTitle><CardDescription>Para empleados con un horario fijo.</CardDescription></div>
@@ -918,6 +949,46 @@ const SettingsTabs = () => {
                             </Table>
                         </CardContent>
                     </Card>
+                    <Dialog open={isFixedScheduleDialogOpen} onOpenChange={setIsFixedScheduleDialogOpen}>
+                        <DialogContent>
+                            <DialogHeader><DialogTitle>{dialogFixedScheduleMode === 'add' ? 'Nuevo Horario Fijo' : 'Editar Horario Fijo'}</DialogTitle></DialogHeader>
+                             <form onSubmit={handleFixedScheduleFormSubmit} className="space-y-4 py-4">
+                                <Input placeholder="Nombre" value={fixedScheduleFormData.name} onChange={e => setFixedScheduleFormData({...fixedScheduleFormData, name: e.target.value})} />
+                                <div className="flex justify-around p-2 rounded-md border">
+                                    {weekDays.map((day) => (
+                                        <Button key={day} type="button" variant={fixedScheduleFormData.workDays.includes(day) ? 'secondary' : 'ghost'} size="icon" onClick={() => {
+                                            const currentDays = fixedScheduleFormData.workDays;
+                                            const newDays = currentDays.includes(day) ? currentDays.filter(d => d !== day) : [...currentDays, day];
+                                            setFixedScheduleFormData({...fixedScheduleFormData, workDays: newDays});
+                                        }}>{day}</Button>
+                                    ))}
+                                </div>
+                                {fixedScheduleFormData.ranges.map((range, index) => (
+                                    <div key={range.id} className="flex items-center gap-2">
+                                        <Input type="time" value={range.start} onChange={e => {
+                                            const newRanges = [...fixedScheduleFormData.ranges];
+                                            newRanges[index].start = e.target.value;
+                                            setFixedScheduleFormData({...fixedScheduleFormData, ranges: newRanges});
+                                        }}/>
+                                        <span>-</span>
+                                        <Input type="time" value={range.end} onChange={e => {
+                                            const newRanges = [...fixedScheduleFormData.ranges];
+                                            newRanges[index].end = e.target.value;
+                                            setFixedScheduleFormData({...fixedScheduleFormData, ranges: newRanges});
+                                        }}/>
+                                        <Button type="button" variant="ghost" size="icon" onClick={() => {
+                                            const newRanges = fixedScheduleFormData.ranges.filter(r => r.id !== range.id);
+                                            setFixedScheduleFormData({...fixedScheduleFormData, ranges: newRanges});
+                                        }}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                                    </div>
+                                ))}
+                                <Button type="button" variant="outline" onClick={() => {
+                                    setFixedScheduleFormData({...fixedScheduleFormData, ranges: [...fixedScheduleFormData.ranges, {id: Date.now().toString(), start: "09:00", end: "17:00"}]});
+                                }}>Añadir Rango</Button>
+                                <DialogFooter><Button>Guardar</Button></DialogFooter>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
                 </TabsContent>
                 
                 <TabsContent value="breaks" className="m-0">
@@ -1106,6 +1177,26 @@ const SettingsTabs = () => {
                             ))}
                         </CardContent>
                     </Card>
+                    <Dialog open={isVacationPolicyDialogOpen} onOpenChange={setIsVacationPolicyDialogOpen}>
+                         <DialogContent className="sm:max-w-xl">
+                            <DialogHeader><DialogTitle>{dialogVacationPolicyMode === 'add' ? 'Nueva Política de Vacaciones' : 'Editar Política'}</DialogTitle></DialogHeader>
+                            <form onSubmit={handleVacationPolicyFormSubmit} className="space-y-4 py-4">
+                                <Input placeholder="Nombre" value={vacationPolicyFormData.name} onChange={e => setVacationPolicyFormData({...vacationPolicyFormData, name: e.target.value})}/>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <Select value={vacationPolicyFormData.unit} onValueChange={(v: any) => setVacationPolicyFormData({...vacationPolicyFormData, unit: v})}>
+                                        <SelectTrigger><SelectValue/></SelectTrigger>
+                                        <SelectContent><SelectItem value="days">Días</SelectItem><SelectItem value="hours">Horas</SelectItem></SelectContent>
+                                    </Select>
+                                    <Input type="number" placeholder="Cantidad" value={vacationPolicyFormData.amount} onChange={e => setVacationPolicyFormData({...vacationPolicyFormData, amount: Number(e.target.value)})}/>
+                                </div>
+                                 <RadioGroup value={vacationPolicyFormData.countBy} onValueChange={(v: any) => setVacationPolicyFormData({...vacationPolicyFormData, countBy: v})} className="flex gap-4">
+                                    <div className="flex items-center space-x-2"><RadioGroupItem value="workdays" id="wd"/><Label htmlFor="wd">Laborables</Label></div>
+                                    <div className="flex items-center space-x-2"><RadioGroupItem value="natural" id="nd"/><Label htmlFor="nd">Naturales</Label></div>
+                                </RadioGroup>
+                                <DialogFooter><Button>Guardar</Button></DialogFooter>
+                            </form>
+                         </DialogContent>
+                    </Dialog>
                 </TabsContent>
                 
                 <TabsContent value="absences" className="m-0">
@@ -1133,6 +1224,27 @@ const SettingsTabs = () => {
                             </Table>
                         </CardContent>
                     </Card>
+                     <Dialog open={isAbsenceTypeDialogOpen} onOpenChange={setIsAbsenceTypeDialogOpen}>
+                         <DialogContent className="sm:max-w-xl">
+                            <DialogHeader><DialogTitle>{dialogAbsenceTypeMode === 'add' ? 'Nuevo Tipo de Ausencia' : 'Editar Tipo'}</DialogTitle></DialogHeader>
+                            <form onSubmit={handleAbsenceTypeFormSubmit} className="space-y-4 py-4">
+                                <Input placeholder="Nombre" value={absenceTypeFormData.name} onChange={e => setAbsenceTypeFormData({...absenceTypeFormData, name: e.target.value})}/>
+                                <Select value={absenceTypeFormData.color} onValueChange={c => setAbsenceTypeFormData({...absenceTypeFormData, color: c})}>
+                                    <SelectTrigger><SelectValue/></SelectTrigger>
+                                    <SelectContent>{projectColors.map(c => <SelectItem key={c.value} value={c.value}><div className="flex items-center gap-2"><div className={cn("w-3 h-3 rounded-full", c.value)}/>{c.label}</div></SelectItem>)}</SelectContent>
+                                </Select>
+                                 <RadioGroup value={absenceTypeFormData.unit} onValueChange={(v: any) => setAbsenceTypeFormData({...absenceTypeFormData, unit: v})} className="flex gap-4">
+                                    <div className="flex items-center space-x-2"><RadioGroupItem value="days" id="days"/><Label htmlFor="days">Días</Label></div>
+                                    <div className="flex items-center space-x-2"><RadioGroupItem value="hours" id="hours"/><Label htmlFor="hours">Horas</Label></div>
+                                </RadioGroup>
+                                <div className="flex items-center space-x-2"><Switch checked={absenceTypeFormData.remunerated} onCheckedChange={c => setAbsenceTypeFormData({...absenceTypeFormData, remunerated: c})}/><Label>Remunerado</Label></div>
+                                <div className="flex items-center space-x-2"><Switch checked={absenceTypeFormData.requiresApproval} onCheckedChange={c => setAbsenceTypeFormData({...absenceTypeFormData, requiresApproval: c})}/><Label>Requiere aprobación</Label></div>
+                                <div className="flex items-center space-x-2"><Switch checked={absenceTypeFormData.allowAttachment} onCheckedChange={c => setAbsenceTypeFormData({...absenceTypeFormData, allowAttachment: c})}/><Label>Permitir adjunto</Label></div>
+                                <div className="flex items-center space-x-2"><Switch checked={absenceTypeFormData.isDisabled} onCheckedChange={c => setAbsenceTypeFormData({...absenceTypeFormData, isDisabled: c})}/><Label>Deshabilitado</Label></div>
+                                <DialogFooter><Button>Guardar</Button></DialogFooter>
+                            </form>
+                         </DialogContent>
+                    </Dialog>
                 </TabsContent>
                 
                 <TabsContent value="incentives" className="space-y-4 m-0">
@@ -1272,5 +1384,7 @@ export default function SettingsPage() {
         </div>
     )
 }
+
+    
 
     
