@@ -72,10 +72,10 @@ const CenterDialogContent = ({
 }: {
     mode: 'add' | 'edit';
     center: Center | null;
-    onSubmit: (data: Center) => void;
+    onSubmit: (data: Omit<Center, 'id'> | Center) => void;
     onClose: () => void;
 }) => {
-    const [centerData, setCenterData] = useState<Center | null>(null);
+    const [centerData, setCenterData] = useState<Omit<Center, 'id'> | Center | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const places = useMapsLibrary('places');
     const apiKey = process.env.NEXT_PUBLIC_Maps_API_KEY || "";
@@ -84,7 +84,7 @@ const CenterDialogContent = ({
         if (mode === 'edit' && center) {
             setCenterData(center);
         } else {
-            setCenterData({ id: uuidv4(), name: '', address: '', radius: 100, lat: defaultMapCenter.lat, lng: defaultMapCenter.lng, timezone: 'Europe/Madrid' });
+            setCenterData({ name: '', address: '', radius: 100, lat: defaultMapCenter.lat, lng: defaultMapCenter.lng, timezone: 'Europe/Madrid' });
         }
     }, [mode, center]);
 
@@ -106,9 +106,7 @@ const CenterDialogContent = ({
             const lat = place.geometry.location.lat();
             const lng = place.geometry.location.lng();
             
-            const prevData = centerData || { id: '', name: '', radius: 100 };
-            const updatedData = { ...prevData, address, lat, lng, timezone: 'Cargando...' };
-            setCenterData(updatedData);
+            setCenterData(prev => ({ ...prev!, address, lat, lng, timezone: 'Cargando...' }));
 
             try {
                 const timestamp = Math.floor(Date.now() / 1000);
@@ -130,7 +128,7 @@ const CenterDialogContent = ({
             const pacContainers = document.querySelectorAll('.pac-container');
             pacContainers.forEach(container => container.remove());
         };
-    }, [places, apiKey, centerData]);
+    }, [places, apiKey]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -217,7 +215,7 @@ const CenterDialog = ({
     onOpenChange: (isOpen: boolean) => void;
     mode: 'add' | 'edit';
     center: Center | null;
-    onSubmit: (data: Center) => void;
+    onSubmit: (data: Omit<Center, 'id'> | Center) => void;
 }) => {
     const apiKey = process.env.NEXT_PUBLIC_Maps_API_KEY || "";
     
@@ -238,6 +236,7 @@ const CentersTabContent = () => {
     const [centers, setCenters] = useState<Center[]>([]);
     const [departments, setDepartments] = useState<Department[]>([]);
     const [isLoading, setIsLoading] = useState({ centers: true, departments: true });
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [isCenterDialogOpen, setIsCenterDialogOpen] = useState(false);
     const [dialogCenterMode, setDialogCenterMode] = useState<'add' | 'edit'>('add');
@@ -247,10 +246,21 @@ const CentersTabContent = () => {
     const [dialogDeptMode, setDialogDeptMode] = useState<'add' | 'edit'>('add');
     const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
     const [newDepartmentName, setNewDepartmentName] = useState("");
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [authError, setAuthError] = useState(false);
     const apiKey = process.env.NEXT_PUBLIC_Maps_API_KEY || "";
+
+    const fetchCenters = useCallback(async () => {
+        setIsLoading(prev => ({...prev, centers: true}));
+        try {
+            const data = await listSettings<Center>('centers');
+            setCenters(data);
+        } catch (error) {
+            toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los centros de trabajo." });
+        } finally {
+            setIsLoading(prev => ({...prev, centers: false}));
+        }
+    }, [toast]);
     
     const fetchDepartments = useCallback(async () => {
         setIsLoading(prev => ({...prev, departments: true}));
@@ -267,13 +277,12 @@ const CentersTabContent = () => {
     useEffect(() => {
         const handleAuthError = () => setAuthError(true);
         window.addEventListener('gm_authFailure', handleAuthError);
+        
+        fetchCenters();
         fetchDepartments();
-        // Placeholder for fetching centers when API exists
-        setIsLoading(prev => ({...prev, centers: false})); 
-        setCenters([]);
 
         return () => window.removeEventListener('gm_authFailure', handleAuthError);
-    }, [fetchDepartments]);
+    }, [fetchCenters, fetchDepartments]);
 
     const openAddCenterDialog = () => {
         setDialogCenterMode('add');
@@ -287,18 +296,33 @@ const CentersTabContent = () => {
         setIsCenterDialogOpen(true);
     };
 
-    const handleCenterFormSubmit = (centerData: Center) => {
-        // Mocked as there's no API
-        if (dialogCenterMode === 'add') {
-            setCenters(prev => [...prev, centerData]);
-        } else if (dialogCenterMode === 'edit' && selectedCenter) {
-            setCenters(prev => prev.map(c => (c.id === selectedCenter.id ? centerData : c)));
+    const handleCenterFormSubmit = async (centerData: Omit<Center, 'id'> | Center) => {
+        setIsSubmitting(true);
+        try {
+            if (dialogCenterMode === 'add') {
+                await createSetting('centers', centerData as Omit<Center, 'id'>);
+                toast({ title: "Centro de trabajo creado" });
+            } else if (dialogCenterMode === 'edit' && 'id' in centerData) {
+                await updateSetting('centers', centerData.id, centerData);
+                toast({ title: "Centro de trabajo actualizado" });
+            }
+            await fetchCenters();
+            setIsCenterDialogOpen(false);
+        } catch(err) {
+             toast({ variant: "destructive", title: "Error", description: "No se pudo guardar el centro de trabajo." });
+        } finally {
+            setIsSubmitting(false);
         }
-        setIsCenterDialogOpen(false);
     };
 
-    const handleDeleteCenter = (centerId: string) => {
-        setCenters(prev => prev.filter(c => c.id !== centerId));
+    const handleDeleteCenter = async (centerId: string) => {
+         try {
+            await deleteSetting('centers', centerId);
+            toast({ title: "Centro de trabajo eliminado" });
+            await fetchCenters();
+        } catch(err) {
+             toast({ variant: "destructive", title: "Error", description: "No se pudo eliminar el centro de trabajo." });
+        }
     };
 
     const openAddDeptDialog = () => {
@@ -379,9 +403,19 @@ const CentersTabContent = () => {
                         </div>
                         <div className="flex items-center">
                             <Button variant="ghost" size="sm" onClick={() => openEditCenterDialog(center)} disabled={authError}>Editar</Button>
-                            <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDeleteCenter(center.id)}>
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader><AlertDialogTitle>Confirmar Eliminación</AlertDialogTitle></AlertDialogHeader>
+                                    <AlertDialogDescription>¿Seguro que quieres eliminar el centro "{center.name}"?</AlertDialogDescription>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => handleDeleteCenter(center.id)} className={buttonVariants({ variant: "destructive" })}>Eliminar</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
                         </div>
                     </div>
                 )) : <p className="text-sm text-muted-foreground text-center py-4">No se han configurado centros de trabajo.</p>}
@@ -422,9 +456,19 @@ const CentersTabContent = () => {
                             <h3 className="font-semibold">{dept.name}</h3>
                             <div className="flex items-center">
                                 <Button variant="ghost" size="sm" onClick={() => openEditDeptDialog(dept)}>Editar</Button>
-                                <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDeleteDepartment(dept.id)}>
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
+                                 <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader><AlertDialogTitle>Confirmar Eliminación</AlertDialogTitle></AlertDialogHeader>
+                                        <AlertDialogDescription>¿Seguro que quieres eliminar el departamento "{dept.name}"? Esto podría afectar a los empleados asignados.</AlertDialogDescription>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleDeleteDepartment(dept.id)} className={buttonVariants({ variant: "destructive" })}>Eliminar</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
                             </div>
                         </div>
                     )) : <p className="text-sm text-muted-foreground text-center py-4">No hay departamentos creados.</p>}
