@@ -83,7 +83,7 @@ const CenterDialogContent = ({
         if (mode === 'edit' && center) {
             setCenterData(center);
         } else {
-            setCenterData({ name: '', address: '', radius: 100, lat: defaultMapCenter.lat, lng: defaultMapCenter.lng, timezone: 'Europe/Madrid' });
+            setCenterData({ id: uuidv4(), name: '', address: '', radius: 100, lat: defaultMapCenter.lat, lng: defaultMapCenter.lng, timezone: 'Europe/Madrid' });
         }
     }, [mode, center]);
 
@@ -105,7 +105,7 @@ const CenterDialogContent = ({
             const lat = place.geometry.location.lat();
             const lng = place.geometry.location.lng();
             
-            const prevData = centerData || { name: '', radius: 100 };
+            const prevData = centerData || { id: '', name: '', radius: 100 };
             const updatedData = { ...prevData, address, lat, lng, timezone: 'Cargando...' };
             setCenterData(updatedData);
 
