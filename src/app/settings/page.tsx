@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -20,7 +19,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { format, addDays } from "date-fns";
+import { format, addDays, parseISO } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { DateRange } from "react-day-picker";
@@ -551,6 +550,18 @@ const SettingsTabs = () => {
     
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const fetcher = useCallback(async (model: string, setter: React.Dispatch<any>) => {
+        setIsLoading(prev => ({ ...prev, [model]: true }));
+        try {
+            const data = await listSettings(model);
+            setter(data);
+        } catch (error) {
+            toast({ variant: "destructive", title: `Error al cargar ${model}`, description: `No se pudieron cargar los datos de ${model}.` });
+        } finally {
+            setIsLoading(prev => ({ ...prev, [model]: false }));
+        }
+    }, [toast]);
+
     const fetchIncentives = useCallback(async () => {
         setIsLoading(prev => ({ ...prev, incentives: true }));
         try {
@@ -564,17 +575,18 @@ const SettingsTabs = () => {
     }, [toast]);
     
     useEffect(() => {
+        fetcher('absenceTypes', setAbsenceTypes);
+        fetcher('calendars', setCalendars);
         fetchIncentives();
+        // Mock data for now
         setRoles([]); setIsLoading(p => ({...p, roles: false}));
         setBreaks([]); setIsLoading(p => ({...p, breaks: false}));
         setClockInTypes([]); setIsLoading(p => ({...p, clockInTypes: false}));
         setShifts([]); setIsLoading(p => ({...p, shifts: false}));
         setFlexibleSchedules([]); setIsLoading(p => ({...p, flexibleSchedules: false}));
         setFixedSchedules([]); setIsLoading(p => ({...p, fixedSchedules: false}));
-        setAbsenceTypes([]); setIsLoading(p => ({...p, absenceTypes: false}));
-        setCalendars([]); setIsLoading(p => ({...p, calendars: false}));
         setVacationPolicies([]); setIsLoading(p => ({...p, vacationPolicies: false}));
-    }, [fetchIncentives]);
+    }, [fetcher, fetchIncentives]);
     
     // Role Handlers
     const openAddRoleDialog = () => { setIsRoleDialogOpen(true); setDialogRoleMode('add'); setSelectedRole(null); setRoleFormData({ name: '', description: '', permissions: [] }); };
@@ -679,42 +691,110 @@ const SettingsTabs = () => {
     // Calendar & Holiday Handlers
     const handleSelectCalendar = (id: string) => setSelectedCalendarId(id);
     const handleBackToCalendars = () => setSelectedCalendarId(null);
-    const handleCalendarFormSubmit = (e: React.FormEvent) => { 
+    const handleCalendarFormSubmit = async (e: React.FormEvent) => { 
         e.preventDefault();
         if (!newCalendarName) return;
-        setCalendars(prev => [...prev, { id: uuidv4(), name: newCalendarName, holidays: [] }]);
-        setNewCalendarName("");
-        setIsCalendarDialogOpen(false); 
+        setIsSubmitting(true);
+        try {
+            await createSetting('calendars', { name: newCalendarName, holidays: [] });
+            toast({ title: "Calendario creado" });
+            fetcher('calendars', setCalendars);
+            setNewCalendarName("");
+            setIsCalendarDialogOpen(false); 
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo crear el calendario' });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
-    const handleDeleteCalendar = (id: string) => { setCalendars(p => p.filter(c => c.id !== id)); };
-    const handleHolidayFormSubmit = (e: React.FormEvent) => { 
+    const handleDeleteCalendar = async (id: string) => { 
+        setIsSubmitting(true);
+        try {
+            await deleteSetting('calendars', id);
+            toast({ title: "Calendario eliminado" });
+            fetcher('calendars', setCalendars);
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo eliminar el calendario' });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+    const handleHolidayFormSubmit = async (e: React.FormEvent) => { 
         e.preventDefault();
         if (!holidayFormData.name || !holidayFormData.date || !selectedCalendarId) return;
+        
+        const calendarToUpdate = calendars.find(c => c.id === selectedCalendarId);
+        if (!calendarToUpdate) return;
+        
         const newHoliday: Holiday = { id: uuidv4(), name: holidayFormData.name, date: format(holidayFormData.date, 'yyyy-MM-dd') };
-        setCalendars(prev => prev.map(cal => cal.id === selectedCalendarId ? { ...cal, holidays: [...cal.holidays, newHoliday] } : cal));
-        setHolidayFormData({ name: "", date: undefined });
-        setIsHolidayDialogOpen(false);
+        const updatedHolidays = [...(calendarToUpdate.holidays || []), newHoliday];
+        
+        setIsSubmitting(true);
+        try {
+            await updateSetting('calendars', selectedCalendarId, { holidays: updatedHolidays });
+            toast({ title: "Festivo añadido" });
+            fetcher('calendars', setCalendars);
+            setHolidayFormData({ name: "", date: undefined });
+            setIsHolidayDialogOpen(false);
+        } catch(error) {
+            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo añadir el festivo' });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
-    const handleDeleteHoliday = (holidayId: string) => {
+    const handleDeleteHoliday = async (holidayId: string) => {
         if (!selectedCalendarId) return;
-        setCalendars(prev => prev.map(cal => cal.id === selectedCalendarId ? { ...cal, holidays: cal.holidays.filter(h => h.id !== holidayId) } : cal));
+        const calendarToUpdate = calendars.find(c => c.id === selectedCalendarId);
+        if (!calendarToUpdate) return;
+        
+        const updatedHolidays = calendarToUpdate.holidays.filter(h => h.id !== holidayId);
+        setIsSubmitting(true);
+        try {
+            await updateSetting('calendars', selectedCalendarId, { holidays: updatedHolidays });
+            toast({ title: "Festivo eliminado" });
+            fetcher('calendars', setCalendars);
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo eliminar el festivo' });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
     const handleImportHolidays = () => { toast({ title: "Próximamente", description: "La importación de festivos estará disponible pronto." }) };
     
     // Absence Type Handlers
     const openAddAbsenceTypeDialog = () => { setIsAbsenceTypeDialogOpen(true); setDialogAbsenceTypeMode('add'); setAbsenceTypeFormData({ name: '', color: 'bg-blue-500', remunerated: true, unit: 'days', requiresApproval: true, allowAttachment: false, isDisabled: false, assignment: 'all', assignedTo: [] }); };
     const openEditAbsenceTypeDialog = (type: AbsenceType) => { setIsAbsenceTypeDialogOpen(true); setDialogAbsenceTypeMode('edit'); setSelectedAbsenceType(type); setAbsenceTypeFormData({ ...type, blockedPeriods: type.blockedPeriods ?? [] }); };
-    const handleAbsenceTypeFormSubmit = (e: React.FormEvent) => { 
+    const handleAbsenceTypeFormSubmit = async (e: React.FormEvent) => { 
         e.preventDefault();
-        const newType = { id: uuidv4(), ...absenceTypeFormData };
-        if (dialogAbsenceTypeMode === 'add') {
-            setAbsenceTypes(prev => [...prev, newType]);
-        } else if (selectedAbsenceType) {
-            setAbsenceTypes(prev => prev.map(t => t.id === selectedAbsenceType.id ? { ...newType, id: t.id } : t));
+        setIsSubmitting(true);
+        try {
+            if (dialogAbsenceTypeMode === 'add') {
+                await createSetting('absenceTypes', absenceTypeFormData);
+                toast({ title: "Tipo de ausencia creado" });
+            } else if (selectedAbsenceType) {
+                await updateSetting('absenceTypes', selectedAbsenceType.id, absenceTypeFormData);
+                toast({ title: "Tipo de ausencia actualizado" });
+            }
+            fetcher('absenceTypes', setAbsenceTypes);
+            setIsAbsenceTypeDialogOpen(false);
+        } catch(error) {
+            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo guardar el tipo de ausencia' });
+        } finally {
+            setIsSubmitting(false);
         }
-        setIsAbsenceTypeDialogOpen(false); 
     };
-    const handleDeleteAbsenceType = (id: string) => { setAbsenceTypes(p => p.filter(t => t.id !== id)); };
+    const handleDeleteAbsenceType = async (id: string) => { 
+        setIsSubmitting(true);
+        try {
+            await deleteSetting('absenceTypes', id);
+            toast({ title: "Tipo de ausencia eliminado" });
+            fetcher('absenceTypes', setAbsenceTypes);
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo eliminar el tipo de ausencia' });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     // Vacation Policy Handlers
     const openAddVacationPolicyDialog = () => { setIsVacationPolicyDialogOpen(true); setDialogVacationPolicyMode('add'); setVacationPolicyFormData({ name: '', unit: 'days', amount: 22, countBy: 'workdays', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [], assignment: 'all', assignedTo: [] }); };
@@ -764,7 +844,7 @@ const SettingsTabs = () => {
     };
     
     const selectedCalendar = calendars.find(c => c.id === selectedCalendarId);
-    const holidayDates = selectedCalendar?.holidays.map(h => new Date(h.date)) || [];
+    const holidayDates = selectedCalendar?.holidays.map(h => parseISO(h.date)) || [];
 
     return (
         <Tabs defaultValue="general" className="space-y-4 md:flex md:space-y-0 md:space-x-4">
@@ -1137,7 +1217,7 @@ const SettingsTabs = () => {
 
                 <TabsContent value="calendars" className="m-0">
                     {selectedCalendarId && selectedCalendar ? (
-                        <Card>
+                        <Card className="bg-gradient-accent-to-card">
                             <CardHeader className="flex flex-row items-center justify-between">
                                 <div><CardTitle>{selectedCalendar.name}</CardTitle><CardDescription>Gestiona los festivos del calendario.</CardDescription></div>
                                 <Button variant="ghost" onClick={handleBackToCalendars}><ArrowLeft className="mr-2 h-4 w-4"/> Volver</Button>
@@ -1157,7 +1237,7 @@ const SettingsTabs = () => {
                                                             <PopoverTrigger asChild><Button variant="outline" className="w-full justify-start">{holidayFormData.date ? format(holidayFormData.date, "PPP") : "Seleccionar fecha"}</Button></PopoverTrigger>
                                                             <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={holidayFormData.date} onSelect={d => setHolidayFormData({...holidayFormData, date: d})}/></PopoverContent>
                                                         </Popover>
-                                                        <DialogFooter><Button>Guardar</Button></DialogFooter>
+                                                        <DialogFooter><Button type="submit" disabled={isSubmitting}>{isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}Guardar</Button></DialogFooter>
                                                     </form>
                                                 </DialogContent>
                                             </Dialog>
@@ -1170,8 +1250,12 @@ const SettingsTabs = () => {
                                                 {selectedCalendar.holidays.map(h => (
                                                     <TableRow key={h.id}>
                                                         <TableCell>{h.name}</TableCell>
-                                                        <TableCell>{format(new Date(h.date), "dd/MM/yyyy")}</TableCell>
-                                                        <TableCell className="text-right"><Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteHoliday(h.id)}><Trash2 className="h-4 w-4"/></Button></TableCell>
+                                                        <TableCell>{format(parseISO(h.date), "dd/MM/yyyy")}</TableCell>
+                                                        <TableCell className="text-right">
+                                                            <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteHoliday(h.id)} disabled={isSubmitting}>
+                                                                <Trash2 className="h-4 w-4"/>
+                                                            </Button>
+                                                        </TableCell>
                                                     </TableRow>
                                                 ))}
                                             </TableBody>
@@ -1184,7 +1268,7 @@ const SettingsTabs = () => {
                             </CardContent>
                         </Card>
                     ) : (
-                        <Card>
+                        <Card className="bg-gradient-accent-to-card">
                             <CardHeader className="flex flex-row items-center justify-between">
                                 <div><CardTitle>Calendarios Laborales</CardTitle><CardDescription>Gestiona los calendarios de festivos.</CardDescription></div>
                                 <Dialog open={isCalendarDialogOpen} onOpenChange={setIsCalendarDialogOpen}>
@@ -1193,28 +1277,29 @@ const SettingsTabs = () => {
                                         <DialogHeader><DialogTitle>Nuevo Calendario</DialogTitle></DialogHeader>
                                         <form onSubmit={handleCalendarFormSubmit} className="space-y-4 py-4">
                                             <Input placeholder="Nombre del Calendario" value={newCalendarName} onChange={e => setNewCalendarName(e.target.value)} required/>
-                                            <DialogFooter><Button>Guardar</Button></DialogFooter>
+                                            <DialogFooter><Button type="submit" disabled={isSubmitting}>{isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}Guardar</Button></DialogFooter>
                                         </form>
                                     </DialogContent>
                                 </Dialog>
                             </CardHeader>
                             <CardContent>
-                                {calendars.map(cal => (
-                                    <div key={cal.id} className="flex items-center justify-between rounded-xl border p-4">
+                                {isLoading['calendars'] ? <div className="flex justify-center items-center py-4"><Loader2 className="animate-spin" /></div> : calendars.map(cal => (
+                                    <div key={cal.id} className="flex items-center justify-between rounded-xl border p-4 mb-4">
                                         <h3 className="font-semibold">{cal.name}</h3>
                                         <div className="flex items-center">
                                             <Button variant="ghost" size="sm" onClick={() => handleSelectCalendar(cal.id)}>Gestionar</Button>
-                                            <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteCalendar(cal.id)}><Trash2 className="h-4 w-4"/></Button>
+                                            <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteCalendar(cal.id)} disabled={isSubmitting}><Trash2 className="h-4 w-4"/></Button>
                                         </div>
                                     </div>
                                 ))}
+                                {calendars.length === 0 && !isLoading['calendars'] && <p className="text-center text-muted-foreground py-4">No hay calendarios creados.</p>}
                             </CardContent>
                         </Card>
                     )}
                 </TabsContent>
                 
                 <TabsContent value="vacations" className="m-0">
-                    <Card>
+                    <Card className="bg-gradient-accent-to-card">
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div><CardTitle>Políticas de Vacaciones</CardTitle><CardDescription>Define cómo se acumulan y gestionan las vacaciones.</CardDescription></div>
                             <Button onClick={openAddVacationPolicyDialog}><PlusCircle className="mr-2 h-4 w-4"/> Nueva Política</Button>
@@ -1254,28 +1339,28 @@ const SettingsTabs = () => {
                 </TabsContent>
                 
                 <TabsContent value="absences" className="m-0">
-                    <Card>
+                    <Card className="bg-gradient-accent-to-card">
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div><CardTitle>Tipos de Ausencia</CardTitle><CardDescription>Configura los diferentes tipos de ausencias que existen.</CardDescription></div>
                             <Button onClick={openAddAbsenceTypeDialog}><PlusCircle className="mr-2 h-4 w-4"/> Nuevo Tipo</Button>
                         </CardHeader>
                         <CardContent>
-                            <Table>
+                            {isLoading['absenceTypes'] ? <div className="flex justify-center items-center py-4"><Loader2 className="animate-spin" /></div> : <Table>
                                 <TableHeader><TableRow><TableHead>Nombre</TableHead><TableHead>Unidad</TableHead><TableHead>Estado</TableHead><TableHead></TableHead></TableRow></TableHeader>
                                 <TableBody>
                                     {absenceTypes.map(t => (
                                         <TableRow key={t.id}>
-                                            <TableCell><Badge className={t.color}>{t.name}</Badge></TableCell>
+                                            <TableCell><Badge className={cn("border-transparent", t.color)}>{t.name}</Badge></TableCell>
                                             <TableCell>{t.unit}</TableCell>
                                             <TableCell>{t.isDisabled ? 'Deshabilitado' : 'Activo'}</TableCell>
                                             <TableCell className="text-right">
                                                 <Button variant="ghost" size="sm" onClick={() => openEditAbsenceTypeDialog(t)}>Editar</Button>
-                                                <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteAbsenceType(t.id)}><Trash2 className="h-4 w-4"/></Button>
+                                                <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteAbsenceType(t.id)} disabled={isSubmitting}><Trash2 className="h-4 w-4"/></Button>
                                             </TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>
-                            </Table>
+                            </Table>}
                         </CardContent>
                     </Card>
                      <Dialog open={isAbsenceTypeDialogOpen} onOpenChange={setIsAbsenceTypeDialogOpen}>
@@ -1295,7 +1380,7 @@ const SettingsTabs = () => {
                                 <div className="flex items-center space-x-2"><Switch checked={absenceTypeFormData.requiresApproval} onCheckedChange={c => setAbsenceTypeFormData({...absenceTypeFormData, requiresApproval: c})}/><Label>Requiere aprobación</Label></div>
                                 <div className="flex items-center space-x-2"><Switch checked={absenceTypeFormData.allowAttachment} onCheckedChange={c => setAbsenceTypeFormData({...absenceTypeFormData, allowAttachment: c})}/><Label>Permitir adjunto</Label></div>
                                 <div className="flex items-center space-x-2"><Switch checked={absenceTypeFormData.isDisabled} onCheckedChange={c => setAbsenceTypeFormData({...absenceTypeFormData, isDisabled: c})}/><Label>Deshabilitado</Label></div>
-                                <DialogFooter><Button>Guardar</Button></DialogFooter>
+                                <DialogFooter><Button type="submit" disabled={isSubmitting}>{isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}Guardar</Button></DialogFooter>
                             </form>
                          </DialogContent>
                     </Dialog>

@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import type { DateRange, DayProps } from 'react-day-picker';
 import { useDayRender } from 'react-day-picker';
-import { addDays, format, isSameDay } from 'date-fns';
+import { addDays, format, isSameDay, parseISO } from 'date-fns';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -13,18 +14,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar as CalendarIcon, PlusCircle } from "lucide-react";
+import { Calendar as CalendarIcon, PlusCircle, Loader2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-
-// Types needed for this page
-type Holiday = { id: string; name: string; date: string; };
-type CalendarData = { id: string; name: string; holidays: Holiday[]; };
-type Employee = { id: number; name: string; email: string; calendarId?: string; };
-
-const EMPLOYEES_STORAGE_KEY = 'workflow-central-employees';
-const CALENDARS_STORAGE_KEY = 'workflow-central-calendars';
+import { type Holiday, type CalendarData, listSettings } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
 
 const balances = [
     { type: "Vacaciones", used: 8, total: 20 },
@@ -40,6 +35,7 @@ const requests = [
 ];
 
 export default function EmployeeAbsencesPage() {
+    const { toast } = useToast();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [dateRange, setDateRange] = useState<DateRange | undefined>({
         from: new Date(),
@@ -47,22 +43,32 @@ export default function EmployeeAbsencesPage() {
     });
 
     const [holidays, setHolidays] = useState<Holiday[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        try {
-            const storedCalendars = localStorage.getItem(CALENDARS_STORAGE_KEY);
-            if (storedCalendars) {
-                const allCalendars: CalendarData[] = JSON.parse(storedCalendars);
-                // For demo, just use the default calendar if it exists
-                const defaultCalendar = allCalendars.find(c => c.id === 'default-calendar');
-                if(defaultCalendar) {
-                    setHolidays(defaultCalendar.holidays);
+        const fetchCalendarData = async () => {
+            setIsLoading(true);
+            try {
+                // In a real app, you would determine which calendar belongs to the user.
+                // For this demo, we'll just fetch all calendars and use the first one we find.
+                const allCalendars = await listSettings<CalendarData>('calendars');
+                if (allCalendars.length > 0) {
+                    setHolidays(allCalendars[0].holidays || []);
                 }
+            } catch (error) {
+                console.error("Failed to load calendars from DB", error);
+                toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: "No se pudieron cargar los datos del calendario laboral.",
+                });
+            } finally {
+                setIsLoading(false);
             }
-        } catch (error) {
-            console.error("Failed to load data from localStorage", error);
-        }
-    }, []);
+        };
+
+        fetchCalendarData();
+    }, [toast]);
 
     // Mock dates for the calendar display
     const approvedAbsences = [
@@ -74,7 +80,7 @@ export default function EmployeeAbsencesPage() {
         new Date(2024, 7, 23),
     ];
 
-    const holidayDates = holidays.map(h => new Date(h.date));
+    const holidayDates = holidays.map(h => parseISO(h.date));
     
     const modifiers = {
         approved: approvedAbsences,
@@ -88,7 +94,7 @@ export default function EmployeeAbsencesPage() {
     function DayWithTooltip(props: DayProps) {
         const buttonRef = useRef<HTMLButtonElement>(null);
         const dayRender = useDayRender(props.date, props.displayMonth, buttonRef);
-        const holiday = holidays.find(h => isSameDay(new Date(h.date), props.date));
+        const holiday = holidays.find(h => isSameDay(parseISO(h.date), props.date));
 
         if (dayRender.isHidden) return <></>;
         if (!dayRender.isButton) return <div {...dayRender.divProps} />;
@@ -180,6 +186,7 @@ export default function EmployeeAbsencesPage() {
                                     selected={dateRange}
                                     onSelect={setDateRange}
                                     numberOfMonths={2}
+                                    disabled={isLoading}
                                 />
                                 </PopoverContent>
                             </Popover>
@@ -255,13 +262,19 @@ export default function EmployeeAbsencesPage() {
                     <CardDescription>Tus ausencias y festivos de un vistazo.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Calendar
-                        mode="multiple"
-                        modifiers={modifiers}
-                        modifiersClassNames={modifiersClassNames}
-                        className="rounded-lg border"
-                        components={{ Day: DayWithTooltip }}
-                    />
+                     {isLoading ? (
+                        <div className="flex items-center justify-center h-[280px]">
+                            <Loader2 className="h-8 w-8 animate-spin" />
+                        </div>
+                    ) : (
+                        <Calendar
+                            mode="multiple"
+                            modifiers={modifiers}
+                            modifiersClassNames={modifiersClassNames}
+                            className="rounded-lg border"
+                            components={{ Day: DayWithTooltip }}
+                        />
+                    )}
                     <div className="mt-4 space-y-2 text-sm text-muted-foreground">
                         <div className="flex items-center gap-2">
                             <div className="h-4 w-4 rounded-full bg-destructive" />
