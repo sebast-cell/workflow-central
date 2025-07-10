@@ -100,9 +100,9 @@ const HusinCardContent = ({ employees }: { employees: ApiEmployee[] }) => (
   );
 
 export default function AttendancePage() {
-    const [employees, setEmployees] = useState<ApiEmployee[]>([]);
-    const [departments, setDepartments] = useState<Department[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [employees, setEmployees] = useState<ApiEmployee[]>(mockEmployees);
+    const [departments, setDepartments] = useState<Department[]>(mockDepartments);
+    const [isLoading, setIsLoading] = useState(false); // Set to false, using mock data
 
     const [dateRange, setDateRange] = useState<DateRange | undefined>({
       from: new Date(2024, 7, 24),
@@ -113,15 +113,6 @@ export default function AttendancePage() {
     const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5;
-
-    useEffect(() => {
-        // Simulate fetching data with a delay to show loading state
-        setTimeout(() => {
-            setEmployees(mockEmployees);
-            setDepartments(mockDepartments);
-            setIsLoading(false);
-        }, 500);
-    }, []);
 
     const availableEmployees = useMemo(() => {
         if (selectedDepartment === 'all') {
@@ -141,8 +132,6 @@ export default function AttendancePage() {
     }, [dateRange, selectedLocation, selectedDepartment, selectedEmployee]);
 
     const husinStats = useMemo(() => {
-        if (isLoading) return null;
-
         const today = new Date(2024, 7, 26);
         const todayNormalized = startOfDay(today);
 
@@ -206,7 +195,7 @@ export default function AttendancePage() {
         stats.absent.count = stats.absent.list.length;
 
         return stats;
-    }, [employees, isLoading]);
+    }, [employees]);
 
     const filteredLog = useMemo(() => {
         const startDate = dateRange?.from ? startOfDay(dateRange.from) : null;
@@ -572,3 +561,5 @@ export default function AttendancePage() {
     </div>
   )
 }
+
+    

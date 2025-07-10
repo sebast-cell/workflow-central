@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from "react";
@@ -13,33 +14,25 @@ import { type Project, listProjects, createProject } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 
+const mockProjects: Project[] = [
+    { id: "1", name: "Rediseño del Sitio Web", description: "Modernizar la interfaz de usuario y la experiencia del sitio web corporativo." },
+    { id: "2", name: "Lanzamiento de App Móvil Q3", description: "Desarrollar y lanzar la aplicación móvil para iOS y Android." },
+    { id: "3", name: "Campaña de Marketing de Verano", description: "Ejecutar campaña multicanal para aumentar las ventas de verano." },
+    { id: "4", name: "Migración a Nueva Infraestructura", description: "Mover todos los servicios a la nueva arquitectura en la nube." },
+    { id: "5", name: "Programa de Certificación Interna", description: "Crear un programa de certificación para el equipo de desarrollo." },
+];
+
+
 export default function ProjectsPage() {
   const { toast } = useToast();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [projects, setProjects] = useState<Project[]>(mockProjects);
+  const [isLoading, setIsLoading] = useState(false); // Using mock data
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
   const [newProjectData, setNewProjectData] = useState({
     name: "",
     description: "",
   });
-
-  const fetchData = async () => {
-      setIsLoading(true);
-      try {
-          const projectsData = await listProjects();
-          setProjects(projectsData);
-      } catch (error) {
-          console.error("Failed to fetch projects from API", error);
-          toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los proyectos." });
-      } finally {
-          setIsLoading(false);
-      }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, [toast]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
@@ -50,16 +43,16 @@ export default function ProjectsPage() {
     e.preventDefault();
     if (!newProjectData.name) return;
 
-    try {
-        const savedProject = await createProject(newProjectData);
-        setProjects(prev => [...prev, savedProject]);
-        setIsDialogOpen(false);
-        setNewProjectData({ name: "", description: "" });
-        toast({ title: "Proyecto creado", description: `El proyecto "${savedProject.name}" ha sido creado.` });
-    } catch (error) {
-        console.error("Failed to create project:", error);
-        toast({ variant: "destructive", title: "Error", description: "No se pudo crear el proyecto." });
-    }
+    // This is a local update for the mock data
+    const newProject: Project = {
+        id: (projects.length + 1).toString(),
+        name: newProjectData.name,
+        description: newProjectData.description,
+    };
+    setProjects(prev => [...prev, newProject]);
+    setIsDialogOpen(false);
+    setNewProjectData({ name: "", description: "" });
+    toast({ title: "Proyecto creado", description: `El proyecto "${newProject.name}" ha sido creado.` });
   };
 
   return (
@@ -144,3 +137,5 @@ export default function ProjectsPage() {
     </div>
   )
 }
+
+    

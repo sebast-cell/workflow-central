@@ -1,3 +1,4 @@
+
 'use client'
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -12,43 +13,24 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { type Objective, type Task, listObjectives, listTasks, createTask } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
+// Mock Data
+const mockObjectives: Objective[] = [
+    { id: 'obj1', project_id: '1', title: 'Crear wireframes', description: 'Diseñar los wireframes de alta fidelidad', type: 'individual', assigned_to: '2', is_incentivized: false, start_date: '2024-08-01', end_date: '2024-08-15', weight: 20 },
+    { id: 'obj2', project_id: '1', title: 'Desarrollar componentes UI', description: 'Implementar la librería de componentes en React', type: 'equipo', assigned_to: '1', is_incentivized: true, incentive_id: 'inc1', start_date: '2024-08-16', end_date: '2024-09-15', weight: 40 },
+];
+const mockTasks: Task[] = [
+    { id: 'task1', objective_id: 'obj1', title: 'Diseñar página de inicio', completed: true, is_incentivized: false },
+    { id: 'task2', objective_id: 'obj1', title: 'Diseñar página de producto', completed: false, is_incentivized: false },
+    { id: 'task3', objective_id: 'obj2', title: 'Crear componente Botón', completed: true, is_incentivized: false },
+];
+
 export default function EmployeeTasksPage() {
     const { toast } = useToast();
-    const [tasks, setTasks] = useState<Task[]>([]);
-    const [myObjectives, setMyObjectives] = useState<Objective[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [tasks, setTasks] = useState<Task[]>(mockTasks);
+    const [myObjectives, setMyObjectives] = useState<Objective[]>(mockObjectives);
+    const [isLoading, setIsLoading] = useState(false); // Using mock data
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [newTaskData, setNewTaskData] = useState({ title: '', objective_id: ''});
-
-    // This page shows a generic demonstration. In a real app, you would get the
-    // current user ID from an authentication context to show personalized data.
-    const isDemoMode = true; 
-
-    const fetchData = async () => {
-        setIsLoading(true);
-        try {
-            const [allObjectives, allTasks] = await Promise.all([
-                listObjectives(),
-                listTasks()
-            ]);
-            
-            // For this demo, we'll just show the first few objectives as an example.
-            const demoObjectives = allObjectives.slice(0, 3);
-            const demoObjectiveIds = demoObjectives.map(o => o.id);
-
-            setMyObjectives(demoObjectives);
-            setTasks(allTasks.filter(t => demoObjectiveIds.includes(t.objective_id)));
-        } catch (error) {
-            console.error("Error loading data:", error);
-            toast({ variant: 'destructive', title: "Error", description: "No se pudieron cargar los datos." });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchData();
-    }, []);
 
     const handleCreateTask = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -57,29 +39,21 @@ export default function EmployeeTasksPage() {
             return;
         }
 
-        const newTaskPayload: Omit<Task, 'id'> = {
+        const newTaskPayload: Task = {
+            id: `task${tasks.length + 1}`,
             title: newTaskData.title,
             objective_id: newTaskData.objective_id,
             completed: false,
             is_incentivized: false,
-            incentive_id: undefined,
         };
 
-        try {
-            const savedTask = await createTask(newTaskPayload);
-            setTasks(prev => [...prev, savedTask]);
-            setNewTaskData({ title: '', objective_id: '' });
-            setIsDialogOpen(false);
-            toast({ title: "Tarea creada", description: "La nueva tarea ha sido añadida." });
-        } catch (error) {
-            console.error("Failed to create task:", error);
-            toast({ variant: 'destructive', title: "Error", description: "No se pudo crear la tarea." });
-        }
+        setTasks(prev => [...prev, newTaskPayload]);
+        setNewTaskData({ title: '', objective_id: '' });
+        setIsDialogOpen(false);
+        toast({ title: "Tarea creada", description: "La nueva tarea ha sido añadida." });
     };
 
     const handleToggleTask = async (taskId: string, completed: boolean) => {
-        // NOTE: In a real app, this would be a PATCH/PUT request to the backend.
-        // The mock API does not support updates, so this change is client-side only.
         setTasks(prev => prev.map(t => t.id === taskId ? { ...t, completed } : t));
     };
 
@@ -198,3 +172,5 @@ export default function EmployeeTasksPage() {
         </div>
     )
 }
+
+    

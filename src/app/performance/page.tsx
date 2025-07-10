@@ -21,16 +21,43 @@ import { cn } from "@/lib/utils";
 import { format, addMonths } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 
+// Mock Data
+const mockEmployees: Employee[] = [
+    { id: "1", name: "Olivia Martin", email: "olivia.martin@example.com", department: "Ingeniería", role: "Frontend Developer", status: "Activo", schedule: "9-5", hireDate: "2023-01-15", phone: "123-456-7890", avatar: "OM" },
+    { id: "2", name: "Jackson Lee", email: "jackson.lee@example.com", department: "Diseño", role: "UI/UX Designer", status: "Activo", schedule: "10-6", hireDate: "2022-06-01", phone: "123-456-7891", avatar: "JL" },
+];
+const mockDepartments: Department[] = [
+    { id: "1", name: "Ingeniería" },
+    { id: "2", name: "Diseño" },
+];
+const mockProjects: Project[] = [
+    { id: "1", name: "Rediseño del Sitio Web" },
+    { id: "2", name: "Lanzamiento de App Móvil Q3" },
+];
+const mockObjectives: Objective[] = [
+    { id: 'obj1', project_id: '1', title: 'Crear wireframes', description: 'Diseñar los wireframes de alta fidelidad', type: 'individual', assigned_to: '2', is_incentivized: false, start_date: '2024-08-01', end_date: '2024-08-15', weight: 20 },
+    { id: 'obj2', project_id: '1', title: 'Desarrollar componentes UI', description: 'Implementar la librería de componentes en React', type: 'equipo', assigned_to: '1', is_incentivized: true, incentive_id: 'inc1', start_date: '2024-08-16', end_date: '2024-09-15', weight: 40 },
+    { id: 'obj3', project_id: '2', title: 'Definir MVP', description: 'Definir el alcance mínimo viable', type: 'empresa', assigned_to: 'company', is_incentivized: false, start_date: '2024-08-01', end_date: '2024-08-10', weight: 10 },
+];
+const mockTasks: Task[] = [
+    { id: 'task1', objective_id: 'obj1', title: 'Diseñar página de inicio', completed: true, is_incentivized: false },
+    { id: 'task2', objective_id: 'obj1', title: 'Diseñar página de producto', completed: false, is_incentivized: false },
+    { id: 'task3', objective_id: 'obj2', title: 'Crear componente Botón', completed: true, is_incentivized: false },
+];
+const mockIncentives: Incentive[] = [
+    { id: 'inc1', name: 'Bono Trimestral', type: 'económico', value: '500€', period: 'trimestral', active: true, company_id: '1', condition_expression: { modality: 'proportional' } },
+];
+
 
 export default function PerformancePage() {
     const { toast } = useToast();
-    const [employees, setEmployees] = useState<Employee[]>([]);
-    const [departments, setDepartments] = useState<Department[]>([]);
-    const [objectives, setObjectives] = useState<Objective[]>([]);
-    const [incentives, setIncentives] = useState<Incentive[]>([]);
-    const [projects, setProjects] = useState<Project[]>([]);
-    const [tasks, setTasks] = useState<Task[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [employees, setEmployees] = useState<Employee[]>(mockEmployees);
+    const [departments, setDepartments] = useState<Department[]>(mockDepartments);
+    const [objectives, setObjectives] = useState<Objective[]>(mockObjectives);
+    const [incentives, setIncentives] = useState<Incentive[]>(mockIncentives);
+    const [projects, setProjects] = useState<Project[]>(mockProjects);
+    const [tasks, setTasks] = useState<Task[]>(mockTasks);
+    const [isLoading, setIsLoading] = useState(false);
 
     const [newObjectiveData, setNewObjectiveData] = useState<Partial<Omit<Objective, 'id'>>>({
         title: "",
@@ -51,29 +78,6 @@ export default function PerformancePage() {
     const [isLoadingDetails, setIsLoadingDetails] = useState(false);
     const [newTaskTitle, setNewTaskTitle] = useState("");
 
-    useEffect(() => {
-        const fetchData = async () => {
-            setIsLoading(true);
-            try {
-                const [objectivesData, incentivesData, projectsData, tasksData, employeesData, departmentsData] = await Promise.all([
-                    listObjectives(), listIncentives(), listProjects(), listTasks(), listEmployees(), listSettings('departments')
-                ]);
-                setObjectives(objectivesData);
-                setIncentives(incentivesData);
-                setProjects(projectsData);
-                setTasks(tasksData);
-                setEmployees(employeesData);
-                setDepartments(departmentsData as Department[]);
-            } catch (error) {
-                console.error("Failed to fetch data:", error);
-                toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los datos." });
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchData();
-    }, [toast]);
-
     const getTasksByObjective = (objectiveId: string) => {
         return tasks.filter(task => task.objective_id === objectiveId);
     };
@@ -85,20 +89,32 @@ export default function PerformancePage() {
         }
         setIsLoadingDetails(true);
         setSelectedObjective(objective);
-        try {
+        
+        // Simulate loading details
+        setTimeout(() => {
             const tasksData = getTasksByObjective(objective.id);
-            const incentiveData = objective.is_incentivized
-                ? await calculateIncentiveForObjective(objective.id)
-                : null;
-
             setObjectiveTasks(tasksData);
-            setIncentiveResult(incentiveData);
-        } catch (error) {
-            console.error("Failed to load objective details", error);
-            toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los detalles del objetivo." });
-        } finally {
+            if(objective.is_incentivized) {
+                // Mock incentive calculation
+                const progress = getObjectiveProgress(objective.id).progress / 100;
+                const incentive = incentives.find(i => i.id === objective.incentive_id);
+                if (incentive) {
+                    const value = parseFloat(incentive.value);
+                    if (incentive.condition_expression?.modality === 'proportional') {
+                        setIncentiveResult({ result: value * progress, message: `Proporcional (${(progress * 100).toFixed(0)}%)` });
+                    } else { // all-or-nothing
+                        if (progress >= 1) {
+                            setIncentiveResult({ result: value, message: "Incentivo completo" });
+                        } else {
+                            setIncentiveResult({ result: 0, message: "Incentivo no cumplido" });
+                        }
+                    }
+                }
+            } else {
+                setIncentiveResult(null);
+            }
             setIsLoadingDetails(false);
-        }
+        }, 300);
     };
 
     const handleCreateObjective = async (e: React.FormEvent) => {
@@ -106,7 +122,7 @@ export default function PerformancePage() {
 
         let assignedTo = newObjectiveData.assigned_to;
         if (newObjectiveData.type === 'empresa') {
-            assignedTo = '00000000-0000-0000-0000-000000000000'; // Placeholder for company-wide
+            assignedTo = 'company';
         }
 
         if (!newObjectiveData.title || !assignedTo) {
@@ -114,7 +130,8 @@ export default function PerformancePage() {
              return;
         }
         
-        const payload: Omit<Objective, 'id'> = {
+        const savedObjective: Objective = {
+            id: `obj${objectives.length + 1}`,
             title: newObjectiveData.title!,
             description: newObjectiveData.description,
             type: newObjectiveData.type!,
@@ -127,53 +144,33 @@ export default function PerformancePage() {
             end_date: newObjectiveData.end_date!,
         };
 
-        try {
-            const savedObjective = await createObjective(payload);
-            setObjectives(prev => [...prev, savedObjective]);
-            toast({ title: "Objetivo Creado", description: "El nuevo objetivo ha sido guardado." });
-            setNewObjectiveData({
-                title: "",
-                description: "",
-                type: "individual",
-                assigned_to: "",
-                project_id: "",
-                is_incentivized: false,
-                incentive_id: "",
-                weight: 0,
-                start_date: format(new Date(), 'yyyy-MM-dd'),
-                end_date: format(addMonths(new Date(), 1), 'yyyy-MM-dd'),
-            });
-        } catch (error) {
-            console.error("Failed to create objective:", error);
-            toast({ variant: "destructive", title: "Error", description: "No se pudo crear el objetivo." });
-        }
+        setObjectives(prev => [...prev, savedObjective]);
+        toast({ title: "Objetivo Creado", description: "El nuevo objetivo ha sido guardado." });
+        setNewObjectiveData({
+            title: "", description: "", type: "individual", assigned_to: "", project_id: "",
+            is_incentivized: false, incentive_id: "", weight: 0,
+            start_date: format(new Date(), 'yyyy-MM-dd'),
+            end_date: format(addMonths(new Date(), 1), 'yyyy-MM-dd'),
+        });
     };
 
     const handleCreateTask = async () => {
         if (!newTaskTitle || !selectedObjective) return;
-        const newTaskPayload: Omit<Task, 'id'> = {
+        const savedTask: Task = {
+            id: `task${tasks.length + 1}`,
             title: newTaskTitle,
             objective_id: selectedObjective.id,
             completed: false,
             is_incentivized: false,
         };
-        try {
-            const savedTask = await createTask(newTaskPayload);
-            setObjectiveTasks(prev => [...prev, savedTask]);
-            setTasks(prev => [...prev, savedTask]);
-            setNewTaskTitle("");
-            toast({ title: "Tarea creada", description: "La nueva tarea se ha añadido al objetivo." });
-        } catch (error) {
-            console.error("Failed to create task", error);
-            toast({ variant: "destructive", title: "Error", description: "No se pudo crear la tarea." });
-        }
+        setObjectiveTasks(prev => [...prev, savedTask]);
+        setTasks(prev => [...prev, savedTask]);
+        setNewTaskTitle("");
+        toast({ title: "Tarea creada", description: "La nueva tarea se ha añadido al objetivo." });
     };
     
     const handleToggleTask = (taskId: string, completed: boolean) => {
-        // NOTE: The provided API does not have an endpoint to update a task.
-        // This update is only reflected in the local state for a better UX.
-        // In a real application, this should be a PATCH/PUT request to the backend.
-        const updateTasks = (tasks: Task[]) => tasks.map(t =>
+        const updateTasks = (tasksList: Task[]) => tasksList.map(t =>
             t.id === taskId ? { ...t, completed: completed } : t
         );
         setObjectiveTasks(updateTasks);
@@ -428,3 +425,5 @@ export default function PerformancePage() {
         </div>
     )
 }
+
+    
