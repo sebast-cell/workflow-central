@@ -49,15 +49,15 @@ const chartData = [
 ]
 
 export default function Dashboard() {
-  const [teamSummary, setTeamSummary] = useState<Employee[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const employees = await listEmployees();
-        setTeamSummary(employees.slice(0, 4));
+        const employeesData = await listEmployees();
+        setEmployees(employeesData);
       } catch (error) {
         console.error("Failed to fetch employees for dashboard:", error);
       } finally {
@@ -66,6 +66,9 @@ export default function Dashboard() {
     };
     fetchData();
   }, []);
+
+  const activeEmployeesCount = employees.filter(e => e.status === 'Activo').length;
+  const teamSummary = employees.slice(0, 4);
 
   return (
     <div className="flex flex-col gap-8">
@@ -82,7 +85,7 @@ export default function Dashboard() {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">42 / 50</div>
+                {isLoading ? <Skeleton className="h-7 w-24" /> : <div className="text-2xl font-bold">{activeEmployeesCount} / {employees.length}</div>}
                 <p className="text-xs text-muted-foreground">+2 desde la última hora</p>
               </CardContent>
             </>

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Briefcase, Coffee, Globe, Home, UserX, Calendar as CalendarIcon, Filter } from "lucide-react";
+import { Briefcase, Coffee, Globe, Home, UserX, Calendar as CalendarIcon, Filter, Loader2 } from "lucide-react";
 import { AttendanceReportDialog } from "./_components/attendance-report-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -20,56 +20,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { listEmployees, listSettings, type Employee, type Department } from '@/lib/api';
+import { Skeleton } from '@/components/ui/skeleton';
 
-type Employee = {
-    id: number;
-    name: string;
-    department: string;
-};
-
-type AttendanceLog = {
-    date: Date;
-    time: string;
-    employee: string;
-    status: string;
-    location: string;
-    department: string;
-};
-
-const employees: Employee[] = [
-  { id: 1, name: "Olivia Martin", department: "Ingeniería" },
-  { id: 2, name: "Jackson Lee", department: "Diseño" },
-  { id: 3, name: "Isabella Nguyen", department: "Marketing" },
-  { id: 4, name: "William Kim", department: "Ingeniería" },
-  { id: 5, name: "Sophia Davis", department: "Ventas" },
-  { id: 6, name: "Liam Garcia", department: "RRHH" },
-  { id: 7, name: "Lucas Brown", department: "Ingeniería" },
-  { id: 8, name: "Mia Miller", department: "Diseño" },
-  { id: 9, name: "Benjamin Wilson", department: "Marketing" },
-  { id: 10, name: "Charlotte Moore", department: "Ventas" },
-  { id: 11, name: "Henry Taylor", department: "RRHH" },
-  { id: 12, name: "Amelia Anderson", department: "Ingeniería" },
-];
-
-const allDepartments = ["Ingeniería", "Diseño", "Marketing", "Ventas", "RRHH"];
-
-const attendanceLog: AttendanceLog[] = [
+// Mock data, will be replaced by API calls
+const attendanceLog: any[] = [
   { date: new Date(2024, 7, 26), time: "09:01 AM", employee: "Olivia Martin", status: "Entrada Marcada", location: "Oficina", department: "Ingeniería" },
   { date: new Date(2024, 7, 26), time: "09:03 AM", employee: "Jackson Lee", status: "Entrada Marcada", location: "Remoto", department: "Diseño" },
   { date: new Date(2024, 7, 26), time: "11:30 AM", employee: "Isabella Nguyen", status: "En Descanso", location: "Oficina", department: "Marketing" },
-  { date: new Date(2024, 7, 26), time: "12:15 PM", employee: "Isabella Nguyen", status: "Entrada Marcada", location: "Oficina", department: "Marketing" },
-  { date: new Date(2024, 7, 26), time: "05:05 PM", employee: "Olivia Martin", status: "Salida Marcada", location: "Oficina", department: "Ingeniería" },
-  { date: new Date(2024, 7, 25), time: "09:00 AM", employee: "Sophia Davis", status: "Entrada Marcada", location: "Oficina", department: "Ventas" },
-  { date: new Date(2024, 7, 25), time: "02:00 PM", employee: "William Kim", status: "Entrada Marcada", location: "Oficina", department: "Ingeniería" },
-  { date: new Date(2024, 7, 25), time: "05:30 PM", employee: "Sophia Davis", status: "Salida Marcada", location: "Oficina", department: "Ventas" },
-  { date: new Date(2024, 7, 24), time: "08:55 AM", employee: "Liam Garcia", status: "Entrada Marcada", location: "Remoto", department: "RRHH" },
-  { date: new Date(2024, 7, 24), time: "04:50 PM", employee: "Liam Garcia", status: "Salida Marcada", location: "Remoto", department: "RRHH" },
+];
+const absencesData: any[] = [
+    { employee: "William Kim", type: "De Vacaciones", from: new Date(2024, 7, 26), to: new Date(2024, 7, 30) },
+    { employee: "Liam Garcia", type: "De Vacaciones", from: new Date(2024, 7, 23), to: new Date(2024, 7, 24) },
 ];
 
-const absencesData = [
-  { employee: "William Kim", type: "De Vacaciones", from: new Date(2024, 7, 26), to: new Date(2024, 7, 30) },
-  { employee: "Liam Garcia", type: "De Vacaciones", from: new Date(2024, 7, 23), to: new Date(2024, 7, 24) },
-];
 
 function parseAMPM(timeStr: string) {
     const [time, modifier] = timeStr.split(' ');
@@ -77,13 +41,17 @@ function parseAMPM(timeStr: string) {
     if (hours === '12') {
         hours = '00';
     }
-    if (modifier.toUpperCase() === 'PM') {
+    if (modifier && modifier.toUpperCase() === 'PM') {
         hours = String(parseInt(hours, 10) + 12);
     }
     return new Date(1970, 0, 1, Number(hours), Number(minutes));
 }
 
 export default function AttendancePage() {
+    const [employees, setEmployees] = useState<Employee[]>([]);
+    const [departments, setDepartments] = useState<Department[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
     const [dateRange, setDateRange] = useState<DateRange | undefined>({
       from: new Date(2024, 7, 24),
       to: new Date(2024, 7, 26),
@@ -94,12 +62,31 @@ export default function AttendancePage() {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5;
 
+    useEffect(() => {
+        const fetchData = async () => {
+            setIsLoading(true);
+            try {
+                const [employeesData, departmentsData] = await Promise.all([
+                    listEmployees(),
+                    listSettings<Department>('departments'),
+                ]);
+                setEmployees(employeesData);
+                setDepartments(departmentsData);
+            } catch (error) {
+                console.error("Failed to fetch data", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchData();
+    }, []);
+
     const availableEmployees = useMemo(() => {
         if (selectedDepartment === 'all') {
             return employees;
         }
         return employees.filter(emp => emp.department === selectedDepartment);
-    }, [selectedDepartment]);
+    }, [selectedDepartment, employees]);
 
     useEffect(() => {
         if (selectedEmployee !== 'all' && !availableEmployees.some(e => e.name === selectedEmployee)) {
@@ -112,7 +99,10 @@ export default function AttendancePage() {
     }, [dateRange, selectedLocation, selectedDepartment, selectedEmployee]);
 
     const husinStats = useMemo(() => {
-        const today = new Date(2024, 7, 26);
+        if (isLoading) {
+             return { inOffice: { count: 0, list: []}, remote: { count: 0, list: [] }, onBreak: { count: 0, list: [] }, onVacation: { count: 0, list: [] }, absent: { count: 0, list: [] } };
+        }
+        const today = new Date(2024, 7, 26); // Using a fixed date for consistent mock data
         const todayNormalized = startOfDay(today);
 
         const stats = {
@@ -175,7 +165,7 @@ export default function AttendancePage() {
         stats.absent.count = stats.absent.list.length;
 
         return stats;
-    }, []);
+    }, [employees, isLoading]);
 
     const filteredLog = useMemo(() => {
         const startDate = dateRange?.from ? startOfDay(dateRange.from) : null;
@@ -214,20 +204,23 @@ export default function AttendancePage() {
       }
     };
 
-  const HusinCardContent = ({ employees }: { employees: Employee[] }) => (
+  const HusinCardContent = ({ employees, isLoading }: { employees: Employee[], isLoading: boolean }) => (
     <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
       <div className="p-3 space-y-2 max-h-48 overflow-y-auto">
-        {employees.length > 0 ? (
+        {isLoading ? (
+            Array.from({length: 3}).map((_, i) => (
+                 <div key={i} className="flex items-center gap-2">
+                    <Skeleton className="h-6 w-6 rounded-full" />
+                    <Skeleton className="h-4 w-24" />
+                </div>
+            ))
+        ) : employees.length > 0 ? (
           employees.map((emp) => (
             <div key={emp.id} className="flex items-center gap-2 text-sm">
               <Avatar className="h-6 w-6">
                 <AvatarImage src={`https://placehold.co/40x40.png`} data-ai-hint="people avatar" alt={emp.name} />
                 <AvatarFallback className="text-xs">
-                  {emp.name
-                    .split(' ')
-                    .map((n) => n[0])
-                    .join('')
-                    .slice(0, 2)}
+                  {emp.avatar}
                 </AvatarFallback>
               </Avatar>
               <span>{emp.name}</span>
@@ -239,6 +232,28 @@ export default function AttendancePage() {
       </div>
     </div>
   );
+  
+  const HusinCard = ({ title, icon: Icon, stats, isLoading }: { title: string, icon: React.ElementType, stats: { count: number, list: Employee[] }, isLoading: boolean }) => (
+    <div className="relative">
+      <Collapsible>
+        <CollapsibleTrigger className="w-full text-left">
+          <Card className="bg-gradient-accent-to-card">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">{title}</CardTitle>
+              <Icon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              {isLoading ? <Skeleton className="h-8 w-12" /> : <div className="text-2xl font-bold">{stats.count}</div>}
+            </CardContent>
+          </Card>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="absolute z-10 w-full">
+            <HusinCardContent employees={stats.list} isLoading={isLoading} />
+        </CollapsibleContent>
+      </Collapsible>
+    </div>
+  );
+
 
   return (
     <div className="space-y-8">
@@ -250,100 +265,11 @@ export default function AttendancePage() {
       <div>
         <h2 className="text-2xl font-semibold tracking-tight mb-4">Husin (Quién está dentro)</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 items-start">
-            <div className="relative">
-                <Collapsible>
-                    <CollapsibleTrigger className="w-full text-left">
-                        <Card className="bg-gradient-accent-to-card">
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">En Oficina</CardTitle>
-                                <Home className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{husinStats.inOffice.count}</div>
-                            </CardContent>
-                        </Card>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="absolute z-10 w-full">
-                        <HusinCardContent employees={husinStats.inOffice.list} />
-                    </CollapsibleContent>
-                </Collapsible>
-            </div>
-            
-            <div className="relative">
-                <Collapsible>
-                    <CollapsibleTrigger className="w-full text-left">
-                        <Card className="bg-gradient-accent-to-card">
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Trabajo Remoto</CardTitle>
-                                <Globe className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{husinStats.remote.count}</div>
-                            </CardContent>
-                        </Card>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="absolute z-10 w-full">
-                        <HusinCardContent employees={husinStats.remote.list} />
-                    </CollapsibleContent>
-                </Collapsible>
-            </div>
-
-            <div className="relative">
-                <Collapsible>
-                    <CollapsibleTrigger className="w-full text-left">
-                        <Card className="bg-gradient-accent-to-card">
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">En Descanso</CardTitle>
-                                <Coffee className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{husinStats.onBreak.count}</div>
-                            </CardContent>
-                        </Card>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="absolute z-10 w-full">
-                        <HusinCardContent employees={husinStats.onBreak.list} />
-                    </CollapsibleContent>
-                </Collapsible>
-            </div>
-
-             <div className="relative">
-                <Collapsible>
-                    <CollapsibleTrigger className="w-full text-left">
-                        <Card className="bg-gradient-accent-to-card">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">De Vacaciones</CardTitle>
-                            <Briefcase className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{husinStats.onVacation.count}</div>
-                        </CardContent>
-                        </Card>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="absolute z-10 w-full">
-                        <HusinCardContent employees={husinStats.onVacation.list} />
-                    </CollapsibleContent>
-                </Collapsible>
-            </div>
-
-            <div className="relative">
-                <Collapsible>
-                    <CollapsibleTrigger className="w-full text-left">
-                        <Card className="bg-gradient-accent-to-card">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Ausente</CardTitle>
-                            <UserX className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{husinStats.absent.count}</div>
-                        </CardContent>
-                        </Card>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="absolute z-10 w-full">
-                        <HusinCardContent employees={husinStats.absent.list} />
-                    </CollapsibleContent>
-                </Collapsible>
-            </div>
+            <HusinCard title="En Oficina" icon={Home} stats={husinStats.inOffice} isLoading={isLoading} />
+            <HusinCard title="Trabajo Remoto" icon={Globe} stats={husinStats.remote} isLoading={isLoading} />
+            <HusinCard title="En Descanso" icon={Coffee} stats={husinStats.onBreak} isLoading={isLoading} />
+            <HusinCard title="De Vacaciones" icon={Briefcase} stats={husinStats.onVacation} isLoading={isLoading} />
+            <HusinCard title="Ausente" icon={UserX} stats={husinStats.absent} isLoading={isLoading} />
         </div>
       </div>
       
@@ -396,10 +322,9 @@ export default function AttendancePage() {
                                                 if (!newFrom) {
                                                     return undefined; 
                                                 }
-
                                                 const currentTo = prev?.to;
                                                 if (currentTo && newFrom > currentTo) {
-                                                    return { from: newFrom, to: undefined };
+                                                    return { from: newFrom, to: newFrom };
                                                 }
                                                 return { from: newFrom, to: currentTo };
                                             });
@@ -416,10 +341,12 @@ export default function AttendancePage() {
                                         onChange={(e) => {
                                             const toValue = e.target.value;
                                             setDateRange(prev => {
-                                                if (!prev?.from) return prev;
                                                 const toDate = toValue ? parse(toValue, 'yyyy-MM-dd', new Date()) : undefined;
                                                 const validToDate = (toDate && !isNaN(toDate.getTime())) ? toDate : undefined;
-                                                return { ...prev, to: validToDate };
+                                                if(prev?.from){
+                                                   return { from: prev.from, to: validToDate };
+                                                }
+                                                return prev;
                                             });
                                         }}
                                     />
@@ -448,19 +375,19 @@ export default function AttendancePage() {
                   </SelectContent>
                 </Select>
 
-                <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+                <Select value={selectedDepartment} onValueChange={setSelectedDepartment} disabled={isLoading}>
                   <SelectTrigger className="w-full sm:w-auto md:w-[180px]">
                     <SelectValue placeholder="Departamento" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos los Deptos.</SelectItem>
-                    {allDepartments.map(dept => (
-                         <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                    {departments.map(dept => (
+                         <SelectItem key={dept.id} value={dept.name}>{dept.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
 
-                 <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+                 <Select value={selectedEmployee} onValueChange={setSelectedEmployee} disabled={isLoading}>
                     <SelectTrigger className="w-full sm:w-auto md:w-[180px]">
                         <SelectValue placeholder="Empleado" />
                     </SelectTrigger>
@@ -489,7 +416,16 @@ export default function AttendancePage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedLog.length > 0 ? paginatedLog.map((log, index) => (
+              {isLoading ? (
+                Array.from({length: 5}).map((_,i) => (
+                    <TableRow key={i}>
+                        <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                        <TableCell><Skeleton className="h-6 w-24 rounded-lg" /></TableCell>
+                        <TableCell className="text-right"><Skeleton className="h-5 w-20 ml-auto" /></TableCell>
+                    </TableRow>
+                ))
+              ) : paginatedLog.length > 0 ? paginatedLog.map((log, index) => (
                 <TableRow key={index}>
                   <TableCell className="font-medium">{log.time}</TableCell>
                   <TableCell>{log.employee}</TableCell>

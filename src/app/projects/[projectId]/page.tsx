@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, Edit, PlusCircle, Gift } from "lucide-react";
+import { ArrowLeft, Edit, PlusCircle, Gift, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -15,8 +15,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { type Project, type Objective, type Task, type Incentive, listProjects, listObjectives, listTasks, listIncentives } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ProjectDetailsPage() {
+    const { toast } = useToast();
     const params = useParams();
     const projectId = params.projectId as string;
     
@@ -24,13 +27,13 @@ export default function ProjectDetailsPage() {
     const [projectObjectives, setProjectObjectives] = useState<Objective[]>([]);
     const [tasks, setTasks] = useState<Task[]>([]);
     const [incentives, setIncentives] = useState<Incentive[]>([]);
-    const [isClient, setIsClient] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const [isObjectiveDialogOpen, setIsObjectiveDialogOpen] = useState(false);
     
     useEffect(() => {
-        setIsClient(true);
         const fetchData = async () => {
             if (!projectId) return;
+            setIsLoading(true);
             try {
                 const [allProjects, allObjectives, allTasks, allIncentives] = await Promise.all([
                     listProjects(),
@@ -48,16 +51,20 @@ export default function ProjectDetailsPage() {
                 setIncentives(allIncentives);
             } catch (error) {
                 console.error("Failed to load project data from API", error);
+                toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los datos del proyecto." });
+            } finally {
+                setIsLoading(false);
             }
         };
 
         fetchData();
-    }, [isClient, projectId]);
+    }, [projectId, toast]);
     
     const handleAddObjective = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         // Logic to add a new objective would go here, calling the API
         setIsObjectiveDialogOpen(false);
+        toast({ title: "Funcionalidad no implementada", description: "La creación de objetivos desde aquí se añadirá pronto." });
     }
 
     const getObjectiveProgress = (objectiveId: string) => {
@@ -69,12 +76,43 @@ export default function ProjectDetailsPage() {
         return { progress, completed: completedTasks.length, total: relevantTasks.length };
     };
     
-    if (!isClient) {
-        return <div className="p-8">Cargando proyecto...</div>;
+    if (isLoading) {
+        return (
+            <div className="space-y-8">
+                <Skeleton className="h-10 w-48" />
+                <Card className="bg-gradient-accent-to-card">
+                    <CardHeader>
+                        <Skeleton className="h-9 w-1/2" />
+                        <Skeleton className="h-6 w-3/4 mt-2" />
+                    </CardHeader>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <Skeleton className="h-8 w-1/3" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-4">
+                           <Skeleton className="h-12 w-full" />
+                           <Skeleton className="h-12 w-full" />
+                           <Skeleton className="h-12 w-full" />
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        );
     }
 
     if (!project) {
-        return <div className="p-8">Proyecto no encontrado.</div>
+        return <div className="p-8 text-center">
+             <h2 className="text-2xl font-bold">Proyecto no encontrado</h2>
+             <p className="text-muted-foreground">El proyecto que buscas no existe o ha sido eliminado.</p>
+             <Button asChild className="mt-4">
+                <Link href="/projects">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Volver a Proyectos
+                </Link>
+             </Button>
+        </div>
     }
 
     return (

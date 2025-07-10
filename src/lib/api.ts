@@ -66,6 +66,7 @@ export type Employee = {
 };
 
 export type Center = {
+    id: string;
     name: string;
     address: string;
     radius: number;
@@ -75,6 +76,7 @@ export type Center = {
 };
 
 export type Department = {
+    id: string;
     name: string;
 };
 
@@ -86,6 +88,7 @@ export type Role = {
 };
 
 export type Break = {
+    id: string;
     name: string;
     remunerated: boolean;
     limit: number; // in minutes
@@ -98,6 +101,7 @@ export type Break = {
 };
 
 export type ClockInType = {
+    id: string;
     name: string;
     color: string;
     assignment: 'all' | 'specific';
@@ -184,7 +188,7 @@ export const listSettings = async <T>(setting: string): Promise<T[]> => {
     return response.data;
 };
 
-export const createSetting = async <T extends {id: string}>(setting: string, data: Omit<T, 'id'>): Promise<T> => {
+export const createSetting = async <T extends {id?: string}>(setting: string, data: Omit<T, 'id'>): Promise<T> => {
     const response = await apiClient.post(`/api/settings/${setting}`, data);
     return response.data;
 };
@@ -236,7 +240,7 @@ export const listObjectives = async (): Promise<Objective[]> => {
     return response.data;
 };
 
-export const createObjective = async (objective: Partial<Objective>): Promise<Objective> => {
+export const createObjective = async (objective: Omit<Objective, 'id'>): Promise<Objective> => {
     const response = await apiClient.post('/api/objectives', objective);
     return response.data;
 };

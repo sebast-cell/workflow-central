@@ -6,16 +6,18 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Textarea } from "@/components/ui/textarea";
 import { type Project, listProjects, createProject } from "@/lib/api";
-import { v4 as uuidv4 } from 'uuid';
+import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ProjectsPage() {
+  const { toast } = useToast();
   const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isClient, setIsClient] = useState(false);
   
   const [newProjectData, setNewProjectData] = useState({
     name: "",
@@ -23,16 +25,19 @@ export default function ProjectsPage() {
   });
 
   const fetchData = async () => {
+      setIsLoading(true);
       try {
           const projectsData = await listProjects();
           setProjects(projectsData);
       } catch (error) {
           console.error("Failed to fetch projects from API", error);
+          toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los proyectos." });
+      } finally {
+          setIsLoading(false);
       }
   };
 
   useEffect(() => {
-    setIsClient(true);
     fetchData();
   }, []);
 
@@ -45,28 +50,17 @@ export default function ProjectsPage() {
     e.preventDefault();
     if (!newProjectData.name) return;
 
-    const newProject: Project = {
-      id: uuidv4(),
-      name: newProjectData.name,
-      description: newProjectData.description,
-    };
-
     try {
-        const savedProject = await createProject(newProject);
+        const savedProject = await createProject(newProjectData);
         setProjects(prev => [...prev, savedProject]);
         setIsDialogOpen(false);
-        setNewProjectData({
-          name: "",
-          description: "",
-        });
+        setNewProjectData({ name: "", description: "" });
+        toast({ title: "Proyecto creado", description: `El proyecto "${savedProject.name}" ha sido creado.` });
     } catch (error) {
         console.error("Failed to create project:", error);
+        toast({ variant: "destructive", title: "Error", description: "No se pudo crear el proyecto." });
     }
   };
-
-  if (!isClient) {
-    return null; // Or a loading skeleton
-  }
 
   return (
     <div className="space-y-8">
@@ -109,7 +103,22 @@ export default function ProjectsPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {projects.map((project) => (
+        {isLoading ? (
+            Array.from({length: 3}).map((_, i) => (
+                <Card key={i} className="bg-gradient-accent-to-card flex flex-col">
+                    <CardHeader>
+                        <Skeleton className="h-6 w-3/4" />
+                    </CardHeader>
+                    <CardContent className="flex-grow space-y-2">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-5/6" />
+                    </CardContent>
+                    <CardFooter>
+                        <Skeleton className="h-10 w-full" />
+                    </CardFooter>
+                </Card>
+            ))
+        ) : projects.map((project) => (
           <Card key={project.id} className="bg-gradient-accent-to-card flex flex-col">
             <CardHeader>
               <CardTitle>{project.name}</CardTitle>
@@ -126,6 +135,11 @@ export default function ProjectsPage() {
             </CardFooter>
           </Card>
         ))}
+         {!isLoading && projects.length === 0 && (
+            <div className="col-span-full text-center text-muted-foreground py-12">
+                <p>No se han creado proyectos. ¡Crea el primero!</p>
+            </div>
+        )}
       </div>
     </div>
   )

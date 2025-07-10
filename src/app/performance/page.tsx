@@ -14,41 +14,25 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Progress } from "@/components/ui/progress";
-import { type Objective, type Task, type Incentive, type Project, type Department, type Employee, listObjectives, listTasks, listIncentives, listProjects, createObjective, calculateIncentiveForObjective, createTask } from "@/lib/api";
-import { v4 as uuidv4 } from 'uuid';
+import { type Objective, type Task, type Incentive, type Project, type Department, type Employee, listObjectives, listTasks, listIncentives, listProjects, createObjective, calculateIncentiveForObjective, createTask, listSettings, listEmployees } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { format, addMonths } from "date-fns";
-
-
-const initialEmployees: Employee[] = [
-  { id: "a1b2c3d4-e5f6-7890-1234-567890abcdef", name: "Olivia Martin", email: "olivia.martin@example.com", department: "Ingeniería", role: "Frontend Developer", status: "Activo", schedule: "9-5", hireDate: "2023-01-15", phone: "123-456-7890", avatar: "OM" },
-  { id: "b2c3d4e5-f6a7-8901-2345-67890abcdef1", name: "Jackson Lee", email: "jackson.lee@example.com", department: "Diseño", role: "UI/UX Designer", status: "Activo", schedule: "9-5", hireDate: "2022-11-20", phone: "123-456-7891", avatar: "JL" },
-  { id: "c3d4e5f6-a7b8-9012-3456-7890abcdef2", name: "Isabella Nguyen", email: "isabella.nguyen@example.com", department: "Marketing", role: "Marketing Manager", status: "Activo", schedule: "9-5", hireDate: "2021-07-10", phone: "123-456-7892", avatar: "IN" },
-  { id: "d4e5f6a7-b8c9-0123-4567-890abcdef3", name: "William Kim", email: "william.kim@example.com", department: "Ingeniería", role: "Backend Developer", status: "Activo", schedule: "9-5", hireDate: "2023-02-28", phone: "123-456-7893", avatar: "WK" },
-  { id: "e5f6a7b8-c9d0-1234-5678-90abcdef4", name: "Sophia Davis", email: "sophia.davis@example.com", department: "Ventas", role: "Sales Associate", status: "Activo", schedule: "9-5", hireDate: "2022-09-01", phone: "123-456-7894", avatar: "SD" },
-];
-
-const initialDepartments: (Department & { id: string })[] = [
-    { id: "de01f2b3-a4b5-c6d7-e8f9-1234567890ab", name: "Ingeniería" },
-    { id: "de01f2b3-a4b5-c6d7-e8f9-1234567890ac", name: "Diseño" },
-    { id: "de01f2b3-a4b5-c6d7-e8f9-1234567890ad", name: "Marketing" },
-    { id: "de01f2b3-a4b5-c6d7-e8f9-1234567890ae", name: "Ventas" },
-    { id: "de01f2b3-a4b5-c6d7-e8f9-1234567890af", name: "RRHH" },
-];
+import { Skeleton } from "@/components/ui/skeleton";
 
 
 export default function PerformancePage() {
     const { toast } = useToast();
-    const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
-    const [departments, setDepartments] = useState<(Department & { id: string })[]>(initialDepartments);
+    const [employees, setEmployees] = useState<Employee[]>([]);
+    const [departments, setDepartments] = useState<Department[]>([]);
     const [objectives, setObjectives] = useState<Objective[]>([]);
     const [incentives, setIncentives] = useState<Incentive[]>([]);
     const [projects, setProjects] = useState<Project[]>([]);
     const [tasks, setTasks] = useState<Task[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const [newObjectiveData, setNewObjectiveData] = useState<Omit<Objective, 'id'>>({
+    const [newObjectiveData, setNewObjectiveData] = useState<Partial<Omit<Objective, 'id'>>>({
         title: "",
         description: "",
         type: "individual",
@@ -67,24 +51,28 @@ export default function PerformancePage() {
     const [isLoadingDetails, setIsLoadingDetails] = useState(false);
     const [newTaskTitle, setNewTaskTitle] = useState("");
 
-    const fetchData = async () => {
-        try {
-            const [objectivesData, incentivesData, projectsData, tasksData] = await Promise.all([
-                listObjectives(), listIncentives(), listProjects(), listTasks()
-            ]);
-            setObjectives(objectivesData);
-            setIncentives(incentivesData);
-            setProjects(projectsData);
-            setTasks(tasksData);
-        } catch (error) {
-            console.error("Failed to fetch data:", error);
-            toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los datos." });
-        }
-    };
-
     useEffect(() => {
+        const fetchData = async () => {
+            setIsLoading(true);
+            try {
+                const [objectivesData, incentivesData, projectsData, tasksData, employeesData, departmentsData] = await Promise.all([
+                    listObjectives(), listIncentives(), listProjects(), listTasks(), listEmployees(), listSettings('departments')
+                ]);
+                setObjectives(objectivesData);
+                setIncentives(incentivesData);
+                setProjects(projectsData);
+                setTasks(tasksData);
+                setEmployees(employeesData);
+                setDepartments(departmentsData as Department[]);
+            } catch (error) {
+                console.error("Failed to fetch data:", error);
+                toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los datos." });
+            } finally {
+                setIsLoading(false);
+            }
+        };
         fetchData();
-    }, []);
+    }, [toast]);
 
     const getTasksByObjective = (objectiveId: string) => {
         return tasks.filter(task => task.objective_id === objectiveId);
@@ -118,7 +106,7 @@ export default function PerformancePage() {
 
         let assignedTo = newObjectiveData.assigned_to;
         if (newObjectiveData.type === 'empresa') {
-            assignedTo = '00000000-0000-0000-0000-000000000000';
+            assignedTo = '00000000-0000-0000-0000-000000000000'; // Placeholder for company-wide
         }
 
         if (!newObjectiveData.title || !assignedTo) {
@@ -126,21 +114,21 @@ export default function PerformancePage() {
              return;
         }
         
-        const newObjective: Omit<Objective, 'id'> = {
-            title: newObjectiveData.title,
-            description: newObjectiveData.description || undefined,
-            type: newObjectiveData.type,
+        const payload: Omit<Objective, 'id'> = {
+            title: newObjectiveData.title!,
+            description: newObjectiveData.description,
+            type: newObjectiveData.type!,
             assigned_to: assignedTo,
-            project_id: newObjectiveData.project_id || undefined,
-            is_incentivized: newObjectiveData.is_incentivized,
-            incentive_id: newObjectiveData.incentive_id || undefined,
-            weight: newObjectiveData.weight || undefined,
-            start_date: newObjectiveData.start_date,
-            end_date: newObjectiveData.end_date,
+            project_id: newObjectiveData.project_id,
+            is_incentivized: newObjectiveData.is_incentivized!,
+            incentive_id: newObjectiveData.incentive_id,
+            weight: newObjectiveData.weight,
+            start_date: newObjectiveData.start_date!,
+            end_date: newObjectiveData.end_date!,
         };
 
         try {
-            const savedObjective = await createObjective({ id: uuidv4(), ...newObjective });
+            const savedObjective = await createObjective(payload);
             setObjectives(prev => [...prev, savedObjective]);
             toast({ title: "Objetivo Creado", description: "El nuevo objetivo ha sido guardado." });
             setNewObjectiveData({
@@ -163,16 +151,14 @@ export default function PerformancePage() {
 
     const handleCreateTask = async () => {
         if (!newTaskTitle || !selectedObjective) return;
-        const newTask: Task = {
-            id: uuidv4(),
+        const newTaskPayload: Omit<Task, 'id'> = {
             title: newTaskTitle,
             objective_id: selectedObjective.id,
             completed: false,
             is_incentivized: false,
-            incentive_id: undefined,
         };
         try {
-            const savedTask = await createTask(newTask);
+            const savedTask = await createTask(newTaskPayload);
             setObjectiveTasks(prev => [...prev, savedTask]);
             setTasks(prev => [...prev, savedTask]);
             setNewTaskTitle("");
@@ -217,7 +203,27 @@ export default function PerformancePage() {
 
     const renderObjectiveCards = (objectivesToShow: Objective[]) => (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {objectivesToShow.map(obj => {
+            {isLoading ? (
+                Array.from({length: 3}).map((_, i) => (
+                    <Card key={i} className="flex flex-col">
+                        <CardHeader>
+                            <Skeleton className="h-6 w-3/4" />
+                            <Skeleton className="h-4 w-full mt-2" />
+                        </CardHeader>
+                        <CardContent className="flex-grow space-y-4">
+                            <Skeleton className="h-4 w-1/2" />
+                            <Skeleton className="h-4 w-1/3" />
+                            <div className="space-y-2">
+                                <Skeleton className="h-2 w-24" />
+                                <Skeleton className="h-2 w-full" />
+                            </div>
+                        </CardContent>
+                        <CardFooter>
+                            <Skeleton className="h-10 w-full" />
+                        </CardFooter>
+                    </Card>
+                ))
+            ) : objectivesToShow.map(obj => {
                  const { progress } = getObjectiveProgress(obj.id);
                  return (
                     <Card key={obj.id} className="bg-gradient-accent-to-card flex flex-col">
@@ -253,7 +259,7 @@ export default function PerformancePage() {
                     </Card>
                  )
             })}
-             {objectivesToShow.length === 0 && (
+             {!isLoading && objectivesToShow.length === 0 && (
                 <div className="text-center text-muted-foreground py-12 col-span-full"><p>No hay objetivos que mostrar.</p></div>
             )}
         </div>
