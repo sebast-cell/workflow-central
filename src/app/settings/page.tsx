@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -251,20 +252,7 @@ const CentersTabContent = () => {
     const apiKey = process.env.NEXT_PUBLIC_Maps_API_KEY || "";
 
     const fetchData = async () => {
-        setIsLoading(true);
-        try {
-            const [centersData, departmentsData] = await Promise.all([
-                listSettings('centers'),
-                listSettings('departments'),
-            ]);
-            setCenters(centersData as Center[]);
-            setDepartments(departmentsData as Department[]);
-        } catch (error) {
-            console.error("Failed to load settings data", error);
-            toast({ variant: 'destructive', title: "Error", description: "No se pudieron cargar los datos de configuración." });
-        } finally {
-            setIsLoading(false);
-        }
+        setIsLoading(false); // Using mock data
     };
     
     useEffect(() => {
@@ -287,7 +275,6 @@ const CentersTabContent = () => {
     };
 
     const handleCenterFormSubmit = (centerData: Center) => {
-        // TODO: In real app, call createSetting or updateSetting API
         if (dialogCenterMode === 'add') {
             setCenters(prev => [...prev, centerData]);
         } else if (dialogCenterMode === 'edit' && selectedCenter) {
@@ -297,7 +284,6 @@ const CentersTabContent = () => {
     };
 
     const handleDeleteCenter = (centerId: string) => {
-        // TODO: In real app, call deleteSetting API
         setCenters(prev => prev.filter(c => c.id !== centerId));
     };
 
@@ -318,7 +304,6 @@ const CentersTabContent = () => {
     const handleDepartmentFormSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!newDepartmentName) return;
-        // TODO: In real app, call createSetting or updateSetting API
         if (dialogDeptMode === 'add') {
             setDepartments(prev => [...prev, { id: uuidv4(), name: newDepartmentName }]);
         } else if (dialogDeptMode === 'edit' && selectedDepartment) {
@@ -330,7 +315,6 @@ const CentersTabContent = () => {
     };
     
     const handleDeleteDepartment = (departmentId: string) => {
-        // TODO: In real app, call deleteSetting API
         setDepartments(prev => prev.filter(d => d.id !== departmentId));
     };
 
@@ -497,54 +481,6 @@ const SettingsTabs = () => {
     const [dialogIncentiveMode, setDialogIncentiveMode] = useState<'add' | 'edit'>('add');
     const [selectedIncentive, setSelectedIncentive] = useState<Incentive | null>(null);
     const [incentiveFormData, setIncentiveFormData] = useState<Omit<Incentive, 'id' | 'company_id'>>({ name: "", type: "económico", value: "", period: "anual", active: true, condition_expression: { modality: 'all-or-nothing' }});
-
-    const fetchSetting = async (settingName: keyof typeof dataHooks, hook: (data: any) => void) => {
-        setIsLoading(prev => ({...prev, [settingName]: true}));
-        try {
-            const data = await listSettings(settingName);
-            hook(data);
-        } catch (error) {
-            console.error(`Failed to fetch ${settingName}`, error);
-            toast({ variant: 'destructive', title: `Error al cargar ${settingName}` });
-        } finally {
-            setIsLoading(prev => ({...prev, [settingName]: false}));
-        }
-    };
-    
-    const dataHooks = {
-        roles: setRoles,
-        breaks: setBreaks,
-        clockInTypes: setClockInTypes,
-        shifts: setShifts,
-        flexibleSchedules: setFlexibleSchedules,
-        fixedSchedules: setFixedSchedules,
-        absenceTypes: setAbsenceTypes,
-        calendars: setCalendars,
-        vacationPolicies: setVacationPolicies,
-    };
-
-    useEffect(() => {
-        Object.entries(dataHooks).forEach(([name, hook]) => {
-            fetchSetting(name as keyof typeof dataHooks, hook);
-        });
-        
-        const fetchEmployeesAndIncentives = async () => {
-            setIsLoading(prev => ({...prev, employees: true, incentives: true }));
-            try {
-                const [empData, incData] = await Promise.all([listEmployees(), listIncentives()]);
-                setEmployees(empData);
-                setIncentives(incData);
-            } catch (error) {
-                toast({ variant: 'destructive', title: "Error", description: "No se pudieron cargar empleados e incentivos." });
-            } finally {
-                setIsLoading(prev => ({...prev, employees: false, incentives: false }));
-            }
-        };
-        
-        fetchEmployeesAndIncentives();
-    }, [toast]);
-
-    const allSchedules = ['Horario Fijo', 'Horario Flexible', ...shifts.map(s => s.name)];
     
     // Role Handlers
     const openAddRoleDialog = () => { setIsRoleDialogOpen(true); setDialogRoleMode('add'); setSelectedRole(null); setRoleFormData({ name: '', description: '', permissions: [] }); };
@@ -552,31 +488,15 @@ const SettingsTabs = () => {
     
     const handleRoleFormSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
-      if (!roleFormData.name) {
-        toast({ variant: 'destructive', title: "Error", description: "El nombre del rol es obligatorio." });
-        return;
-      }
-
-      try {
-        if (dialogRoleMode === 'add') {
-          const payload: Omit<Role, 'id'> = {
-            name: roleFormData.name,
-            description: roleFormData.description || "",
-            permissions: roleFormData.permissions || [],
-          };
-          const newRole = await createSetting<Role>('roles', payload);
+      // Mock functionality
+      if (dialogRoleMode === 'add') {
+          const newRole = { id: uuidv4(), ...roleFormData } as Role;
           setRoles(prev => [...prev, newRole]);
-          toast({ title: "Rol creado", description: `El rol "${newRole.name}" ha sido creado.` });
-        } else if (dialogRoleMode === 'edit' && selectedRole?.id) {
-          const updatedRole = await updateSetting<Role>('roles', selectedRole.id, roleFormData);
-          setRoles(prev => prev.map(r => r.id === updatedRole.id ? updatedRole : r));
-          toast({ title: "Rol actualizado", description: `El rol "${updatedRole.name}" ha sido guardado.` });
-        }
-        setIsRoleDialogOpen(false);
-      } catch (error) {
-        console.error("Failed to save role", error);
-        toast({ variant: 'destructive', title: "Error", description: "No se pudo guardar el rol." });
+      } else if (selectedRole) {
+          const updatedRole = { ...selectedRole, ...roleFormData };
+          setRoles(prev => prev.map(r => r.id === selectedRole.id ? updatedRole : r));
       }
+      setIsRoleDialogOpen(false);
     };
 
     const confirmDeleteRole = (role: Role) => {
@@ -586,73 +506,65 @@ const SettingsTabs = () => {
 
     const handleDeleteRole = async () => {
         if (!roleToDelete?.id) return;
-        try {
-            await deleteSetting('roles', roleToDelete.id);
-            setRoles(prev => prev.filter(r => r.id !== roleToDelete.id));
-            toast({ title: "Rol eliminado" });
-        } catch (error) {
-            console.error("Failed to delete role", error);
-            toast({ variant: 'destructive', title: "Error", description: "No se pudo eliminar el rol." });
-        } finally {
-            setIsDeleteRoleAlertOpen(false);
-            setRoleToDelete(null);
-        }
+        setRoles(prev => prev.filter(r => r.id !== roleToDelete.id));
+        setIsDeleteRoleAlertOpen(false);
+        setRoleToDelete(null);
     };
     
     // Break Handlers
     const openAddBreakDialog = () => { setIsBreakDialogOpen(true); setDialogBreakMode('add'); setBreakFormData({ id: uuidv4(), name: "", remunerated: false, limit: 30, isAutomatic: false, intervalStart: "", intervalEnd: "", notifyStart: false, notifyEnd: false, assignedTo: [] }); };
     const openEditBreakDialog = (br: Break) => { setIsBreakDialogOpen(true); setDialogBreakMode('edit'); setSelectedBreak(br); setBreakFormData(br); };
-    const handleBreakFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: API call */ setIsBreakDialogOpen(false); };
-    const handleDeleteBreak = (breakId: string) => { setBreaks(p => p.filter(b => b.id !== breakId)); /* TODO: API call */ };
+    const handleBreakFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: Mock */ setIsBreakDialogOpen(false); };
+    const handleDeleteBreak = (breakId: string) => { setBreaks(p => p.filter(b => b.id !== breakId)); };
 
     // ClockIn Type Handlers
     const openAddClockInTypeDialog = () => { setIsClockInTypeDialogOpen(true); setDialogClockInTypeMode('add'); setClockInTypeFormData({ id: uuidv4(), name: "", color: "bg-blue-500", assignment: 'all', assignedTo: [] }); };
     const openEditClockInTypeDialog = (type: ClockInType) => { setIsClockInTypeDialogOpen(true); setDialogClockInTypeMode('edit'); setSelectedClockInType(type); setClockInTypeFormData(type); };
-    const handleClockInTypeFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: API call */ setIsClockInTypeDialogOpen(false); };
-    const handleDeleteClockInType = (typeId: string) => { setClockInTypes(p => p.filter(t => t.id !== typeId)); /* TODO: API call */ };
+    const handleClockInTypeFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: Mock */ setIsClockInTypeDialogOpen(false); };
+    const handleDeleteClockInType = (typeId: string) => { setClockInTypes(p => p.filter(t => t.id !== typeId)); };
     
     // Schedule & Shift Handlers
     const openAddShiftDialog = () => { setIsShiftDialogOpen(true); setDialogShiftMode('add'); setShiftFormData({ name: "09:00", start: "09:00", end: "17:00" }); };
     const openEditShiftDialog = (shift: Shift) => { setIsShiftDialogOpen(true); setDialogShiftMode('edit'); setSelectedShift(shift); setShiftFormData(shift); };
-    const handleShiftFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: API call */ setIsShiftDialogOpen(false); };
-    const handleDeleteShift = (shiftId: string) => { setShifts(p => p.filter(s => s.id !== shiftId)); /* TODO: API call */ };
+    const handleShiftFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: Mock */ setIsShiftDialogOpen(false); };
+    const handleDeleteShift = (shiftId: string) => { setShifts(p => p.filter(s => s.id !== shiftId)); };
 
     const openAddFlexibleScheduleDialog = () => { setIsFlexibleScheduleDialogOpen(true); setDialogFlexibleScheduleMode('add'); setFlexibleScheduleFormData({ name: "", workDays: [], hoursPerDay: 8, noWeeklyHours: false }); };
     const openEditFlexibleScheduleDialog = (schedule: FlexibleSchedule) => { setIsFlexibleScheduleDialogOpen(true); setDialogFlexibleScheduleMode('edit'); setSelectedFlexibleSchedule(schedule); setFlexibleScheduleFormData(schedule); };
-    const handleFlexibleScheduleFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: API call */ setIsFlexibleScheduleDialogOpen(false); };
-    const handleDeleteFlexibleSchedule = (scheduleId: string) => { setFlexibleSchedules(p => p.filter(s => s.id !== scheduleId)); /* TODO: API call */ };
+    const handleFlexibleScheduleFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: Mock */ setIsFlexibleScheduleDialogOpen(false); };
+    const handleDeleteFlexibleSchedule = (scheduleId: string) => { setFlexibleSchedules(p => p.filter(s => s.id !== scheduleId)); };
     
     const openAddFixedScheduleDialog = () => { setIsFixedScheduleDialogOpen(true); setDialogFixedScheduleMode('add'); setFixedScheduleFormData({ name: "", workDays: [], ranges: [{ id: Date.now().toString(), start: "09:00", end: "17:00" }], isNightShift: false }); };
     const openEditFixedScheduleDialog = (schedule: FixedSchedule) => { setIsFixedScheduleDialogOpen(true); setDialogFixedScheduleMode('edit'); setSelectedFixedSchedule(schedule); setFixedScheduleFormData(schedule); };
-    const handleFixedScheduleFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: API call */ setIsFixedScheduleDialogOpen(false); };
-    const handleDeleteFixedSchedule = (scheduleId: string) => { setFixedSchedules(p => p.filter(s => s.id !== scheduleId)); /* TODO: API call */ };
+    const handleFixedScheduleFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: Mock */ setIsFixedScheduleDialogOpen(false); };
+    const handleDeleteFixedSchedule = (scheduleId: string) => { setFixedSchedules(p => p.filter(s => s.id !== scheduleId)); };
 
     // Calendar & Holiday Handlers
     const handleSelectCalendar = (id: string) => setSelectedCalendarId(id);
     const handleBackToCalendars = () => setSelectedCalendarId(null);
-    const handleCalendarFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: API call */ setIsCalendarDialogOpen(false); };
-    const handleDeleteCalendar = (id: string) => { setCalendars(p => p.filter(c => c.id !== id)); /* TODO: API call */ };
-    const handleHolidayFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: API call */ setIsHolidayDialogOpen(false); };
-    const handleDeleteHoliday = (holidayId: string) => { /* TODO: API call */ };
-    const handleImportHolidays = () => { /* TODO: API call */ };
+    const handleCalendarFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: Mock */ setIsCalendarDialogOpen(false); };
+    const handleDeleteCalendar = (id: string) => { setCalendars(p => p.filter(c => c.id !== id)); };
+    const handleHolidayFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: Mock */ setIsHolidayDialogOpen(false); };
+    const handleDeleteHoliday = (holidayId: string) => { /* TODO: Mock */ };
+    const handleImportHolidays = () => { /* TODO: Mock */ };
     
     // Absence Type Handlers
     const openAddAbsenceTypeDialog = () => { setIsAbsenceTypeDialogOpen(true); setDialogAbsenceTypeMode('add'); setAbsenceTypeFormData({ name: '', color: 'bg-blue-500', remunerated: true, unit: 'days', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [], requiresApproval: true, allowAttachment: false, isDisabled: false, assignment: 'all', assignedTo: [] }); };
     const openEditAbsenceTypeDialog = (type: AbsenceType) => { setIsAbsenceTypeDialogOpen(true); setDialogAbsenceTypeMode('edit'); setSelectedAbsenceType(type); setAbsenceTypeFormData({ ...type, blockedPeriods: type.blockedPeriods ?? [] }); };
-    const handleAbsenceTypeFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: API call */ setIsAbsenceTypeDialogOpen(false); };
-    const handleDeleteAbsenceType = (id: string) => { setAbsenceTypes(p => p.filter(t => t.id !== id)); /* TODO: API call */ };
+    const handleAbsenceTypeFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: Mock */ setIsAbsenceTypeDialogOpen(false); };
+    const handleDeleteAbsenceType = (id: string) => { setAbsenceTypes(p => p.filter(t => t.id !== id)); };
 
     // Vacation Policy Handlers
     const openAddVacationPolicyDialog = () => { setIsVacationPolicyDialogOpen(true); setDialogVacationPolicyMode('add'); setVacationPolicyFormData({ name: '', unit: 'days', amount: 22, countBy: 'workdays', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [], assignment: 'all', assignedTo: [] }); };
     const openEditVacationPolicyDialog = (policy: VacationPolicy) => { setIsVacationPolicyDialogOpen(true); setDialogVacationPolicyMode('edit'); setSelectedVacationPolicy(policy); setVacationPolicyFormData({ ...policy, requestLimit: policy.requestLimit || 0, blockedPeriods: policy.blockedPeriods || [], assignment: policy.assignment || 'all', assignedTo: policy.assignedTo || [] }); };
-    const handleVacationPolicyFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: API call */ setIsVacationPolicyDialogOpen(false); };
-    const handleDeleteVacationPolicy = (id: string) => { setVacationPolicies(p => p.filter(pol => pol.id !== id)); /* TODO: API call */ };
+    const handleVacationPolicyFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: Mock */ setIsVacationPolicyDialogOpen(false); };
+    const handleDeleteVacationPolicy = (id: string) => { setVacationPolicies(p => p.filter(pol => pol.id !== id)); };
 
     // Incentive Handlers
     const openAddIncentiveDialog = () => { setIsIncentiveDialogOpen(true); setDialogIncentiveMode('add'); setIncentiveFormData({ name: "", type: "económico", value: "", period: "anual", active: true, condition_expression: { modality: 'all-or-nothing' } }); };
     const openEditIncentiveDialog = (incentive: Incentive) => { setIsIncentiveDialogOpen(true); setDialogIncentiveMode('edit'); setSelectedIncentive(incentive); setIncentiveFormData({ ...incentive, condition_expression: incentive.condition_expression || { modality: 'all-or-nothing' } }); };
-    const handleIncentiveFormSubmit = async (e: React.FormEvent) => { e.preventDefault(); /* TODO: API call */ setIsIncentiveDialogOpen(false); };
-    const handleDeleteIncentive = (id: string) => { setIncentives(p => p.filter(i => i.id !== id)); /* TODO: API call */ };
+    const handleIncentiveFormSubmit = async (e: React.FormEvent) => { e.preventDefault(); /* TODO: Mock */ setIsIncentiveDialogOpen(false); };
+    const handleDeleteIncentive = (id: string) => { setIncentives(p => p.filter(i => i.id !== id)); };
     
     const selectedCalendar = calendars.find(c => c.id === selectedCalendarId);
     const holidayDates = selectedCalendar?.holidays.map(h => new Date(h.date)) || [];
@@ -983,3 +895,5 @@ export default function SettingsPage() {
         </div>
     )
 }
+
+    
