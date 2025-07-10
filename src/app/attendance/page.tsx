@@ -23,18 +23,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { type Employee as ApiEmployee, type Department, type AttendanceLog as ApiAttendanceLog, listEmployees, listSettings, listAttendanceLogs } from '@/lib/api';
 import { Skeleton } from '@/components/ui/skeleton';
 
-type LocalAttendanceLog = {
-    date: Date;
-    time: string;
-    employee: string;
-    status:string;
-    location: string;
-    department: string;
-};
-
+// Mock data for absences, as this feature is not yet connected to the DB.
+// In a real app, this would be fetched from an "absences" or "leave_requests" collection.
 const absencesData = [
-  { employee: "William Kim", type: "De Vacaciones", from: new Date(2024, 7, 26), to: new Date(2024, 7, 30) },
-  { employee: "Liam Garcia", type: "De Vacaciones", from: new Date(2024, 7, 23), to: new Date(2024, 7, 24) },
+  // Example: { employeeId: "some-id", type: "Vacation", from: new Date(), to: new Date() }
 ];
 
 
@@ -134,24 +126,23 @@ export default function AttendancePage() {
 
         if (isLoading) return stats;
 
-        // Employees on vacation today
         const employeesOnLeaveToday = new Set<string>();
-        absencesData.forEach(absence => {
-            const employee = employees.find(e => e.name === absence.employee);
+        // NOTE: absencesData is still mock. This should be replaced with real data.
+        absencesData.forEach((absence: any) => {
+            const employee = employees.find(e => e.id === absence.employeeId);
             if (employee && isWithinInterval(todayNormalized, { start: absence.from, end: absence.to })) {
-                if (absence.type === "De Vacaciones") {
+                if (absence.type === "De Vacaciones") { // This condition might need adjustment
                     stats.onVacation.list.push(employee);
                 }
-                employeesOnLeaveToday.add(absence.employee);
+                employeesOnLeaveToday.add(absence.employeeId);
             }
         });
         
-        // Latest log for each employee today
         const todaysLogs = attendanceLog.filter(log => isWithinInterval(parseISO(log.timestamp), { start: startOfToday(), end: endOfToday() }));
         const latestLogs: { [key: string]: ApiAttendanceLog } = {};
         
         todaysLogs.forEach(log => {
-            if (!employeesOnLeaveToday.has(log.employeeName)) {
+            if (!employeesOnLeaveToday.has(log.employeeId)) {
                  if (!latestLogs[log.employeeId] || parseISO(log.timestamp) > parseISO(latestLogs[log.employeeId].timestamp)) {
                     latestLogs[log.employeeId] = log;
                 }
@@ -171,7 +162,7 @@ export default function AttendancePage() {
                 case "Entrada":
                     if (log.location === "Oficina") {
                         stats.inOffice.list.push(employee);
-                    } else {
+                    } else { // Assume any other "Entrada" is remote
                         stats.remote.list.push(employee);
                     }
                     break;
@@ -180,8 +171,9 @@ export default function AttendancePage() {
                     break;
             }
         });
-
-        stats.absent.list = employees.filter(emp => !presentEmployees.has(emp.id) && !employeesOnLeaveToday.has(emp.name));
+        
+        // Employees are absent if they are not on leave and have no present status log
+        stats.absent.list = employees.filter(emp => !presentEmployees.has(emp.id) && !employeesOnLeaveToday.has(emp.id));
 
         stats.inOffice.count = stats.inOffice.list.length;
         stats.remote.count = stats.remote.list.length;
@@ -203,8 +195,9 @@ export default function AttendancePage() {
 
             const logDate = parseISO(log.timestamp);
             const dateMatch = (() => {
-                if (!startDate || !endDate) return true;
-                return isWithinInterval(logDate, { start: startDate, end: endOfToday() }); // Check if within range
+                if (!startDate) return true;
+                const effectiveEndDate = endDate || endOfToday();
+                return isWithinInterval(logDate, { start: startDate, end: effectiveEndDate }); 
             })();
 
             return dateMatch && locationMatch && departmentMatch && employeeMatch;
