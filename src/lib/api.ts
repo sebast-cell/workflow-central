@@ -195,36 +195,15 @@ export type VacationPolicy = {
 };
 
 // -------- HELPER FUNCTIONS -------- //
-// A simple cache to avoid fetching the same data multiple times
-const employeeCache = new Map<string, Employee>();
-const departmentCache = new Map<string, Department>();
-
-// Function to pre-fill caches
-const populateCaches = async () => {
-    if (employeeCache.size === 0) {
-        try {
-            const employees = await listEmployees();
-            employees.forEach(e => employeeCache.set(e.id, e));
-        } catch(e) { console.error("Could not populate employee cache", e)}
-    }
-    if (departmentCache.size === 0) {
-        try {
-            const departments = await listSettings<Department>('departments');
-            departments.forEach(d => departmentCache.set(d.id, d));
-        } catch(e) { console.error("Could not populate department cache", e)}
-    }
-};
-// Call it once
-populateCaches();
 
 // This function resolves the name for an objective's assigned_to field
-export const getAssignedToName = (objective: Objective): string => {
+export const getAssignedToName = (objective: Objective, employees: Employee[], departments: Department[]): string => {
     if (objective.type === 'individual') {
-        const employee = employeeCache.get(objective.assigned_to);
+        const employee = employees.find(e => e.id === objective.assigned_to);
         return employee ? employee.name : "Empleado no encontrado";
     }
     if (objective.type === 'equipo') {
-        const department = departmentCache.get(objective.assigned_to);
+        const department = departments.find(d => d.id === objective.assigned_to);
         return department ? department.name : "Equipo no encontrado";
     }
     if (objective.type === 'empresa') return "Toda la empresa";
@@ -297,6 +276,16 @@ export const createIncentive = async (incentive: Omit<Incentive, 'id' | 'company
     const response = await apiClient.post('/api/incentives', incentive);
     return response.data;
 };
+
+export const updateIncentive = async (id: string, incentiveData: Partial<Omit<Incentive, 'id' | 'company_id'>>): Promise<Incentive> => {
+    const response = await apiClient.put(`/api/settings/incentives/${id}`, incentiveData);
+    return response.data;
+};
+
+export const deleteIncentive = async (id: string): Promise<void> => {
+    await apiClient.delete(`/api/settings/incentives/${id}`);
+};
+
 
 // -- Objectives --
 export const listObjectives = async (): Promise<Objective[]> => {

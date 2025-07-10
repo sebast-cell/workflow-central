@@ -14,7 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Progress } from "@/components/ui/progress";
-import { type Objective, type Task, type Incentive, type Project, type Department, type Employee, listObjectives, listTasks, listIncentives, listProjects, createObjective, calculateIncentiveForObjective, createTask, listSettings, listEmployees, getAssignedToName } from "@/lib/api";
+import { type Objective, type Task, type Incentive, type Project, type Department, type Employee, listObjectives, listTasks, listIncentives, listProjects, createObjective, calculateIncentiveForObjective, createTask, listSettings, listEmployees, getAssignedToName, getTasksByObjective } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
@@ -149,8 +149,7 @@ export default function PerformancePage() {
         };
 
         try {
-            const savedObjective = await createObjective(payload);
-            setObjectives(prev => [...prev, savedObjective]);
+            await createObjective(payload);
             toast({ title: "Objetivo Creado", description: "El nuevo objetivo ha sido guardado." });
             setNewObjectiveData({
                 title: "", description: "", type: "individual", assigned_to: "", project_id: "",
@@ -158,6 +157,7 @@ export default function PerformancePage() {
                 start_date: format(new Date(), 'yyyy-MM-dd'),
                 end_date: format(addMonths(new Date(), 1), 'yyyy-MM-dd'),
             });
+            fetchData();
         } catch(e) {
             toast({ variant: 'destructive', title: 'Error', description: 'No se pudo crear el objetivo' });
         } finally {
@@ -244,7 +244,7 @@ export default function PerformancePage() {
                         </CardHeader>
                         <CardContent className="flex-grow space-y-4">
                             <div className="text-sm text-muted-foreground">
-                                <p><strong>Asignado a:</strong> {getAssignedToName(obj)}</p>
+                                <p><strong>Asignado a:</strong> {getAssignedToName(obj, employees, departments)}</p>
                                 <div><strong>Tipo:</strong> <Badge variant="outline">{obj.type}</Badge></div>
                             </div>
                             <div>

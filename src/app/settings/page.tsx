@@ -27,72 +27,9 @@ import type { DateRange } from "react-day-picker";
 import { APIProvider, Map, AdvancedMarker, useMapsLibrary } from "@vis.gl/react-google-maps";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { type Employee, type Center, type Department, type Role, type Break, type ClockInType, type Shift, type FlexibleSchedule, type FixedSchedule, type AbsenceType, type Holiday, type CalendarData, type VacationPolicy, type Incentive, listIncentives, createIncentive, listSettings, createSetting, updateSetting, deleteSetting, listEmployees } from "@/lib/api";
+import { type Employee, type Center, type Department, type Role, type Break, type ClockInType, type Shift, type FlexibleSchedule, type FixedSchedule, type AbsenceType, type Holiday, type CalendarData, type VacationPolicy, type Incentive, listIncentives, createIncentive, listSettings, createSetting, updateSetting, deleteSetting, listEmployees, deleteIncentive, updateIncentive } from "@/lib/api";
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from "@/hooks/use-toast";
-
-// --- Mock Data ---
-const mockEmployees: Employee[] = [
-    { id: "1", name: "Olivia Martin", email: "olivia.martin@example.com", department: "Ingeniería", role: "Frontend Developer", status: "Activo", schedule: "9-5", hireDate: "2023-01-15", phone: "123-456-7890", avatar: "OM" },
-    { id: "2", name: "Jackson Lee", email: "jackson.lee@example.com", department: "Diseño", role: "UI/UX Designer", status: "Activo", schedule: "10-6", hireDate: "2022-06-01", phone: "123-456-7891", avatar: "JL" },
-];
-
-const mockDepartments: Department[] = [
-    { id: "1", name: "Ingeniería" },
-    { id: "2", name: "Diseño" },
-    { id: "3", name: "Marketing" },
-];
-
-const mockCenters: Center[] = [
-    { id: 'center1', name: 'Oficina Central', address: 'Calle Gran Vía, 1, Madrid', radius: 100, lat: 40.416775, lng: -3.703790, timezone: 'Europe/Madrid' }
-];
-
-const mockRoles: Role[] = [
-    { id: 'role1', name: 'Admin', description: 'Acceso total', permissions: ['manage_employees', 'manage_settings'] },
-    { id: 'role2', name: 'Manager', description: 'Gestiona equipos y proyectos', permissions: ['manage_projects'] }
-];
-
-const mockBreaks: Break[] = [
-    { id: 'break1', name: 'Pausa para comer', remunerated: false, limit: 60, isAutomatic: true, intervalStart: "13:00", intervalEnd: "15:00", notifyStart: true, notifyEnd: true, assignedTo: [] },
-    { id: 'break2', name: 'Pausa café', remunerated: true, limit: 15, isAutomatic: false, notifyStart: false, notifyEnd: false, assignedTo: [] }
-];
-
-const mockClockInTypes: ClockInType[] = [
-    { id: 'clockin1', name: 'Trabajo en Oficina', color: 'bg-blue-500', assignment: 'all', assignedTo: [] },
-    { id: 'clockin2', name: 'Trabajo Remoto', color: 'bg-green-500', assignment: 'all', assignedTo: [] },
-];
-
-const mockShifts: Shift[] = [
-    { id: 'shift1', name: 'Turno de Mañana', start: '08:00', end: '16:00' },
-    { id: 'shift2', name: 'Turno de Tarde', start: '15:00', end: '23:00' },
-];
-
-const mockFlexibleSchedules: FlexibleSchedule[] = [
-    { id: 'flex1', name: 'Flexible Semanal', workDays: ['L', 'M', 'X', 'J', 'V'], hoursPerDay: 8, noWeeklyHours: false },
-];
-
-const mockFixedSchedules: FixedSchedule[] = [
-    { id: 'fixed1', name: 'Fijo Estándar', workDays: ['L', 'M', 'X', 'J', 'V'], ranges: [{ id: 'range1', start: '09:00', end: '17:00' }], isNightShift: false },
-];
-
-const mockAbsenceTypes: AbsenceType[] = [
-    { id: 'absence1', name: 'Enfermedad', color: 'bg-orange-500', remunerated: true, unit: 'days', requiresApproval: true, allowAttachment: true, isDisabled: false, assignment: 'all', assignedTo: [] },
-    { id: 'absence2', name: 'Cita Médica', color: 'bg-purple-500', remunerated: true, unit: 'hours', requiresApproval: false, allowAttachment: false, isDisabled: false, assignment: 'all', assignedTo: [] },
-];
-
-const mockCalendars: CalendarData[] = [
-    { id: 'cal1', name: 'Calendario Laboral 2024', holidays: [{ id: 'h1', name: 'Año Nuevo', date: '2024-01-01' }] }
-];
-
-const mockVacationPolicies: VacationPolicy[] = [
-    { id: 'vac1', name: 'Política Estándar', unit: 'days', amount: 22, countBy: 'workdays', limitRequests: false, blockPeriods: false, blockedPeriods: [], assignment: 'all', assignedTo: [] }
-];
-
-const mockIncentives: Incentive[] = [
-    { id: 'inc1', name: 'Bono Trimestral', type: 'económico', value: '500€', period: 'trimestral', active: true, company_id: '1', condition_expression: { modality: 'proportional' } },
-];
-// --- End Mock Data ---
-
 
 const allPermissions = [
     { id: 'view_dashboard', label: 'Ver Panel Principal' },
@@ -298,9 +235,9 @@ const CenterDialog = ({
 
 const CentersTabContent = () => {
     const { toast } = useToast();
-    const [centers, setCenters] = useState<Center[]>(mockCenters);
-    const [departments, setDepartments] = useState<Department[]>(mockDepartments);
-    const [isLoading, setIsLoading] = useState(false);
+    const [centers, setCenters] = useState<Center[]>([]);
+    const [departments, setDepartments] = useState<Department[]>([]);
+    const [isLoading, setIsLoading] = useState({ centers: true, departments: true });
 
     const [isCenterDialogOpen, setIsCenterDialogOpen] = useState(false);
     const [dialogCenterMode, setDialogCenterMode] = useState<'add' | 'edit'>('add');
@@ -310,15 +247,33 @@ const CentersTabContent = () => {
     const [dialogDeptMode, setDialogDeptMode] = useState<'add' | 'edit'>('add');
     const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
     const [newDepartmentName, setNewDepartmentName] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [authError, setAuthError] = useState(false);
     const apiKey = process.env.NEXT_PUBLIC_Maps_API_KEY || "";
     
+    const fetchDepartments = useCallback(async () => {
+        setIsLoading(prev => ({...prev, departments: true}));
+        try {
+            const data = await listSettings<Department>('departments');
+            setDepartments(data);
+        } catch (error) {
+            toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los departamentos." });
+        } finally {
+            setIsLoading(prev => ({...prev, departments: false}));
+        }
+    }, [toast]);
+    
     useEffect(() => {
         const handleAuthError = () => setAuthError(true);
         window.addEventListener('gm_authFailure', handleAuthError);
+        fetchDepartments();
+        // Placeholder for fetching centers when API exists
+        setIsLoading(prev => ({...prev, centers: false})); 
+        setCenters([]);
+
         return () => window.removeEventListener('gm_authFailure', handleAuthError);
-    }, [toast]);
+    }, [fetchDepartments]);
 
     const openAddCenterDialog = () => {
         setDialogCenterMode('add');
@@ -333,6 +288,7 @@ const CentersTabContent = () => {
     };
 
     const handleCenterFormSubmit = (centerData: Center) => {
+        // Mocked as there's no API
         if (dialogCenterMode === 'add') {
             setCenters(prev => [...prev, centerData]);
         } else if (dialogCenterMode === 'edit' && selectedCenter) {
@@ -359,26 +315,36 @@ const CentersTabContent = () => {
         setIsDeptDialogOpen(true);
     };
 
-    const handleDepartmentFormSubmit = (e: React.FormEvent) => {
+    const handleDepartmentFormSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newDepartmentName) return;
-        if (dialogDeptMode === 'add') {
-            setDepartments(prev => [...prev, { id: uuidv4(), name: newDepartmentName }]);
-        } else if (dialogDeptMode === 'edit' && selectedDepartment) {
-            setDepartments(prev => prev.map(d => (d.id === selectedDepartment.id ? { ...d, name: newDepartmentName } : d)));
+        setIsSubmitting(true);
+        try {
+            if (dialogDeptMode === 'add') {
+                await createSetting('departments', { name: newDepartmentName });
+                toast({ title: "Departamento creado" });
+            } else if (dialogDeptMode === 'edit' && selectedDepartment) {
+                await updateSetting('departments', selectedDepartment.id, { name: newDepartmentName });
+                toast({ title: "Departamento actualizado" });
+            }
+            await fetchDepartments();
+            setIsDeptDialogOpen(false);
+        } catch(err) {
+             toast({ variant: "destructive", title: "Error", description: "No se pudo guardar el departamento." });
+        } finally {
+            setIsSubmitting(false);
         }
-
-        setNewDepartmentName("");
-        setIsDeptDialogOpen(false);
     };
     
-    const handleDeleteDepartment = (departmentId: string) => {
-        setDepartments(prev => prev.filter(d => d.id !== departmentId));
+    const handleDeleteDepartment = async (departmentId: string) => {
+         try {
+            await deleteSetting('departments', departmentId);
+            toast({ title: "Departamento eliminado" });
+            await fetchDepartments();
+        } catch(err) {
+             toast({ variant: "destructive", title: "Error", description: "No se pudo eliminar el departamento." });
+        }
     };
-
-    if (isLoading) {
-        return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>;
-    }
 
     return (
         <div className="space-y-4">
@@ -400,7 +366,7 @@ const CentersTabContent = () => {
                 <Button onClick={openAddCenterDialog} disabled={authError}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Centro</Button>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                {centers.map((center) => (
+                {isLoading.centers ? <Loader2 className="animate-spin" /> : centers.length > 0 ? centers.map((center) => (
                     <div key={center.id} className="flex items-center justify-between rounded-xl border p-4">
                         <div>
                             <h3 className="font-semibold">{center.name}</h3>
@@ -418,7 +384,7 @@ const CentersTabContent = () => {
                             </Button>
                         </div>
                     </div>
-                ))}
+                )) : <p className="text-sm text-muted-foreground text-center py-4">No se han configurado centros de trabajo.</p>}
                 </CardContent>
             </Card>
             <CenterDialog 
@@ -445,13 +411,13 @@ const CentersTabContent = () => {
                                         <Input id="dept-name" placeholder="Ej. Soporte Técnico" value={newDepartmentName} onChange={(e) => setNewDepartmentName(e.target.value)} required/>
                                     </div>
                                 </div>
-                                <DialogFooter><Button type="submit">Guardar</Button></DialogFooter>
+                                <DialogFooter><Button type="submit" disabled={isSubmitting}>{isSubmitting && <Loader2 className="animate-spin mr-2 h-4 w-4" />}Guardar</Button></DialogFooter>
                             </form>
                         </DialogContent>
                     </Dialog>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {departments.map((dept) => (
+                    {isLoading.departments ? <Loader2 className="animate-spin" /> : departments.length > 0 ? departments.map((dept) => (
                         <div key={dept.id} className="flex items-center justify-between rounded-xl border p-4">
                             <h3 className="font-semibold">{dept.name}</h3>
                             <div className="flex items-center">
@@ -461,7 +427,7 @@ const CentersTabContent = () => {
                                 </Button>
                             </div>
                         </div>
-                    ))}
+                    )) : <p className="text-sm text-muted-foreground text-center py-4">No hay departamentos creados.</p>}
                 </CardContent>
             </Card>
         </div>
@@ -471,17 +437,17 @@ const CentersTabContent = () => {
 const SettingsTabs = () => {
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState<Record<string, boolean>>({});
-    const [roles, setRoles] = useState<Role[]>(mockRoles);
-    const [breaks, setBreaks] = useState<Break[]>(mockBreaks);
-    const [clockInTypes, setClockInTypes] = useState<ClockInType[]>(mockClockInTypes);
-    const [employees, setEmployees] = useState<Employee[]>(mockEmployees);
-    const [shifts, setShifts] = useState<Shift[]>(mockShifts);
-    const [flexibleSchedules, setFlexibleSchedules] = useState<FlexibleSchedule[]>(mockFlexibleSchedules);
-    const [fixedSchedules, setFixedSchedules] = useState<FixedSchedule[]>(mockFixedSchedules);
-    const [absenceTypes, setAbsenceTypes] = useState<AbsenceType[]>(mockAbsenceTypes);
-    const [calendars, setCalendars] = useState<CalendarData[]>(mockCalendars);
-    const [vacationPolicies, setVacationPolicies] = useState<VacationPolicy[]>(mockVacationPolicies);
-    const [incentives, setIncentives] = useState<Incentive[]>(mockIncentives);
+    const [roles, setRoles] = useState<Role[]>([]);
+    const [breaks, setBreaks] = useState<Break[]>([]);
+    const [clockInTypes, setClockInTypes] = useState<ClockInType[]>([]);
+    const [employees, setEmployees] = useState<Employee[]>([]);
+    const [shifts, setShifts] = useState<Shift[]>([]);
+    const [flexibleSchedules, setFlexibleSchedules] = useState<FlexibleSchedule[]>([]);
+    const [fixedSchedules, setFixedSchedules] = useState<FixedSchedule[]>([]);
+    const [absenceTypes, setAbsenceTypes] = useState<AbsenceType[]>([]);
+    const [calendars, setCalendars] = useState<CalendarData[]>([]);
+    const [vacationPolicies, setVacationPolicies] = useState<VacationPolicy[]>([]);
+    const [incentives, setIncentives] = useState<Incentive[]>([]);
     
     // Dialog states
     const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
@@ -538,6 +504,33 @@ const SettingsTabs = () => {
     const [dialogIncentiveMode, setDialogIncentiveMode] = useState<'add' | 'edit'>('add');
     const [selectedIncentive, setSelectedIncentive] = useState<Incentive | null>(null);
     const [incentiveFormData, setIncentiveFormData] = useState<Omit<Incentive, 'id' | 'company_id'>>({ name: "", type: "económico", value: "", period: "anual", active: true, condition_expression: { modality: 'all-or-nothing' }});
+    
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const fetchIncentives = useCallback(async () => {
+        setIsLoading(prev => ({ ...prev, incentives: true }));
+        try {
+            const data = await listIncentives();
+            setIncentives(data);
+        } catch (error) {
+            toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los incentivos." });
+        } finally {
+            setIsLoading(prev => ({ ...prev, incentives: false }));
+        }
+    }, [toast]);
+    
+    useEffect(() => {
+        fetchIncentives();
+        setRoles([]); setIsLoading(p => ({...p, roles: false}));
+        setBreaks([]); setIsLoading(p => ({...p, breaks: false}));
+        setClockInTypes([]); setIsLoading(p => ({...p, clockInTypes: false}));
+        setShifts([]); setIsLoading(p => ({...p, shifts: false}));
+        setFlexibleSchedules([]); setIsLoading(p => ({...p, flexibleSchedules: false}));
+        setFixedSchedules([]); setIsLoading(p => ({...p, fixedSchedules: false}));
+        setAbsenceTypes([]); setIsLoading(p => ({...p, absenceTypes: false}));
+        setCalendars([]); setIsLoading(p => ({...p, calendars: false}));
+        setVacationPolicies([]); setIsLoading(p => ({...p, vacationPolicies: false}));
+    }, [fetchIncentives]);
     
     // Role Handlers
     const openAddRoleDialog = () => { setIsRoleDialogOpen(true); setDialogRoleMode('add'); setSelectedRole(null); setRoleFormData({ name: '', description: '', permissions: [] }); };
@@ -699,15 +692,32 @@ const SettingsTabs = () => {
     const openEditIncentiveDialog = (incentive: Incentive) => { setIsIncentiveDialogOpen(true); setDialogIncentiveMode('edit'); setSelectedIncentive(incentive); setIncentiveFormData({ ...incentive, condition_expression: incentive.condition_expression || { modality: 'all-or-nothing' } }); };
     const handleIncentiveFormSubmit = async (e: React.FormEvent) => { 
         e.preventDefault();
-        const newIncentive = { id: uuidv4(), company_id: '1', ...incentiveFormData };
-        if (dialogIncentiveMode === 'add') {
-            setIncentives(prev => [...prev, newIncentive]);
-        } else if (selectedIncentive) {
-            setIncentives(prev => prev.map(i => i.id === selectedIncentive.id ? { ...newIncentive, id: i.id } : i));
+        setIsSubmitting(true);
+        try {
+            if (dialogIncentiveMode === 'add') {
+                await createIncentive(incentiveFormData);
+                toast({ title: "Incentivo creado" });
+            } else if (selectedIncentive) {
+                await updateIncentive(selectedIncentive.id, incentiveFormData);
+                toast({ title: "Incentivo actualizado" });
+            }
+            await fetchIncentives();
+            setIsIncentiveDialogOpen(false);
+        } catch (err) {
+            toast({ variant: "destructive", title: "Error", description: "No se pudo guardar el incentivo." });
+        } finally {
+            setIsSubmitting(false);
         }
-        setIsIncentiveDialogOpen(false); 
     };
-    const handleDeleteIncentive = (id: string) => { setIncentives(p => p.filter(i => i.id !== id)); };
+    const handleDeleteIncentive = async (id: string) => { 
+        try {
+            await deleteIncentive(id);
+            toast({ title: "Incentivo eliminado" });
+            await fetchIncentives();
+        } catch(err) {
+             toast({ variant: "destructive", title: "Error", description: "No se pudo eliminar el incentivo." });
+        }
+    };
     
     const selectedCalendar = calendars.find(c => c.id === selectedCalendarId);
     const holidayDates = selectedCalendar?.holidays.map(h => new Date(h.date)) || [];
@@ -1257,7 +1267,7 @@ const SettingsTabs = () => {
                              <Button onClick={openAddIncentiveDialog}><PlusCircle className="mr-2 h-4 w-4"/> Crear Incentivo</Button>
                         </CardHeader>
                         <CardContent>
-                             {isLoading['incentives'] ? <Loader2 className="animate-spin" /> : <Table>
+                             {isLoading['incentives'] ? <div className="flex justify-center items-center py-4"><Loader2 className="animate-spin" /></div> : <Table>
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Nombre</TableHead>
@@ -1362,7 +1372,7 @@ const SettingsTabs = () => {
                                         </div>
                                     </RadioGroup>
                                 </div>
-                                <DialogFooter><Button type="submit">Guardar</Button></DialogFooter>
+                                <DialogFooter><Button type="submit" disabled={isSubmitting}>{isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}Guardar</Button></DialogFooter>
                             </form>
                         </DialogContent>
                     </Dialog>
@@ -1384,7 +1394,3 @@ export default function SettingsPage() {
         </div>
     )
 }
-
-    
-
-    
