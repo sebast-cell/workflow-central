@@ -16,7 +16,7 @@ export async function PUT(
         const updatedData = await request.json();
         // Exclude id from the data to be written to avoid conflicts
         const { id: _, ...rest } = updatedData;
-        await firestore.collection(model).doc(id).update(rest);
+        await firestore.collection(model).doc(id).set(rest, { merge: true });
         const updatedDoc = await firestore.collection(model).doc(id).get();
         return NextResponse.json({ id: updatedDoc.id, ...updatedDoc.data() });
     } catch (error) {

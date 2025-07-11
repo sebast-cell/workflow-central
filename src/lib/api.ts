@@ -218,7 +218,7 @@ export const getAssignedToName = (objective: Objective, employees: Employee[], d
         return employee ? employee.name : "Empleado no encontrado";
     }
     if (objective.type === 'equipo') {
-        const department = departments.find(d => d.id === objective.assigned_to);
+        const department = departments.find(d => d.name === objective.assigned_to);
         return department ? department.name : "Equipo no encontrado";
     }
     if (objective.type === 'empresa') return "Toda la empresa";
@@ -309,12 +309,12 @@ export const createIncentive = async (incentive: Omit<Incentive, 'id' | 'company
 };
 
 export const updateIncentive = async (id: string, incentiveData: Partial<Omit<Incentive, 'id' | 'company_id'>>): Promise<Incentive> => {
-    const response = await apiClient.put(`/api/settings/incentives/${id}`, incentiveData);
+    const response = await apiClient.put(`/api/incentives/${id}`, incentiveData);
     return response.data;
 };
 
 export const deleteIncentive = async (id: string): Promise<void> => {
-    await apiClient.delete(`/api/settings/incentives/${id}`);
+    await apiClient.delete(`/api/incentives/${id}`);
 };
 
 
