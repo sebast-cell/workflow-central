@@ -17,7 +17,7 @@ import type { VariantProps } from "class-variance-authority";
 import type { Employee, Department } from "@/lib/api";
 import { listEmployees, createEmployee, updateEmployee, deleteEmployee, listSettings } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -68,7 +68,7 @@ export default function EmployeesPage() {
 
   useEffect(() => {
     fetchData();
-  }, [toast]);
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -106,7 +106,7 @@ export default function EmployeesPage() {
                 department: formData.department || '',
                 role: formData.role || '',
                 schedule: formData.schedule || '',
-                hireDate: formData.hireDate || '',
+                hireDate: formData.hireDate ? format(parseISO(formData.hireDate), 'yyyy-MM-dd') : '',
                 phone: formData.phone || '',
             };
             await createEmployee(newEmployeeData);
