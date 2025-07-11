@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from "react";
@@ -15,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { type Project, type Objective, type Task, type Incentive, getAssignedToName, listProjects, listObjectives, listTasks, listIncentives } from "@/lib/api";
+import { type Project, type Objective, type Task, type Incentive, type Employee, type Department, getAssignedToName, listProjects, listObjectives, listTasks, listIncentives, listEmployees, listSettings } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -28,6 +27,8 @@ export default function ProjectDetailsPage() {
     const [projectObjectives, setProjectObjectives] = useState<Objective[]>([]);
     const [tasks, setTasks] = useState<Task[]>([]);
     const [incentives, setIncentives] = useState<Incentive[]>([]);
+    const [employees, setEmployees] = useState<Employee[]>([]);
+    const [departments, setDepartments] = useState<Department[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isObjectiveDialogOpen, setIsObjectiveDialogOpen] = useState(false);
     
@@ -38,11 +39,13 @@ export default function ProjectDetailsPage() {
             setIsLoading(true);
             try {
                 // This will be slow if there's a lot of data. In a real app, you'd fetch only what's needed.
-                const [allProjects, allObjectives, allTasks, allIncentives] = await Promise.all([
+                const [allProjects, allObjectives, allTasks, allIncentives, allEmployees, allDepartmentsData] = await Promise.all([
                     listProjects(),
                     listObjectives(),
                     listTasks(),
-                    listIncentives()
+                    listIncentives(),
+                    listEmployees(),
+                    listSettings('departments')
                 ]);
                 
                 const currentProject = allProjects.find(p => p.id === projectId) || null;
@@ -50,8 +53,10 @@ export default function ProjectDetailsPage() {
                 
                 setProject(currentProject);
                 setProjectObjectives(objectivesForProject);
-                setTasks(allTasks); // We need all tasks to calculate progress for any objective
+                setTasks(allTasks);
                 setIncentives(allIncentives);
+                setEmployees(allEmployees);
+                setDepartments(allDepartmentsData as Department[]);
 
             } catch (error) {
                 toast({
@@ -208,7 +213,7 @@ export default function ProjectDetailsPage() {
                                             )}
                                         </div>
                                     </TableCell>
-                                    <TableCell><Badge variant="outline">{getAssignedToName(obj)}</Badge></TableCell>
+                                    <TableCell><Badge variant="outline">{getAssignedToName(obj, employees, departments)}</Badge></TableCell>
                                     <TableCell>
                                         <div className="flex items-center gap-2">
                                             <Progress value={progress} className="w-24" />

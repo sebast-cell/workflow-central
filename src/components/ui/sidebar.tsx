@@ -18,7 +18,7 @@ import {
 const SIDEBAR_PINNED_COOKIE_NAME = "sidebar_pinned_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 365 // 1 year
 
-// --- CORRECCIÓN AÑADIENDO openMobile y setOpenMobile ---
+// CORRECCIÓN: Se añaden las propiedades que faltaban
 interface SidebarContextType {
   isOpen: boolean
   isPinned: boolean
