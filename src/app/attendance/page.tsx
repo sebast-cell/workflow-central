@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -8,11 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Briefcase, Coffee, Globe, Home, UserX, Calendar as CalendarIcon, Filter, Loader2 } from "lucide-react";
+import { Briefcase, Coffee, Globe, Home, UserX, Calendar as CalendarIcon, Filter } from "lucide-react";
 import { AttendanceReportDialog } from "./_components/attendance-report-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { format, parse, isWithinInterval, startOfDay, parseISO, startOfToday, endOfToday, subDays } from 'date-fns';
+import { format, parse, isWithinInterval, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { type DateRange } from 'react-day-picker';
@@ -20,88 +18,87 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { type Employee as ApiEmployee, type Department, type AttendanceLog as ApiAttendanceLog, listEmployees, listSettings, listAttendanceLogs } from '@/lib/api';
 import { Skeleton } from '@/components/ui/skeleton';
 
-// Mock data for absences, as this feature is not yet connected to the DB.
-// In a real app, this would be fetched from an "absences" or "leave_requests" collection.
-const absencesData = [
-  // Example: { employeeId: "some-id", type: "Vacation", from: new Date(), to: new Date() }
+type Employee = {
+    id: number;
+    name: string;
+    department: string;
+};
+
+type AttendanceLog = {
+    date: Date;
+    time: string;
+    employee: string;
+    status:string;
+    location: string;
+    department: string;
+};
+
+const employees: Employee[] = [
+  { id: 1, name: "Olivia Martin", department: "Ingeniería" },
+  { id: 2, name: "Jackson Lee", department: "Diseño" },
+  { id: 3, name: "Isabella Nguyen", department: "Marketing" },
+  { id: 4, name: "William Kim", department: "Ingeniería" },
+  { id: 5, name: "Sophia Davis", department: "Ventas" },
+  { id: 6, name: "Liam Garcia", department: "RRHH" },
+  { id: 7, name: "Lucas Brown", department: "Ingeniería" },
+  { id: 8, name: "Mia Miller", department: "Diseño" },
+  { id: 9, name: "Benjamin Wilson", department: "Marketing" },
+  { id: 10, name: "Charlotte Moore", department: "Ventas" },
+  { id: 11, name: "Henry Taylor", department: "RRHH" },
+  { id: 12, name: "Amelia Anderson", department: "Ingeniería" },
 ];
 
+const allDepartments = ["Ingeniería", "Diseño", "Marketing", "Ventas", "RRHH"];
+
+const attendanceLog: AttendanceLog[] = [
+  { date: new Date(2024, 7, 26), time: "09:01 AM", employee: "Olivia Martin", status: "Entrada Marcada", location: "Oficina", department: "Ingeniería" },
+  { date: new Date(2024, 7, 26), time: "09:03 AM", employee: "Jackson Lee", status: "Entrada Marcada", location: "Remoto", department: "Diseño" },
+  { date: new Date(2024, 7, 26), time: "11:30 AM", employee: "Isabella Nguyen", status: "En Descanso", location: "Oficina", department: "Marketing" },
+  { date: new Date(2024, 7, 26), time: "12:15 PM", employee: "Isabella Nguyen", status: "Entrada Marcada", location: "Oficina", department: "Marketing" },
+  { date: new Date(2024, 7, 26), time: "05:05 PM", employee: "Olivia Martin", status: "Salida Marcada", location: "Oficina", department: "Ingeniería" },
+  { date: new Date(2024, 7, 25), time: "09:00 AM", employee: "Sophia Davis", status: "Entrada Marcada", location: "Oficina", department: "Ventas" },
+  { date: new Date(2024, 7, 25), time: "02:00 PM", employee: "William Kim", status: "Entrada Marcada", location: "Oficina", department: "Ingeniería" },
+  { date: new Date(2024, 7, 25), time: "05:30 PM", employee: "Sophia Davis", status: "Salida Marcada", location: "Oficina", department: "Ventas" },
+  { date: new Date(2024, 7, 24), time: "08:55 AM", employee: "Liam Garcia", status: "Entrada Marcada", location: "Remoto", department: "RRHH" },
+  { date: new Date(2024, 7, 24), time: "04:50 PM", employee: "Liam Garcia", status: "Salida Marcada", location: "Remoto", department: "RRHH" },
+];
+
+const absencesData = [
+  { employee: "William Kim", type: "De Vacaciones", from: new Date(2024, 7, 26), to: new Date(2024, 7, 30) },
+  { employee: "Liam Garcia", type: "De Vacaciones", from: new Date(2024, 7, 23), to: new Date(2024, 7, 24) },
+];
 
 function parseAMPM(timeStr: string) {
-    // This is a robust parser for AM/PM time, but since we are moving to ISO strings, it may become less relevant
-    const date = parse(timeStr, 'hh:mm a', new Date());
-    return date;
+    const [time, modifier] = timeStr.split(' ');
+    let [hours, minutes] = time.split(':');
+    if (hours === '12') {
+        hours = '00';
+    }
+    if (modifier.toUpperCase() === 'PM') {
+        hours = String(parseInt(hours, 10) + 12);
+    }
+    return new Date(1970, 0, 1, Number(hours), Number(minutes));
 }
 
-const HusinCardContent = ({ employees }: { employees: ApiEmployee[] }) => (
-    <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
-      <div className="p-3 space-y-2 max-h-48 overflow-y-auto">
-        {employees.length > 0 ? (
-          employees.map((emp) => (
-            <div key={emp.id} className="flex items-center gap-2 text-sm">
-              <Avatar className="h-6 w-6">
-                <AvatarImage src={`https://placehold.co/40x40.png`} data-ai-hint="people avatar" alt={emp.name} />
-                <AvatarFallback className="text-xs">
-                  {emp.avatar}
-                </AvatarFallback>
-              </Avatar>
-              <span>{emp.name}</span>
-            </div>
-          ))
-        ) : (
-          <p className="text-xs text-muted-foreground text-center py-2">No hay empleados.</p>
-        )}
-      </div>
-    </div>
-  );
-
 export default function AttendancePage() {
-    const [employees, setEmployees] = useState<ApiEmployee[]>([]);
-    const [departments, setDepartments] = useState<Department[]>([]);
-    const [attendanceLog, setAttendanceLog] = useState<ApiAttendanceLog[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                setIsLoading(true);
-                const [employeesData, departmentsData, logsData] = await Promise.all([
-                    listEmployees(),
-                    listSettings<Department>('departments'),
-                    listAttendanceLogs()
-                ]);
-                setEmployees(employeesData);
-                setDepartments(departmentsData);
-                setAttendanceLog(logsData);
-
-            } catch (error) {
-                console.error("Failed to fetch attendance data", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchData();
-    }, []);
-
     const [dateRange, setDateRange] = useState<DateRange | undefined>({
-      from: subDays(new Date(), 30),
-      to: new Date(),
+      from: new Date(2024, 7, 24),
+      to: new Date(2024, 7, 26),
     });
     const [selectedLocation, setSelectedLocation] = useState<string>('all');
     const [selectedDepartment, setSelectedDepartment] = useState<string>('all');
     const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10;
+    const itemsPerPage = 5;
 
     const availableEmployees = useMemo(() => {
         if (selectedDepartment === 'all') {
             return employees;
         }
         return employees.filter(emp => emp.department === selectedDepartment);
-    }, [selectedDepartment, employees]);
+    }, [selectedDepartment]);
 
     useEffect(() => {
         if (selectedEmployee !== 'all' && !availableEmployees.some(e => e.name === selectedEmployee)) {
@@ -114,66 +111,61 @@ export default function AttendancePage() {
     }, [dateRange, selectedLocation, selectedDepartment, selectedEmployee]);
 
     const husinStats = useMemo(() => {
-        const todayNormalized = startOfToday();
+        const today = new Date(2024, 7, 26);
+        const todayNormalized = startOfDay(today);
 
         const stats = {
-            inOffice: { count: 0, list: [] as ApiEmployee[] },
-            remote: { count: 0, list: [] as ApiEmployee[] },
-            onBreak: { count: 0, list: [] as ApiEmployee[] },
-            onVacation: { count: 0, list: [] as ApiEmployee[] },
-            absent: { count: 0, list: [] as ApiEmployee[] },
+            inOffice: { count: 0, list: [] as Employee[] },
+            remote: { count: 0, list: [] as Employee[] },
+            onBreak: { count: 0, list: [] as Employee[] },
+            onVacation: { count: 0, list: [] as Employee[] },
+            absent: { count: 0, list: [] as Employee[] },
         };
 
-        if (isLoading) return stats;
-
         const employeesOnLeaveToday = new Set<string>();
-        // NOTE: absencesData is still mock. This should be replaced with real data.
-        absencesData.forEach((absence: any) => {
-            const employee = employees.find(e => e.id === absence.employeeId);
-            if (employee && isWithinInterval(todayNormalized, { start: absence.from, end: absence.to })) {
-                if (absence.type === "De Vacaciones") { // This condition might need adjustment
+        absencesData.forEach(absence => {
+            const employee = employees.find(e => e.name === absence.employee);
+            if (employee && isWithinInterval(today, { start: absence.from, end: absence.to })) {
+                if (absence.type === "De Vacaciones") {
                     stats.onVacation.list.push(employee);
                 }
-                employeesOnLeaveToday.add(absence.employeeId);
+                employeesOnLeaveToday.add(absence.employee);
             }
         });
-        
-        const todaysLogs = attendanceLog.filter(log => isWithinInterval(parseISO(log.timestamp), { start: startOfToday(), end: endOfToday() }));
-        const latestLogs: { [key: string]: ApiAttendanceLog } = {};
-        
-        todaysLogs.forEach(log => {
-            if (!employeesOnLeaveToday.has(log.employeeId)) {
-                 if (!latestLogs[log.employeeId] || parseISO(log.timestamp) > parseISO(latestLogs[log.employeeId].timestamp)) {
-                    latestLogs[log.employeeId] = log;
+
+        const todaysLog = attendanceLog.filter(log => startOfDay(log.date).getTime() === todayNormalized.getTime());
+
+        const latestLogs: { [key: string]: any } = {};
+        todaysLog.forEach(log => {
+            if (!employeesOnLeaveToday.has(log.employee)) {
+                if (!latestLogs[log.employee] || parseAMPM(log.time) > parseAMPM(latestLogs[log.employee].time)) {
+                    latestLogs[log.employee] = log;
                 }
             }
         });
 
         const presentEmployees = new Set<string>();
         Object.values(latestLogs).forEach(log => {
-            const employee = employees.find(e => e.id === log.employeeId);
+            const employee = employees.find(e => e.name === log.employee);
             if (!employee) return;
             
-            if (log.type === 'Salida') return; // Don't count clocked out employees as present
+            presentEmployees.add(log.employee);
 
-            presentEmployees.add(log.employeeId);
-
-            switch (log.type) {
-                case "Entrada":
+            switch (log.status) {
+                case "Entrada Marcada":
                     if (log.location === "Oficina") {
                         stats.inOffice.list.push(employee);
-                    } else { // Assume any other "Entrada" is remote
+                    } else {
                         stats.remote.list.push(employee);
                     }
                     break;
-                case "Descanso":
+                case "En Descanso":
                     stats.onBreak.list.push(employee);
                     break;
             }
         });
-        
-        // Employees are absent if they are not on leave and have no present status log
-        stats.absent.list = employees.filter(emp => !presentEmployees.has(emp.id) && !employeesOnLeaveToday.has(emp.id));
+
+        stats.absent.list = employees.filter(emp => !presentEmployees.has(emp.name) && !employeesOnLeaveToday.has(emp.name));
 
         stats.inOffice.count = stats.inOffice.list.length;
         stats.remote.count = stats.remote.list.length;
@@ -182,79 +174,70 @@ export default function AttendancePage() {
         stats.absent.count = stats.absent.list.length;
 
         return stats;
-    }, [employees, attendanceLog, isLoading]);
+    }, []);
 
     const filteredLog = useMemo(() => {
         const startDate = dateRange?.from ? startOfDay(dateRange.from) : null;
         const endDate = dateRange?.to ? startOfDay(dateRange.to) : startDate;
 
         return attendanceLog.filter(log => {
-            const locationMatch = selectedLocation === 'all' || log.location.toLowerCase().includes(selectedLocation.toLowerCase());
+            const locationMatch = selectedLocation === 'all' || log.location === selectedLocation;
             const departmentMatch = selectedDepartment === 'all' || log.department === selectedDepartment;
-            const employeeMatch = selectedEmployee === 'all' || log.employeeName === selectedEmployee;
+            const employeeMatch = selectedEmployee === 'all' || log.employee === selectedEmployee;
 
-            const logDate = parseISO(log.timestamp);
             const dateMatch = (() => {
-                if (!startDate) return true;
-                const effectiveEndDate = endDate || endOfToday();
-                return isWithinInterval(logDate, { start: startDate, end: effectiveEndDate }); 
+                if (!startDate || !endDate) return true;
+                const currentDate = startOfDay(log.date);
+                return currentDate >= startDate && currentDate <= endDate;
             })();
 
             return dateMatch && locationMatch && departmentMatch && employeeMatch;
         });
-    }, [dateRange, selectedLocation, selectedDepartment, selectedEmployee, attendanceLog]);
-    
-    const formattedFilteredLog = useMemo(() => {
-        return filteredLog.map(log => ({
-            ...log,
-            time: format(parseISO(log.timestamp), 'hh:mm a'),
-        })).sort((a, b) => b.timestamp.localeCompare(a.timestamp)); // Sort by most recent
-    }, [filteredLog]);
+    }, [dateRange, selectedLocation, selectedDepartment, selectedEmployee]);
 
     const { paginatedLog, totalPages } = useMemo(() => {
-        const total = Math.ceil(formattedFilteredLog.length / itemsPerPage);
+        const total = Math.ceil(filteredLog.length / itemsPerPage);
         const startIndex = (currentPage - 1) * itemsPerPage;
         return {
-            paginatedLog: formattedFilteredLog.slice(startIndex, startIndex + itemsPerPage),
+            paginatedLog: filteredLog.slice(startIndex, startIndex + itemsPerPage),
             totalPages: total > 0 ? total : 1,
         };
-    }, [formattedFilteredLog, currentPage]);
+    }, [filteredLog, currentPage]);
 
     const getStatusVariant = (status: string) => {
       switch (status) {
-        case "Entrada": return "active";
-        case "Salida": return "destructive";
-        case "Descanso": return "warning";
+        case "Entrada Marcada": return "active";
+        case "Salida Marcada": return "destructive";
+        case "En Descanso": return "warning";
         default: return "secondary";
       }
     };
-    
-  if (isLoading) {
-    return (
-        <div className="space-y-8">
-            <Skeleton className="h-10 w-1/2" />
-            <div className="space-y-4">
-                 <Skeleton className="h-8 w-1/4" />
-                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-                    <Skeleton className="h-24" />
-                    <Skeleton className="h-24" />
-                    <Skeleton className="h-24" />
-                    <Skeleton className="h-24" />
-                    <Skeleton className="h-24" />
-                 </div>
+
+  const HusinCardContent = ({ employees }: { employees: Employee[] }) => (
+    <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
+      <div className="p-3 space-y-2 max-h-48 overflow-y-auto">
+        {employees.length > 0 ? (
+          employees.map((emp) => (
+            <div key={emp.id} className="flex items-center gap-2 text-sm">
+              <Avatar className="h-6 w-6">
+                <AvatarImage src={`https://placehold.co/40x40.png`} data-ai-hint="people avatar" alt={emp.name} />
+                <AvatarFallback className="text-xs">
+                  {emp.name
+                    .split(' ')
+                    .map((n) => n[0])
+                    .join('')
+                    .slice(0, 2)}
+                </AvatarFallback>
+              </Avatar>
+              <span>{emp.name}</span>
             </div>
-            <Card>
-                <CardHeader>
-                    <Skeleton className="h-8 w-1/3" />
-                    <Skeleton className="h-4 w-2/3" />
-                </CardHeader>
-                <CardContent>
-                    <Skeleton className="h-40 w-full" />
-                </CardContent>
-            </Card>
-        </div>
-    );
-  }
+          ))
+        ) : (
+          <p className="text-xs text-muted-foreground text-center py-2">No hay empleados.</p>
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-8">
@@ -275,12 +258,12 @@ export default function AttendancePage() {
                                 <Home className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">{husinStats?.inOffice.count}</div>
+                                <div className="text-2xl font-bold">{husinStats.inOffice.count}</div>
                             </CardContent>
                         </Card>
                     </CollapsibleTrigger>
                     <CollapsibleContent className="absolute z-10 w-full">
-                        <HusinCardContent employees={husinStats?.inOffice.list || []} />
+                        <HusinCardContent employees={husinStats.inOffice.list} />
                     </CollapsibleContent>
                 </Collapsible>
             </div>
@@ -294,12 +277,12 @@ export default function AttendancePage() {
                                 <Globe className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">{husinStats?.remote.count}</div>
+                                <div className="text-2xl font-bold">{husinStats.remote.count}</div>
                             </CardContent>
                         </Card>
                     </CollapsibleTrigger>
                     <CollapsibleContent className="absolute z-10 w-full">
-                        <HusinCardContent employees={husinStats?.remote.list || []} />
+                        <HusinCardContent employees={husinStats.remote.list} />
                     </CollapsibleContent>
                 </Collapsible>
             </div>
@@ -313,12 +296,12 @@ export default function AttendancePage() {
                                 <Coffee className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">{husinStats?.onBreak.count}</div>
+                                <div className="text-2xl font-bold">{husinStats.onBreak.count}</div>
                             </CardContent>
                         </Card>
                     </CollapsibleTrigger>
                     <CollapsibleContent className="absolute z-10 w-full">
-                        <HusinCardContent employees={husinStats?.onBreak.list || []} />
+                        <HusinCardContent employees={husinStats.onBreak.list} />
                     </CollapsibleContent>
                 </Collapsible>
             </div>
@@ -332,12 +315,12 @@ export default function AttendancePage() {
                             <Briefcase className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{husinStats?.onVacation.count}</div>
+                            <div className="text-2xl font-bold">{husinStats.onVacation.count}</div>
                         </CardContent>
                         </Card>
                     </CollapsibleTrigger>
                     <CollapsibleContent className="absolute z-10 w-full">
-                        <HusinCardContent employees={husinStats?.onVacation.list || []} />
+                        <HusinCardContent employees={husinStats.onVacation.list} />
                     </CollapsibleContent>
                 </Collapsible>
             </div>
@@ -351,12 +334,12 @@ export default function AttendancePage() {
                             <UserX className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{husinStats?.absent.count}</div>
+                            <div className="text-2xl font-bold">{husinStats.absent.count}</div>
                         </CardContent>
                         </Card>
                     </CollapsibleTrigger>
                     <CollapsibleContent className="absolute z-10 w-full">
-                        <HusinCardContent employees={husinStats?.absent.list || []} />
+                        <HusinCardContent employees={husinStats.absent.list} />
                     </CollapsibleContent>
                 </Collapsible>
             </div>
@@ -473,8 +456,8 @@ export default function AttendancePage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos los Deptos.</SelectItem>
-                    {departments.map(dept => (
-                         <SelectItem key={dept.id} value={dept.name}>{dept.name}</SelectItem>
+                    {allDepartments.map(dept => (
+                         <SelectItem key={dept} value={dept}>{dept}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -493,7 +476,7 @@ export default function AttendancePage() {
 
               </div>
               <div className="sm:ml-auto">
-                 <AttendanceReportDialog attendanceLog={formattedFilteredLog.map(l => ({time: l.time, employee: l.employeeName, status: l.type, location: l.location }))} />
+                 <AttendanceReportDialog attendanceLog={filteredLog} />
               </div>
           </div>
         </CardHeader>
@@ -511,10 +494,10 @@ export default function AttendancePage() {
               {paginatedLog.length > 0 ? paginatedLog.map((log, index) => (
                 <TableRow key={index}>
                   <TableCell className="font-medium">{log.time}</TableCell>
-                  <TableCell>{log.employeeName}</TableCell>
+                  <TableCell>{log.employee}</TableCell>
                   <TableCell>
-                    <Badge variant={getStatusVariant(log.type)}>
-                      {log.type}
+                    <Badge variant={getStatusVariant(log.status)}>
+                      {log.status}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">{log.location}</TableCell>
