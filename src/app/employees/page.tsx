@@ -6,7 +6,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge, badgeVariants } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +19,7 @@ import { listEmployees, createEmployee, updateEmployee, deleteEmployee, listSett
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from "@/components/ui/sheet";
 
 export default function EmployeesPage() {
   const { toast } = useToast();
@@ -27,9 +27,9 @@ export default function EmployeesPage() {
   const [departments, setDepartments] = useState<Department[]>([]);
   
   const [isLoading, setIsLoading] = useState(true);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add');
+  const [sheetMode, setSheetMode] = useState<'add' | 'edit'>('add');
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -67,7 +67,7 @@ export default function EmployeesPage() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [toast]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -78,18 +78,18 @@ export default function EmployeesPage() {
     setFormData((prev) => ({ ...prev, [id]: value }));
   };
 
-  const openAddDialog = () => {
-    setDialogMode('add');
+  const openAddSheet = () => {
+    setSheetMode('add');
     setSelectedEmployee(null);
     setFormData({ name: "", email: "", department: "", role: "", schedule: "", hireDate: format(new Date(), 'yyyy-MM-dd'), phone: "" });
-    setIsDialogOpen(true);
+    setIsSheetOpen(true);
   }
 
-  const openEditDialog = (employee: Employee) => {
-    setDialogMode('edit');
+  const openEditSheet = (employee: Employee) => {
+    setSheetMode('edit');
     setSelectedEmployee(employee);
     setFormData(employee);
-    setIsDialogOpen(true);
+    setIsSheetOpen(true);
   }
 
   const handleFormSubmit = async (e: React.FormEvent) => {
@@ -98,7 +98,7 @@ export default function EmployeesPage() {
 
     setIsSubmitting(true);
     try {
-        if (dialogMode === 'add') {
+        if (sheetMode === 'add') {
             const newEmployeeData = {
                 name: formData.name,
                 email: formData.email,
@@ -110,12 +110,12 @@ export default function EmployeesPage() {
             };
             await createEmployee(newEmployeeData);
             toast({ title: "Empleado añadido", description: `${newEmployeeData.name} ha sido añadido al equipo.` });
-        } else if (dialogMode === 'edit' && selectedEmployee) {
+        } else if (sheetMode === 'edit' && selectedEmployee) {
             await updateEmployee(selectedEmployee.id, formData);
             toast({ title: "Empleado actualizado", description: `Los datos de ${formData.name} han sido guardados.` });
         }
         await fetchData(); // Refresh data from server
-        setIsDialogOpen(false);
+        setIsSheetOpen(false);
     } catch (error) {
         toast({ variant: "destructive", title: "Error al guardar", description: "No se pudo guardar el empleado." });
     } finally {
@@ -220,10 +220,86 @@ export default function EmployeesPage() {
                 <Download className="mr-2 h-4 w-4" />
                 Exportar Excel
               </Button>
-              <Button onClick={openAddDialog} className="w-full sm:w-auto">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Añadir Empleado
-              </Button>
+              <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+                  <SheetTrigger asChild>
+                    <Button onClick={openAddSheet} className="w-full sm:w-auto">
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Añadir Empleado
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent className="sm:max-w-md">
+                    <SheetHeader>
+                      <SheetTitle>
+                        {sheetMode === 'add' ? 'Añadir Nuevo Empleado' : 'Editar Empleado'}
+                      </SheetTitle>
+                      <SheetDescription>
+                        {sheetMode === 'add' ? 'Rellena los datos para añadir un nuevo miembro al equipo.' : `Editando el perfil de ${selectedEmployee?.name}.`}
+                      </SheetDescription>
+                    </SheetHeader>
+                    <Tabs defaultValue="individual" className="w-full pt-4">
+                        {sheetMode === 'add' && (
+                            <TabsList className="grid w-full grid-cols-2">
+                                <TabsTrigger value="individual">Individual</TabsTrigger>
+                                <TabsTrigger value="multiple">Múltiple</TabsTrigger>
+                            </TabsList>
+                        )}
+                        <TabsContent value="individual">
+                            <form onSubmit={handleFormSubmit}>
+                              <div className="grid gap-4 py-4">
+                                <div className="space-y-2">
+                                  <Label htmlFor="name">Nombre</Label>
+                                  <Input id="name" value={formData.name || ''} onChange={handleInputChange} placeholder="Ej. Juan Pérez" required />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label htmlFor="email">Email</Label>
+                                  <Input id="email" type="email" value={formData.email || ''} onChange={handleInputChange} placeholder="juan@ejemplo.com" required />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label htmlFor="phone">Teléfono</Label>
+                                  <Input id="phone" type="tel" value={formData.phone || ''} onChange={handleInputChange} placeholder="+34 600 000 000" />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label htmlFor="department">Departamento</Label>
+                                   <Select value={formData.department} onValueChange={(value) => handleSelectChange('department', value)}>
+                                    <SelectTrigger id="department">
+                                      <SelectValue placeholder="Seleccionar" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {departments.map(d => <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>)}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="space-y-2">
+                                  <Label htmlFor="role">Cargo</Label>
+                                  <Input id="role" value={formData.role || ''} onChange={handleInputChange} placeholder="Ej. Desarrollador Frontend" />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label htmlFor="hireDate">Fecha de Contratación</Label>
+                                  <Input id="hireDate" type="date" value={formData.hireDate || ''} onChange={handleInputChange} />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label htmlFor="schedule">Horario</Label>
+                                  <Input id="schedule" value={formData.schedule || ''} onChange={handleInputChange} placeholder="Ej. 9-5, Fijo, Flexible" />
+                                </div>
+                              </div>
+                              <SheetFooter>
+                                <Button type="submit" disabled={isSubmitting}>
+                                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                  {sheetMode === 'add' ? 'Añadir Empleado' : 'Guardar Cambios'}
+                                </Button>
+                              </SheetFooter>
+                            </form>
+                        </TabsContent>
+                        <TabsContent value="multiple">
+                            <div className="py-4 space-y-4 text-center">
+                                <p className="text-muted-foreground">Sube un archivo de Excel o envía un enlace de invitación para añadir múltiples empleados a la vez.</p>
+                                <Button variant="outline"><UploadCloud className="mr-2 h-4 w-4" /> Subir Excel</Button>
+                                <Button variant="outline"><LinkIcon className="mr-2 h-4 w-4" /> Enviar Invitaciones</Button>
+                            </div>
+                        </TabsContent>
+                    </Tabs>
+                  </SheetContent>
+              </Sheet>
             </div>
           </div>
         </CardHeader>
@@ -272,7 +348,7 @@ export default function EmployeesPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => openEditDialog(employee)}>Editar</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openEditSheet(employee)}>Editar</DropdownMenuItem>
                         <DropdownMenuItem>Ver Perfil</DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => handleToggleStatus(employee)}>
@@ -296,82 +372,8 @@ export default function EmployeesPage() {
           </Table>
         </CardContent>
       </Card>
-
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>
-                {dialogMode === 'add' ? 'Añadir Nuevo Empleado' : 'Editar Empleado'}
-              </DialogTitle>
-              <DialogDescription>
-                {dialogMode === 'add' ? 'Rellena los datos para añadir un nuevo miembro al equipo.' : `Editando el perfil de ${selectedEmployee?.name}.`}
-              </DialogDescription>
-            </DialogHeader>
-            <Tabs defaultValue="individual" className="w-full">
-                {dialogMode === 'add' && (
-                    <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="individual">Individual</TabsTrigger>
-                        <TabsTrigger value="multiple">Múltiple</TabsTrigger>
-                    </TabsList>
-                )}
-                <TabsContent value="individual">
-                    <form onSubmit={handleFormSubmit}>
-                      <div className="grid gap-4 py-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="name">Nombre</Label>
-                          <Input id="name" value={formData.name} onChange={handleInputChange} placeholder="Ej. Juan Pérez" required />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="email">Email</Label>
-                          <Input id="email" type="email" value={formData.email} onChange={handleInputChange} placeholder="juan@ejemplo.com" required />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="phone">Teléfono</Label>
-                          <Input id="phone" type="tel" value={formData.phone} onChange={handleInputChange} placeholder="+34 600 000 000" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="department">Departamento</Label>
-                           <Select value={formData.department} onValueChange={(value) => handleSelectChange('department', value)}>
-                            <SelectTrigger id="department">
-                              <SelectValue placeholder="Seleccionar" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {departments.map(d => <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="role">Cargo</Label>
-                          <Input id="role" value={formData.role} onChange={handleInputChange} placeholder="Ej. Desarrollador Frontend" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="hireDate">Fecha de Contratación</Label>
-                          <Input id="hireDate" type="date" value={formData.hireDate} onChange={handleInputChange} />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="schedule">Horario</Label>
-                          <Input id="schedule" value={formData.schedule} onChange={handleInputChange} placeholder="Ej. 9-5, Fijo, Flexible" />
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <Button type="submit" disabled={isSubmitting}>
-                          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                          {dialogMode === 'add' ? 'Añadir Empleado' : 'Guardar Cambios'}
-                        </Button>
-                      </DialogFooter>
-                    </form>
-                </TabsContent>
-                <TabsContent value="multiple">
-                    <div className="py-4 space-y-4 text-center">
-                        <p className="text-muted-foreground">Sube un archivo de Excel o envía un enlace de invitación para añadir múltiples empleados a la vez.</p>
-                        <Button variant="outline"><UploadCloud className="mr-2 h-4 w-4" /> Subir Excel</Button>
-                        <Button variant="outline"><LinkIcon className="mr-2 h-4 w-4" /> Enviar Invitaciones</Button>
-                    </div>
-                </TabsContent>
-            </Tabs>
-          </DialogContent>
-        </Dialog>
-
     </div>
   )
 }
+
+    
