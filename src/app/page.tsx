@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,7 @@ export default function PortalSelectionPage() {
               <p className="text-muted-foreground mt-2">Gestiona tu equipo, proyectos y operaciones.</p>
               <div className="flex justify-center mt-8">
                   <Button asChild size="lg" className="w-full max-w-xs">
-                      <Link href="/dashboard">
+                      <Link href="/login?role=admin">
                           Acceder como Admin
                           <LogIn className="ml-2 h-4 w-4" />
                       </Link>
@@ -31,7 +32,7 @@ export default function PortalSelectionPage() {
               <p className="text-muted-foreground mt-2">Consulta tu información y gestiona tus solicitudes.</p>
               <div className="flex justify-center mt-8">
                   <Button asChild size="lg" className="w-full max-w-xs">
-                      <Link href="/portal">
+                       <Link href="/login?role=employee">
                           Acceder como Empleado
                           <LogIn className="ml-2 h-4 w-4" />
                       </Link>
