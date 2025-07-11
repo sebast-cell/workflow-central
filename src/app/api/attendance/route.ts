@@ -1,3 +1,4 @@
+
 import { NextResponse } from 'next/server';
 import { firestore } from '@/lib/firebase-admin';
 import type { AttendanceLog } from '@/lib/api';
