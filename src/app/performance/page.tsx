@@ -137,13 +137,13 @@ export default function PerformancePage() {
         
         const payload = {
             title: newObjectiveData.title!,
-            description: newObjectiveData.description,
+            description: newObjectiveData.description || "",
             type: newObjectiveData.type!,
             assigned_to: assignedTo,
-            project_id: newObjectiveData.project_id,
+            project_id: newObjectiveData.project_id || "",
             is_incentivized: newObjectiveData.is_incentivized!,
-            incentive_id: newObjectiveData.incentive_id,
-            weight: newObjectiveData.weight,
+            incentive_id: newObjectiveData.incentive_id || "",
+            weight: newObjectiveData.weight || 0,
             start_date: newObjectiveData.start_date!,
             end_date: newObjectiveData.end_date!,
         };
@@ -326,7 +326,7 @@ export default function PerformancePage() {
                                         {newObjectiveData.type === 'equipo' && (
                                             <Select value={newObjectiveData.assigned_to} onValueChange={(value) => setNewObjectiveData({...newObjectiveData, assigned_to: value})}>
                                                 <SelectTrigger id="objective-assignee"><SelectValue placeholder="Seleccionar depto."/></SelectTrigger>
-                                                <SelectContent>{departments.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}</SelectContent>
+                                                <SelectContent>{departments.map(d => <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>)}</SelectContent>
                                             </Select>
                                         )}
                                         {newObjectiveData.type === 'empresa' && <Input id="objective-assignee" value="Toda la empresa" disabled/>}
