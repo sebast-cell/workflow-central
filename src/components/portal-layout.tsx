@@ -33,9 +33,13 @@ function PortalSidebarContent() {
 }
 
 export function PortalLayout({ children }: { children: React.ReactNode }) {
+  // Se añade esta línea para obtener el estado de la barra lateral
+  const { isOpen } = useSidebar();
+  
   return (
     <SidebarProvider>
-      <Sidebar>
+      {/* Se añade la propiedad isCollapsed */}
+      <Sidebar isCollapsed={!isOpen}>
         <PortalSidebarContent />
       </Sidebar>
       <SidebarInset>
