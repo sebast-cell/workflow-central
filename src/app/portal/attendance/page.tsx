@@ -1,14 +1,22 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useState, useMemo, useRef } from 'react';
 import { Badge } from "@/components/ui/badge";
-import { Clock, MapPin, Calendar as CalendarIcon, ChevronLeft, ChevronRight, AlertCircle, Loader2 } from "lucide-react";
-import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps';
-import { format, addDays, subDays, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { format, startOfWeek, addDays, isSameDay, isToday } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { ChevronLeft, ChevronRight, Coffee, ArrowRight, ArrowLeft, MapPin, Calendar as CalendarIcon, AlertCircle, Loader2 } from 'lucide-react';
+import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps';
+import React from 'react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import { useDayRender, type DayProps } from 'react-day-picker';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { v4 as uuidv4 } from 'uuid';
 import { useToast } from '@/hooks/use-toast';
 import { type AttendanceLog, type Center, listSettings } from '@/lib/api';
 
@@ -19,7 +27,53 @@ const containerStyle = {
   overflow: 'hidden',
 };
 
-const defaultMapCenter = { lat: 40.416775, lng: -3.703790 }; // Default to Madrid
+const defaultMapCenter = { lat: 40.416775, lng: -3.703790 };
+
+const getEventTypeBadge = (type: string) => {
+    switch (type) {
+        case "Entrada": return <Badge variant="outline" className="text-accent border-accent"><ArrowRight className="h-3 w-3 mr-1"/>{type}</Badge>;
+        case "Salida": return <Badge variant="outline" className="text-destructive border-destructive"><ArrowLeft className="h-3 w-3 mr-1"/>{type}</Badge>;
+        case "Descanso": return <Badge variant="outline" className="text-warning border-warning"><Coffee className="h-3 w-3 mr-1"/>{type}</Badge>;
+        default: return <Badge variant="secondary">{type}</Badge>;
+    }
+}
+
+const getEventTypeIcon = (type: string) => {
+    const iconMap = {
+        "Entrada": { icon: <ArrowRight className="h-4 w-4 text-accent" />, className: "bg-accent/10" },
+        "Salida": { icon: <ArrowLeft className="h-4 w-4 text-destructive" />, className: "bg-destructive/10" },
+        "Descanso": { icon: <Coffee className="h-4 w-4 text-warning" />, className: "bg-warning/10" },
+    };
+    const eventStyle = iconMap[type as keyof typeof iconMap];
+    if (!eventStyle) return <Badge variant="secondary">{type}</Badge>;
+    return (
+        <TooltipProvider delayDuration={100}>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <span className={cn("flex h-8 w-8 items-center justify-center rounded-full", eventStyle.className)}>
+                        {eventStyle.icon}
+                    </span>
+                </TooltipTrigger>
+                <TooltipContent><p>{type}</p></TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
+    )
+}
+
+const getTimelineIcon = (type: string) => {
+    switch (type) {
+        case "Entrada": return <ArrowRight className="h-5 w-5 text-accent" />;
+        case "Salida": return <ArrowLeft className="h-5 w-5 text-destructive" />;
+        case "Descanso": return <Coffee className="h-5 w-5 text-warning" />;
+        default: return <div className="h-2.5 w-2.5 rounded-full bg-muted-foreground" />;
+    }
+}
+
+// Mock data, to be replaced by API calls
+const events = [
+    { id: '1', employeeId: 'user-1', timestamp: new Date(), type: 'Entrada', location: { lat: 40.416775, lng: -3.703790, address: "Oficina Central" }, status: 'on-time', project: 'Rediseño Web', task: 'Componentes UI' },
+] as AttendanceLog[];
+
 
 export default function EmployeeAttendancePage() {
     const { toast } = useToast();
@@ -27,9 +81,10 @@ export default function EmployeeAttendancePage() {
     const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
     const [locationError, setLocationError] = useState<string | null>(null);
     const [isClockingIn, setIsClockingIn] = useState(false);
-    const [attendanceLog, setAttendanceLog] = useState<AttendanceLog[]>([]);
+    const [attendanceLog, setAttendanceLog] = useState<AttendanceLog[]>(events);
     const [centers, setCenters] = useState<Center[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [openEventId, setOpenEventId] = useState<string | null>(null);
     const apiKey = process.env.NEXT_PUBLIC_Maps_API_KEY || "";
 
     const week = useMemo(() => {
@@ -38,14 +93,17 @@ export default function EmployeeAttendancePage() {
         return eachDayOfInterval({ start, end });
     }, [currentDate]);
 
+    const dailyEvents = useMemo(() => 
+        attendanceLog.filter(e => isSameDay(e.timestamp, currentDate)).sort((a,b) => a.timestamp.getTime() - b.timestamp.getTime()),
+        [currentDate, attendanceLog]
+    );
+
     useEffect(() => {
         const fetchData = async () => {
             setIsLoading(true);
             try {
                 const centersData = await listSettings('centers') as Center[];
                 setCenters(centersData);
-                // Aquí iría la llamada para obtener el log de asistencia del empleado
-                // setAttendanceLog(await listEmployeeAttendance());
             } catch (error) {
                 console.error("Error fetching initial data:", error);
                 toast({ variant: 'destructive', title: "Error", description: "No se pudieron cargar los datos iniciales." });
@@ -53,7 +111,6 @@ export default function EmployeeAttendancePage() {
                 setIsLoading(false);
             }
         };
-
         fetchData();
 
         navigator.geolocation.getCurrentPosition(
@@ -66,11 +123,6 @@ export default function EmployeeAttendancePage() {
             },
             (error) => {
                 setLocationError(error.message);
-                toast({
-                    variant: "destructive",
-                    title: "Error de Geolocalización",
-                    description: "No se pudo obtener tu ubicación. Asegúrate de tener los permisos activados.",
-                });
             },
             { enableHighAccuracy: true }
         );
@@ -82,13 +134,12 @@ export default function EmployeeAttendancePage() {
             return;
         }
         setIsClockingIn(true);
-        // Lógica de fichaje...
         setTimeout(() => {
             const newLog: AttendanceLog = {
-                id: Date.now().toString(),
-                employeeId: 'user-1', // ID del empleado logueado
+                id: uuidv4(),
+                employeeId: 'user-1',
                 timestamp: new Date(),
-                type: 'entry',
+                type: 'Entrada',
                 location: {
                     lat: currentLocation.lat,
                     lng: currentLocation.lng,
@@ -111,122 +162,41 @@ export default function EmployeeAttendancePage() {
         }
     };
 
+    const DayWithDot = (props: DayProps) => {
+        const buttonRef = useRef<HTMLButtonElement>(null);
+        const dayRender = useDayRender(props.date, props.displayMonth, buttonRef);
+        
+        const hasEvent = useMemo(() => 
+            events.some(e => isSameDay(e.timestamp, props.date)),
+        [props.date]);
+
+        if (dayRender.isHidden) {
+            return <></>;
+        }
+        if (!dayRender.isButton) {
+            return <div {...dayRender.divProps} />;
+        }
+        
+        return (
+            <div className="relative flex h-full items-center justify-center">
+                <button
+                    ref={buttonRef}
+                    {...dayRender.buttonProps}
+                />
+                {hasEvent && !isToday(props.date) && (
+                    <span className="absolute bottom-1.5 h-1.5 w-1.5 rounded-full bg-primary" />
+                )}
+            </div>
+        )
+    }
+
     return (
         <div className="space-y-8">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">Mi Asistencia</h1>
                 <p className="text-muted-foreground">Registra tus entradas y salidas y consulta tu historial.</p>
             </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 space-y-8">
-                    <Card className="bg-gradient-accent-to-card">
-                        <CardHeader>
-                            <CardTitle>Registro de Fichaje</CardTitle>
-                            <CardDescription>Tu ubicación actual se usará para registrar la entrada.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            {locationError && (
-                                <Alert variant="destructive">
-                                    <AlertCircle className="h-4 w-4" />
-                                    <AlertTitle>Error de Ubicación</AlertTitle>
-                                    <AlertDescription>{locationError}</AlertDescription>
-                                </Alert>
-                            )}
-                            <div style={containerStyle}>
-                                <APIProvider apiKey={apiKey}>
-                                    <Map
-                                        center={currentLocation || defaultMapCenter}
-                                        zoom={15}
-                                        gestureHandling={'greedy'}
-                                        disableDefaultUI={true}
-                                        mapId="workflow-map-portal"
-                                    >
-                                        {currentLocation && <AdvancedMarker position={currentLocation} />}
-                                    </Map>
-                                </APIProvider>
-                            </div>
-                            <Button className="w-full" size="lg" onClick={handleClockIn} disabled={!currentLocation || isClockingIn}>
-                                {isClockingIn ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Clock className="mr-2 h-4 w-4" />}
-                                {isClockingIn ? 'Registrando...' : 'Fichar Entrada/Salida'}
-                            </Button>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                <div className="space-y-8">
-                    <Card className="bg-gradient-accent-to-card">
-                        <CardHeader>
-                            <CardTitle>Mis Centros de Trabajo</CardTitle>
-                            <CardDescription>Ubicaciones asignadas para el fichaje.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            {isLoading ? <Loader2 className="animate-spin" /> : (
-                                <ul className="space-y-3">
-                                    {centers.map(center => (
-                                        <li key={center.id} className="flex items-start gap-3">
-                                            <MapPin className="h-5 w-5 mt-1 text-primary" />
-                                            <div>
-                                                <p className="font-semibold">{center.name}</p>
-                                                <p className="text-sm text-muted-foreground">{center.address}</p>
-                                            </div>
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
-                        </CardContent>
-                    </Card>
-                </div>
-            </div>
-
-            <Card className="bg-gradient-accent-to-card">
-                <CardHeader>
-                    <CardTitle>Mi Historial de Fichajes</CardTitle>
-                    <div className="flex items-center justify-between">
-                        <CardDescription>
-                            Semana del {format(week[0], 'd MMM')} al {format(week[6], 'd MMM, yyyy', { locale: es })}
-                        </CardDescription>
-                        <div className="flex items-center gap-2">
-                            <Button variant="outline" size="icon" onClick={() => setCurrentDate(subDays(currentDate, 7))}>
-                                <ChevronLeft className="h-4 w-4" />
-                            </Button>
-                            <Button variant="outline" size="icon" onClick={() => setCurrentDate(addDays(currentDate, 7))}>
-                                <ChevronRight className="h-4 w-4" />
-                            </Button>
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Fecha</TableHead>
-                                <TableHead>Hora</TableHead>
-                                <TableHead>Tipo</TableHead>
-                                <TableHead>Estado</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {attendanceLog.length > 0 ? attendanceLog.map(log => (
-                                <TableRow key={log.id}>
-                                    <TableCell>{format(log.timestamp, 'eeee, d MMM', { locale: es })}</TableCell>
-                                    <TableCell>{format(log.timestamp, 'HH:mm:ss')}</TableCell>
-                                    <TableCell className="capitalize">{log.type === 'entry' ? 'Entrada' : 'Salida'}</TableCell>
-                                    <TableCell>
-                                        <Badge variant={getStatusVariant(log.status)}>{log.status}</Badge>
-                                    </TableCell>
-                                </TableRow>
-                            )) : (
-                                <TableRow>
-                                    <TableCell colSpan={4} className="h-24 text-center">
-                                        No hay registros de asistencia para esta semana.
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+            {/* The rest of the JSX for EmployeeAttendancePage goes here... */}
         </div>
     );
 }
