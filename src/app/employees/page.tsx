@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from "@/components/ui/sheet";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function EmployeesPage() {
   const { toast } = useToast();
@@ -227,7 +228,7 @@ export default function EmployeesPage() {
                       Añadir Empleado
                     </Button>
                   </SheetTrigger>
-                  <SheetContent className="sm:max-w-md">
+                  <SheetContent className="sm:max-w-md flex flex-col">
                     <SheetHeader>
                       <SheetTitle>
                         {sheetMode === 'add' ? 'Añadir Nuevo Empleado' : 'Editar Empleado'}
@@ -236,68 +237,70 @@ export default function EmployeesPage() {
                         {sheetMode === 'add' ? 'Rellena los datos para añadir un nuevo miembro al equipo.' : `Editando el perfil de ${selectedEmployee?.name}.`}
                       </SheetDescription>
                     </SheetHeader>
-                    <Tabs defaultValue="individual" className="w-full pt-4">
-                        {sheetMode === 'add' && (
-                            <TabsList className="grid w-full grid-cols-2">
-                                <TabsTrigger value="individual">Individual</TabsTrigger>
-                                <TabsTrigger value="multiple">Múltiple</TabsTrigger>
-                            </TabsList>
-                        )}
-                        <TabsContent value="individual">
-                            <form onSubmit={handleFormSubmit}>
-                              <div className="grid gap-4 py-4">
-                                <div className="space-y-2">
-                                  <Label htmlFor="name">Nombre</Label>
-                                  <Input id="name" value={formData.name || ''} onChange={handleInputChange} placeholder="Ej. Juan Pérez" required />
+                    <div className="flex-grow overflow-y-auto">
+                      <ScrollArea className="h-full pr-6">
+                        <Tabs defaultValue="individual" className="w-full pt-4">
+                            {sheetMode === 'add' && (
+                                <TabsList className="grid w-full grid-cols-2">
+                                    <TabsTrigger value="individual">Individual</TabsTrigger>
+                                    <TabsTrigger value="multiple">Múltiple</TabsTrigger>
+                                </TabsList>
+                            )}
+                            <TabsContent value="individual">
+                                <form onSubmit={handleFormSubmit} className="space-y-4">
+                                  <div className="space-y-2">
+                                    <Label htmlFor="name">Nombre</Label>
+                                    <Input id="name" value={formData.name || ''} onChange={handleInputChange} placeholder="Ej. Juan Pérez" required />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor="email">Email</Label>
+                                    <Input id="email" type="email" value={formData.email || ''} onChange={handleInputChange} placeholder="juan@ejemplo.com" required />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor="phone">Teléfono</Label>
+                                    <Input id="phone" type="tel" value={formData.phone || ''} onChange={handleInputChange} placeholder="+34 600 000 000" />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor="department">Departamento</Label>
+                                    <Select value={formData.department} onValueChange={(value) => handleSelectChange('department', value)}>
+                                      <SelectTrigger id="department">
+                                        <SelectValue placeholder="Seleccionar" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {departments.map(d => <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>)}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor="role">Cargo</Label>
+                                    <Input id="role" value={formData.role || ''} onChange={handleInputChange} placeholder="Ej. Desarrollador Frontend" />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor="hireDate">Fecha de Contratación</Label>
+                                    <Input id="hireDate" type="date" value={formData.hireDate || ''} onChange={handleInputChange} />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor="schedule">Horario</Label>
+                                    <Input id="schedule" value={formData.schedule || ''} onChange={handleInputChange} placeholder="Ej. 9-5, Fijo, Flexible" />
+                                  </div>
+                                  <SheetFooter className="pt-4">
+                                    <Button type="submit" disabled={isSubmitting}>
+                                      {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                      {sheetMode === 'add' ? 'Añadir Empleado' : 'Guardar Cambios'}
+                                    </Button>
+                                  </SheetFooter>
+                                </form>
+                            </TabsContent>
+                            <TabsContent value="multiple">
+                                <div className="py-4 space-y-4 text-center">
+                                    <p className="text-muted-foreground">Sube un archivo de Excel o envía un enlace de invitación para añadir múltiples empleados a la vez.</p>
+                                    <Button variant="outline"><UploadCloud className="mr-2 h-4 w-4" /> Subir Excel</Button>
+                                    <Button variant="outline"><LinkIcon className="mr-2 h-4 w-4" /> Enviar Invitaciones</Button>
                                 </div>
-                                <div className="space-y-2">
-                                  <Label htmlFor="email">Email</Label>
-                                  <Input id="email" type="email" value={formData.email || ''} onChange={handleInputChange} placeholder="juan@ejemplo.com" required />
-                                </div>
-                                <div className="space-y-2">
-                                  <Label htmlFor="phone">Teléfono</Label>
-                                  <Input id="phone" type="tel" value={formData.phone || ''} onChange={handleInputChange} placeholder="+34 600 000 000" />
-                                </div>
-                                <div className="space-y-2">
-                                  <Label htmlFor="department">Departamento</Label>
-                                   <Select value={formData.department} onValueChange={(value) => handleSelectChange('department', value)}>
-                                    <SelectTrigger id="department">
-                                      <SelectValue placeholder="Seleccionar" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {departments.map(d => <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>)}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                                <div className="space-y-2">
-                                  <Label htmlFor="role">Cargo</Label>
-                                  <Input id="role" value={formData.role || ''} onChange={handleInputChange} placeholder="Ej. Desarrollador Frontend" />
-                                </div>
-                                <div className="space-y-2">
-                                  <Label htmlFor="hireDate">Fecha de Contratación</Label>
-                                  <Input id="hireDate" type="date" value={formData.hireDate || ''} onChange={handleInputChange} />
-                                </div>
-                                <div className="space-y-2">
-                                  <Label htmlFor="schedule">Horario</Label>
-                                  <Input id="schedule" value={formData.schedule || ''} onChange={handleInputChange} placeholder="Ej. 9-5, Fijo, Flexible" />
-                                </div>
-                              </div>
-                              <SheetFooter>
-                                <Button type="submit" disabled={isSubmitting}>
-                                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                  {sheetMode === 'add' ? 'Añadir Empleado' : 'Guardar Cambios'}
-                                </Button>
-                              </SheetFooter>
-                            </form>
-                        </TabsContent>
-                        <TabsContent value="multiple">
-                            <div className="py-4 space-y-4 text-center">
-                                <p className="text-muted-foreground">Sube un archivo de Excel o envía un enlace de invitación para añadir múltiples empleados a la vez.</p>
-                                <Button variant="outline"><UploadCloud className="mr-2 h-4 w-4" /> Subir Excel</Button>
-                                <Button variant="outline"><LinkIcon className="mr-2 h-4 w-4" /> Enviar Invitaciones</Button>
-                            </div>
-                        </TabsContent>
-                    </Tabs>
+                            </TabsContent>
+                        </Tabs>
+                      </ScrollArea>
+                    </div>
                   </SheetContent>
               </Sheet>
             </div>
@@ -375,5 +378,3 @@ export default function EmployeesPage() {
     </div>
   )
 }
-
-    
