@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',  // <-- ESTA ES LA CLAVE
+  // output: 'standalone', // <--- ¡COMENTA O ELIMINA ESTA LÍNEA!
 
   images: {
     remotePatterns: [
