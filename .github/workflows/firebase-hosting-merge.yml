@@ -15,5 +15,5 @@ jobs:
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
           channelId: live
           projectId: mi-workflow-app
-        env: # <-- LÍNEAS AÑADIDAS
-          FIREBASE_CLI_EXPERIMENTS: webframeworks # <-- LÍNEAS AÑADIDAS
+        env:
+          FIREBASE_CLI_EXPERIMENTS: webframeworks
