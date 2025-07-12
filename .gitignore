@@ -1,6 +1,6 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# dependencies
+# Directorios de dependencias
 /node_modules
 /.pnp
 .pnp.*
@@ -10,36 +10,34 @@
 !.yarn/releases
 !.yarn/versions
 
-# testing
-/coverage
-
-# next.js
+# Directorios de build y caché de Next.js
 /.next/
 /out/
+/build # Si usas React con create-react-app (o similar)
 
-# production
-/build
+# Directorios de Firebase CLI y artefactos de despliegue
+.firebase/ # <--- ¡ESTA ES LA LÍNEA CRÍTICA QUE FALTABA!
+firebase-debug.log*
+firestore-debug.log
+hosting-debug.log*
 
-# misc
-.DS_Store
-*.pem
+# Archivos de entorno local (contienen secretos o configuraciones específicas de tu máquina)
+.env
+.env.local
+.env.development.local
+.env.production.local
 
-# debug
+# Archivos de caché o temporales
+.DS_Store # macOS
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+*.tsbuildinfo # Archivos de caché de TypeScript
+next-env.d.ts # Archivo de declaración de tipos generado por Next.js
 
-# vercel
+# Vercel
 .vercel
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-
-.genkit/*
-.env*
-
-# firebase
-firebase-debug.log
-firestore-debug.log
+# Genkit (si aplica)
+.genkit/
