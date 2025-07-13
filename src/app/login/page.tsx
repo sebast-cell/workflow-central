@@ -1,4 +1,6 @@
 // src/app/login/page.tsx
+"use client"; // <--- ¡AÑADE ESTA LÍNEA AL PRINCIPIO!
+
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
