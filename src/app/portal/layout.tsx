@@ -1,17 +1,15 @@
-<<<<<<< HEAD
-
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
-import LayoutProvider from '@/components/layout-provider';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import { AuthProvider } from '@/contexts/auth-context';
-=======
-// src/app/layout.tsx
-import './globals.css'; // Asegúrate de que esta ruta sea correcta si tienes un globals.css
->>>>>>> f82117f479ac19379af2965913c66ec24753ba05
 
-export const metadata = {
-  title: 'Workflow Central App',
+// Nota: El componente LayoutProvider no estaba en una de las versiones,
+// si lo necesitas, asegúrate de que el import es correcto.
+// import LayoutProvider from '@/components/layout-provider';
+
+export const metadata: Metadata = {
+  title: 'WorkFlow Central',
   description: 'Tu centro de mando para la gestión de equipos.',
 };
 
@@ -21,18 +19,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-<<<<<<< HEAD
     <html lang="es" suppressHydrationWarning>
       <body className="font-body antialiased">
         <AuthProvider>
-          <LayoutProvider>{children}</LayoutProvider>
+          <SidebarProvider>
+            {/* Si usas LayoutProvider, envuelve a children: <LayoutProvider>{children}</LayoutProvider> */}
+            {children}
+          </SidebarProvider>
         </AuthProvider>
         <Toaster />
       </body>
-=======
-    <html lang="es">
-      <body>{children}</body>
->>>>>>> f82117f479ac19379af2965913c66ec24753ba05
     </html>
   );
 }

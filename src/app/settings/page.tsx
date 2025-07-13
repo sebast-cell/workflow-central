@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -19,16 +18,17 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { format, addDays, parseISO } from "date-fns";
+import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { DateRange } from "react-day-picker";
 import { APIProvider, Map, AdvancedMarker, useMapsLibrary } from "@vis.gl/react-google-maps";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { type Employee, type Center, type Department, type Role, type Break, type ClockInType, type Shift, type FlexibleSchedule, type FixedSchedule, type AbsenceType, type Holiday, type CalendarData, type VacationPolicy, type Incentive, listIncentives, createIncentive, listSettings, createSetting, updateSetting, deleteSetting, listEmployees, deleteIncentive, updateIncentive } from "@/lib/api";
+import { type Employee, type Center, type Department, type Role, type Break, type ClockInType, type Shift, type FlexibleSchedule, type FixedSchedule, type AbsenceType, type Holiday, type CalendarData, type VacationPolicy, type Incentive, listIncentives, createIncentive, listSettings, createSetting, updateSetting, deleteSetting, listEmployees } from "@/lib/api";
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from "@/hooks/use-toast";
+
 
 const allPermissions = [
     { id: 'view_dashboard', label: 'Ver Panel Principal' },
@@ -71,10 +71,10 @@ const CenterDialogContent = ({
 }: {
     mode: 'add' | 'edit';
     center: Center | null;
-    onSubmit: (data: Omit<Center, 'id'> | Center) => void;
+    onSubmit: (data: Center) => void;
     onClose: () => void;
 }) => {
-    const [centerData, setCenterData] = useState<Omit<Center, 'id'> | Center | null>(null);
+    const [centerData, setCenterData] = useState<Center | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const places = useMapsLibrary('places');
     const apiKey = process.env.NEXT_PUBLIC_Maps_API_KEY || "";
@@ -83,7 +83,7 @@ const CenterDialogContent = ({
         if (mode === 'edit' && center) {
             setCenterData(center);
         } else {
-            setCenterData({ name: '', address: '', radius: 100, lat: defaultMapCenter.lat, lng: defaultMapCenter.lng, timezone: 'Europe/Madrid' });
+            setCenterData({ id: uuidv4(), name: '', address: '', radius: 100, lat: defaultMapCenter.lat, lng: defaultMapCenter.lng, timezone: 'Europe/Madrid' });
         }
     }, [mode, center]);
 
@@ -105,7 +105,9 @@ const CenterDialogContent = ({
             const lat = place.geometry.location.lat();
             const lng = place.geometry.location.lng();
             
-            setCenterData(prev => ({ ...prev!, address, lat, lng, timezone: 'Cargando...' }));
+            const prevData = centerData || { id: '', name: '', radius: 100 };
+            const updatedData = { ...prevData, address, lat, lng, timezone: 'Cargando...' };
+            setCenterData(updatedData);
 
             try {
                 const timestamp = Math.floor(Date.now() / 1000);
@@ -127,7 +129,7 @@ const CenterDialogContent = ({
             const pacContainers = document.querySelectorAll('.pac-container');
             pacContainers.forEach(container => container.remove());
         };
-    }, [places, apiKey]);
+    }, [places, apiKey, centerData]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -214,7 +216,7 @@ const CenterDialog = ({
     onOpenChange: (isOpen: boolean) => void;
     mode: 'add' | 'edit';
     center: Center | null;
-    onSubmit: (data: Omit<Center, 'id'> | Center) => void;
+    onSubmit: (data: Center) => void;
 }) => {
     const apiKey = process.env.NEXT_PUBLIC_Maps_API_KEY || "";
     
@@ -234,8 +236,7 @@ const CentersTabContent = () => {
     const { toast } = useToast();
     const [centers, setCenters] = useState<Center[]>([]);
     const [departments, setDepartments] = useState<Department[]>([]);
-    const [isLoading, setIsLoading] = useState({ centers: true, departments: true });
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     const [isCenterDialogOpen, setIsCenterDialogOpen] = useState(false);
     const [dialogCenterMode, setDialogCenterMode] = useState<'add' | 'edit'>('add');
@@ -249,39 +250,29 @@ const CentersTabContent = () => {
     const [authError, setAuthError] = useState(false);
     const apiKey = process.env.NEXT_PUBLIC_Maps_API_KEY || "";
 
-    const fetchCenters = useCallback(async () => {
-        setIsLoading(prev => ({...prev, centers: true}));
+    const fetchData = async () => {
+        setIsLoading(true);
         try {
-            const data = await listSettings<Center>('centers');
-            setCenters(data);
+            const [centersData, departmentsData] = await Promise.all([
+                listSettings('centers'),
+                listSettings('departments'),
+            ]);
+            setCenters(centersData as Center[]);
+            setDepartments(departmentsData as Department[]);
         } catch (error) {
-            toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los centros de trabajo." });
+            console.error("Failed to load settings data", error);
+            toast({ variant: 'destructive', title: "Error", description: "No se pudieron cargar los datos de configuración." });
         } finally {
-            setIsLoading(prev => ({...prev, centers: false}));
+            setIsLoading(false);
         }
-    }, [toast]);
-    
-    const fetchDepartments = useCallback(async () => {
-        setIsLoading(prev => ({...prev, departments: true}));
-        try {
-            const data = await listSettings<Department>('departments');
-            setDepartments(data);
-        } catch (error) {
-            toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los departamentos." });
-        } finally {
-            setIsLoading(prev => ({...prev, departments: false}));
-        }
-    }, [toast]);
+    };
     
     useEffect(() => {
+        fetchData();
         const handleAuthError = () => setAuthError(true);
         window.addEventListener('gm_authFailure', handleAuthError);
-        
-        fetchCenters();
-        fetchDepartments();
-
         return () => window.removeEventListener('gm_authFailure', handleAuthError);
-    }, [fetchCenters, fetchDepartments]);
+    }, [toast]);
 
     const openAddCenterDialog = () => {
         setDialogCenterMode('add');
@@ -295,33 +286,19 @@ const CentersTabContent = () => {
         setIsCenterDialogOpen(true);
     };
 
-    const handleCenterFormSubmit = async (centerData: Omit<Center, 'id'> | Center) => {
-        setIsSubmitting(true);
-        try {
-            if (dialogCenterMode === 'add') {
-                await createSetting('centers', centerData as Omit<Center, 'id'>);
-                toast({ title: "Centro de trabajo creado" });
-            } else if (dialogCenterMode === 'edit' && 'id' in centerData) {
-                await updateSetting('centers', centerData.id, centerData);
-                toast({ title: "Centro de trabajo actualizado" });
-            }
-            await fetchCenters();
-            setIsCenterDialogOpen(false);
-        } catch(err) {
-             toast({ variant: "destructive", title: "Error", description: "No se pudo guardar el centro de trabajo." });
-        } finally {
-            setIsSubmitting(false);
+    const handleCenterFormSubmit = (centerData: Center) => {
+        // TODO: In real app, call createSetting or updateSetting API
+        if (dialogCenterMode === 'add') {
+            setCenters(prev => [...prev, centerData]);
+        } else if (dialogCenterMode === 'edit' && selectedCenter) {
+            setCenters(prev => prev.map(c => (c.id === selectedCenter.id ? centerData : c)));
         }
+        setIsCenterDialogOpen(false);
     };
 
-    const handleDeleteCenter = async (centerId: string) => {
-         try {
-            await deleteSetting('centers', centerId);
-            toast({ title: "Centro de trabajo eliminado" });
-            await fetchCenters();
-        } catch(err) {
-             toast({ variant: "destructive", title: "Error", description: "No se pudo eliminar el centro de trabajo." });
-        }
+    const handleDeleteCenter = (centerId: string) => {
+        // TODO: In real app, call deleteSetting API
+        setCenters(prev => prev.filter(c => c.id !== centerId));
     };
 
     const openAddDeptDialog = () => {
@@ -338,36 +315,28 @@ const CentersTabContent = () => {
         setIsDeptDialogOpen(true);
     };
 
-    const handleDepartmentFormSubmit = async (e: React.FormEvent) => {
+    const handleDepartmentFormSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!newDepartmentName) return;
-        setIsSubmitting(true);
-        try {
-            if (dialogDeptMode === 'add') {
-                await createSetting('departments', { name: newDepartmentName });
-                toast({ title: "Departamento creado" });
-            } else if (dialogDeptMode === 'edit' && selectedDepartment) {
-                await updateSetting('departments', selectedDepartment.id, { name: newDepartmentName });
-                toast({ title: "Departamento actualizado" });
-            }
-            await fetchDepartments();
-            setIsDeptDialogOpen(false);
-        } catch(err) {
-             toast({ variant: "destructive", title: "Error", description: "No se pudo guardar el departamento." });
-        } finally {
-            setIsSubmitting(false);
+        // TODO: In real app, call createSetting or updateSetting API
+        if (dialogDeptMode === 'add') {
+            setDepartments(prev => [...prev, { id: uuidv4(), name: newDepartmentName }]);
+        } else if (dialogDeptMode === 'edit' && selectedDepartment) {
+            setDepartments(prev => prev.map(d => (d.id === selectedDepartment.id ? { ...d, name: newDepartmentName } : d)));
         }
+
+        setNewDepartmentName("");
+        setIsDeptDialogOpen(false);
     };
     
-    const handleDeleteDepartment = async (departmentId: string) => {
-         try {
-            await deleteSetting('departments', departmentId);
-            toast({ title: "Departamento eliminado" });
-            await fetchDepartments();
-        } catch(err) {
-             toast({ variant: "destructive", title: "Error", description: "No se pudo eliminar el departamento." });
-        }
+    const handleDeleteDepartment = (departmentId: string) => {
+        // TODO: In real app, call deleteSetting API
+        setDepartments(prev => prev.filter(d => d.id !== departmentId));
     };
+
+    if (isLoading) {
+        return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+    }
 
     return (
         <div className="space-y-4">
@@ -389,7 +358,7 @@ const CentersTabContent = () => {
                 <Button onClick={openAddCenterDialog} disabled={authError}><PlusCircle className="mr-2 h-4 w-4"/> Añadir Centro</Button>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                {isLoading.centers ? <Loader2 className="animate-spin" /> : centers.length > 0 ? centers.map((center) => (
+                {centers.map((center) => (
                     <div key={center.id} className="flex items-center justify-between rounded-xl border p-4">
                         <div>
                             <h3 className="font-semibold">{center.name}</h3>
@@ -402,22 +371,12 @@ const CentersTabContent = () => {
                         </div>
                         <div className="flex items-center">
                             <Button variant="ghost" size="sm" onClick={() => openEditCenterDialog(center)} disabled={authError}>Editar</Button>
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader><AlertDialogTitle>Confirmar Eliminación</AlertDialogTitle></AlertDialogHeader>
-                                    <AlertDialogDescription>¿Seguro que quieres eliminar el centro "{center.name}"?</AlertDialogDescription>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => handleDeleteCenter(center.id)} className={buttonVariants({ variant: "destructive" })}>Eliminar</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
+                            <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDeleteCenter(center.id)}>
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
                         </div>
                     </div>
-                )) : <p className="text-sm text-muted-foreground text-center py-4">No se han configurado centros de trabajo.</p>}
+                ))}
                 </CardContent>
             </Card>
             <CenterDialog 
@@ -444,33 +403,23 @@ const CentersTabContent = () => {
                                         <Input id="dept-name" placeholder="Ej. Soporte Técnico" value={newDepartmentName} onChange={(e) => setNewDepartmentName(e.target.value)} required/>
                                     </div>
                                 </div>
-                                <DialogFooter><Button type="submit" disabled={isSubmitting}>{isSubmitting && <Loader2 className="animate-spin mr-2 h-4 w-4" />}Guardar</Button></DialogFooter>
+                                <DialogFooter><Button type="submit">Guardar</Button></DialogFooter>
                             </form>
                         </DialogContent>
                     </Dialog>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {isLoading.departments ? <Loader2 className="animate-spin" /> : departments.length > 0 ? departments.map((dept) => (
+                    {departments.map((dept) => (
                         <div key={dept.id} className="flex items-center justify-between rounded-xl border p-4">
                             <h3 className="font-semibold">{dept.name}</h3>
                             <div className="flex items-center">
                                 <Button variant="ghost" size="sm" onClick={() => openEditDeptDialog(dept)}>Editar</Button>
-                                 <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader><AlertDialogTitle>Confirmar Eliminación</AlertDialogTitle></AlertDialogHeader>
-                                        <AlertDialogDescription>¿Seguro que quieres eliminar el departamento "{dept.name}"? Esto podría afectar a los empleados asignados.</AlertDialogDescription>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                            <AlertDialogAction onClick={() => handleDeleteDepartment(dept.id)} className={buttonVariants({ variant: "destructive" })}>Eliminar</AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
+                                <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDeleteDepartment(dept.id)}>
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
                             </div>
                         </div>
-                    )) : <p className="text-sm text-muted-foreground text-center py-4">No hay departamentos creados.</p>}
+                    ))}
                 </CardContent>
             </Card>
         </div>
@@ -513,7 +462,7 @@ const SettingsTabs = () => {
     const [isShiftDialogOpen, setIsShiftDialogOpen] = useState(false);
     const [dialogShiftMode, setDialogShiftMode] = useState<'add' | 'edit'>('add');
     const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
-    const [shiftFormData, setShiftFormData] = useState<Omit<Shift, 'id'>>({ name: "", start: "09:00", end: "17:00" });
+    const [shiftFormData, setShiftFormData] = useState<Omit<Shift, 'id'>>({ name: "09:00", start: "09:00", end: "17:00" });
 
     const [isFlexibleScheduleDialogOpen, setIsFlexibleScheduleDialogOpen] = useState(false);
     const [dialogFlexibleScheduleMode, setDialogFlexibleScheduleMode] = useState<'add' | 'edit'>('add');
@@ -528,8 +477,9 @@ const SettingsTabs = () => {
     const [isAbsenceTypeDialogOpen, setIsAbsenceTypeDialogOpen] = useState(false);
     const [dialogAbsenceTypeMode, setDialogAbsenceTypeMode] = useState<'add' | 'edit'>('add');
     const [selectedAbsenceType, setSelectedAbsenceType] = useState<AbsenceType | null>(null);
-    const [absenceTypeFormData, setAbsenceTypeFormData] = useState<Omit<AbsenceType, 'id'>>({ name: '', color: 'bg-blue-500', remunerated: true, unit: 'days', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [], requiresApproval: true, allowAttachment: false, isDisabled: false, assignment: 'all', assignedTo: [] });
+    const [absenceTypeFormData, setAbsenceTypeFormData] = useState<Omit<AbsenceType, 'id' | 'blockedPeriods'> & { blockedPeriods?: { id: string, from: string, to: string }[] }>({ name: '', color: 'bg-blue-500', remunerated: true, unit: 'days', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [], requiresApproval: true, allowAttachment: false, isDisabled: false, assignment: 'all', assignedTo: [] });
     const [newAbsenceBlockedPeriod, setNewAbsenceBlockedPeriod] = useState<DateRange | undefined>(undefined);
+
 
     const [selectedCalendarId, setSelectedCalendarId] = useState<string | null>(null);
     const [isCalendarDialogOpen, setIsCalendarDialogOpen] = useState(false);
@@ -547,46 +497,54 @@ const SettingsTabs = () => {
     const [dialogIncentiveMode, setDialogIncentiveMode] = useState<'add' | 'edit'>('add');
     const [selectedIncentive, setSelectedIncentive] = useState<Incentive | null>(null);
     const [incentiveFormData, setIncentiveFormData] = useState<Omit<Incentive, 'id' | 'company_id'>>({ name: "", type: "económico", value: "", period: "anual", active: true, condition_expression: { modality: 'all-or-nothing' }});
-    
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const fetcher = useCallback(async (model: string, setter: React.Dispatch<any>) => {
-        setIsLoading(prev => ({ ...prev, [model]: true }));
+    const fetchSetting = async (settingName: keyof typeof dataHooks, hook: (data: any) => void) => {
+        setIsLoading(prev => ({...prev, [settingName]: true}));
         try {
-            const data = await listSettings(model);
-            setter(data);
+            const data = await listSettings(settingName);
+            hook(data);
         } catch (error) {
-            toast({ variant: "destructive", title: `Error al cargar ${model}`, description: `No se pudieron cargar los datos de ${model}.` });
+            console.error(`Failed to fetch ${settingName}`, error);
+            toast({ variant: 'destructive', title: `Error al cargar ${settingName}` });
         } finally {
-            setIsLoading(prev => ({ ...prev, [model]: false }));
+            setIsLoading(prev => ({...prev, [settingName]: false}));
         }
-    }, [toast]);
-
-    const fetchIncentives = useCallback(async () => {
-        setIsLoading(prev => ({ ...prev, incentives: true }));
-        try {
-            const data = await listIncentives();
-            setIncentives(data);
-        } catch (error) {
-            toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los incentivos." });
-        } finally {
-            setIsLoading(prev => ({ ...prev, incentives: false }));
-        }
-    }, [toast]);
+    };
     
+    const dataHooks = {
+        roles: setRoles,
+        breaks: setBreaks,
+        clockInTypes: setClockInTypes,
+        shifts: setShifts,
+        flexibleSchedules: setFlexibleSchedules,
+        fixedSchedules: setFixedSchedules,
+        absenceTypes: setAbsenceTypes,
+        calendars: setCalendars,
+        vacationPolicies: setVacationPolicies,
+    };
+
     useEffect(() => {
-        fetcher('absenceTypes', setAbsenceTypes);
-        fetcher('calendars', setCalendars);
-        fetchIncentives();
-        // Mock data for now
-        setRoles([]); setIsLoading(p => ({...p, roles: false}));
-        setBreaks([]); setIsLoading(p => ({...p, breaks: false}));
-        setClockInTypes([]); setIsLoading(p => ({...p, clockInTypes: false}));
-        setShifts([]); setIsLoading(p => ({...p, shifts: false}));
-        setFlexibleSchedules([]); setIsLoading(p => ({...p, flexibleSchedules: false}));
-        setFixedSchedules([]); setIsLoading(p => ({...p, fixedSchedules: false}));
-        setVacationPolicies([]); setIsLoading(p => ({...p, vacationPolicies: false}));
-    }, [fetcher, fetchIncentives]);
+        Object.entries(dataHooks).forEach(([name, hook]) => {
+            fetchSetting(name as keyof typeof dataHooks, hook);
+        });
+        
+        const fetchEmployeesAndIncentives = async () => {
+            setIsLoading(prev => ({...prev, employees: true, incentives: true }));
+            try {
+                const [empData, incData] = await Promise.all([listEmployees(), listIncentives()]);
+                setEmployees(empData);
+                setIncentives(incData);
+            } catch (error) {
+                toast({ variant: 'destructive', title: "Error", description: "No se pudieron cargar empleados e incentivos." });
+            } finally {
+                setIsLoading(prev => ({...prev, employees: false, incentives: false }));
+            }
+        };
+        
+        fetchEmployeesAndIncentives();
+    }, [toast]);
+
+    const allSchedules = ['Horario Fijo', 'Horario Flexible', ...shifts.map(s => s.name)];
     
     // Role Handlers
     const openAddRoleDialog = () => { setIsRoleDialogOpen(true); setDialogRoleMode('add'); setSelectedRole(null); setRoleFormData({ name: '', description: '', permissions: [] }); };
@@ -594,15 +552,31 @@ const SettingsTabs = () => {
     
     const handleRoleFormSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
-      // Mock functionality
-      if (dialogRoleMode === 'add') {
-          const newRole = { id: uuidv4(), ...roleFormData } as Role;
-          setRoles(prev => [...prev, newRole]);
-      } else if (selectedRole) {
-          const updatedRole = { ...selectedRole, ...roleFormData };
-          setRoles(prev => prev.map(r => r.id === selectedRole.id ? updatedRole : r));
+      if (!roleFormData.name) {
+        toast({ variant: 'destructive', title: "Error", description: "El nombre del rol es obligatorio." });
+        return;
       }
-      setIsRoleDialogOpen(false);
+
+      try {
+        if (dialogRoleMode === 'add') {
+          const payload: Omit<Role, 'id'> = {
+            name: roleFormData.name,
+            description: roleFormData.description || "",
+            permissions: roleFormData.permissions || [],
+          };
+          const newRole = await createSetting<Role>('roles', payload);
+          setRoles(prev => [...prev, newRole]);
+          toast({ title: "Rol creado", description: `El rol "${newRole.name}" ha sido creado.` });
+        } else if (dialogRoleMode === 'edit' && selectedRole?.id) {
+          const updatedRole = await updateSetting<Role>('roles', selectedRole.id, roleFormData);
+          setRoles(prev => prev.map(r => r.id === updatedRole.id ? updatedRole : r));
+          toast({ title: "Rol actualizado", description: `El rol "${updatedRole.name}" ha sido guardado.` });
+        }
+        setIsRoleDialogOpen(false);
+      } catch (error) {
+        console.error("Failed to save role", error);
+        toast({ variant: 'destructive', title: "Error", description: "No se pudo guardar el rol." });
+      }
     };
 
     const confirmDeleteRole = (role: Role) => {
@@ -612,239 +586,76 @@ const SettingsTabs = () => {
 
     const handleDeleteRole = async () => {
         if (!roleToDelete?.id) return;
-        setRoles(prev => prev.filter(r => r.id !== roleToDelete.id));
-        setIsDeleteRoleAlertOpen(false);
-        setRoleToDelete(null);
+        try {
+            await deleteSetting('roles', roleToDelete.id);
+            setRoles(prev => prev.filter(r => r.id !== roleToDelete.id));
+            toast({ title: "Rol eliminado" });
+        } catch (error) {
+            console.error("Failed to delete role", error);
+            toast({ variant: 'destructive', title: "Error", description: "No se pudo eliminar el rol." });
+        } finally {
+            setIsDeleteRoleAlertOpen(false);
+            setRoleToDelete(null);
+        }
     };
     
     // Break Handlers
     const openAddBreakDialog = () => { setIsBreakDialogOpen(true); setDialogBreakMode('add'); setBreakFormData({ id: uuidv4(), name: "", remunerated: false, limit: 30, isAutomatic: false, intervalStart: "", intervalEnd: "", notifyStart: false, notifyEnd: false, assignedTo: [] }); };
     const openEditBreakDialog = (br: Break) => { setIsBreakDialogOpen(true); setDialogBreakMode('edit'); setSelectedBreak(br); setBreakFormData(br); };
-    const handleBreakFormSubmit = (e: React.FormEvent) => { 
-        e.preventDefault();
-        if (dialogBreakMode === 'add') {
-            setBreaks(prev => [...prev, breakFormData]);
-        } else if (selectedBreak) {
-            setBreaks(prev => prev.map(b => b.id === selectedBreak.id ? breakFormData : b));
-        }
-        setIsBreakDialogOpen(false); 
-    };
-    const handleDeleteBreak = (breakId: string) => { setBreaks(p => p.filter(b => b.id !== breakId)); };
+    const handleBreakFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: API call */ setIsBreakDialogOpen(false); };
+    const handleDeleteBreak = (breakId: string) => { setBreaks(p => p.filter(b => b.id !== breakId)); /* TODO: API call */ };
 
     // ClockIn Type Handlers
     const openAddClockInTypeDialog = () => { setIsClockInTypeDialogOpen(true); setDialogClockInTypeMode('add'); setClockInTypeFormData({ id: uuidv4(), name: "", color: "bg-blue-500", assignment: 'all', assignedTo: [] }); };
     const openEditClockInTypeDialog = (type: ClockInType) => { setIsClockInTypeDialogOpen(true); setDialogClockInTypeMode('edit'); setSelectedClockInType(type); setClockInTypeFormData(type); };
-    const handleClockInTypeFormSubmit = (e: React.FormEvent) => { 
-        e.preventDefault(); 
-        if (dialogClockInTypeMode === 'add') {
-            setClockInTypes(prev => [...prev, clockInTypeFormData]);
-        } else if (selectedClockInType) {
-            setClockInTypes(prev => prev.map(c => c.id === selectedClockInType.id ? clockInTypeFormData : c));
-        }
-        setIsClockInTypeDialogOpen(false); 
-    };
-    const handleDeleteClockInType = (typeId: string) => { setClockInTypes(p => p.filter(t => t.id !== typeId)); };
+    const handleClockInTypeFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: API call */ setIsClockInTypeDialogOpen(false); };
+    const handleDeleteClockInType = (typeId: string) => { setClockInTypes(p => p.filter(t => t.id !== typeId)); /* TODO: API call */ };
     
     // Schedule & Shift Handlers
-    const openAddShiftDialog = () => { setIsShiftDialogOpen(true); setDialogShiftMode('add'); setShiftFormData({ name: "", start: "09:00", end: "17:00" }); };
+    const openAddShiftDialog = () => { setIsShiftDialogOpen(true); setDialogShiftMode('add'); setShiftFormData({ name: "09:00", start: "09:00", end: "17:00" }); };
     const openEditShiftDialog = (shift: Shift) => { setIsShiftDialogOpen(true); setDialogShiftMode('edit'); setSelectedShift(shift); setShiftFormData(shift); };
-    const handleShiftFormSubmit = (e: React.FormEvent) => { 
-        e.preventDefault();
-        const newShift = { id: uuidv4(), ...shiftFormData };
-        if (dialogShiftMode === 'add') {
-            setShifts(prev => [...prev, newShift]);
-        } else if (selectedShift) {
-            setShifts(prev => prev.map(s => s.id === selectedShift.id ? { ...newShift, id: s.id } : s));
-        }
-        setIsShiftDialogOpen(false); 
-    };
-    const handleDeleteShift = (shiftId: string) => { setShifts(p => p.filter(s => s.id !== shiftId)); };
+    const handleShiftFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: API call */ setIsShiftDialogOpen(false); };
+    const handleDeleteShift = (shiftId: string) => { setShifts(p => p.filter(s => s.id !== shiftId)); /* TODO: API call */ };
 
     const openAddFlexibleScheduleDialog = () => { setIsFlexibleScheduleDialogOpen(true); setDialogFlexibleScheduleMode('add'); setFlexibleScheduleFormData({ name: "", workDays: [], hoursPerDay: 8, noWeeklyHours: false }); };
     const openEditFlexibleScheduleDialog = (schedule: FlexibleSchedule) => { setIsFlexibleScheduleDialogOpen(true); setDialogFlexibleScheduleMode('edit'); setSelectedFlexibleSchedule(schedule); setFlexibleScheduleFormData(schedule); };
-    const handleFlexibleScheduleFormSubmit = (e: React.FormEvent) => { 
-        e.preventDefault();
-        const newSchedule = { id: uuidv4(), ...flexibleScheduleFormData };
-        if (dialogFlexibleScheduleMode === 'add') {
-            setFlexibleSchedules(prev => [...prev, newSchedule]);
-        } else if (selectedFlexibleSchedule) {
-            setFlexibleSchedules(prev => prev.map(s => s.id === selectedFlexibleSchedule.id ? { ...newSchedule, id: s.id } : s));
-        }
-        setIsFlexibleScheduleDialogOpen(false); 
-    };
-    const handleDeleteFlexibleSchedule = (scheduleId: string) => { setFlexibleSchedules(p => p.filter(s => s.id !== scheduleId)); };
+    const handleFlexibleScheduleFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: API call */ setIsFlexibleScheduleDialogOpen(false); };
+    const handleDeleteFlexibleSchedule = (scheduleId: string) => { setFlexibleSchedules(p => p.filter(s => s.id !== scheduleId)); /* TODO: API call */ };
     
     const openAddFixedScheduleDialog = () => { setIsFixedScheduleDialogOpen(true); setDialogFixedScheduleMode('add'); setFixedScheduleFormData({ name: "", workDays: [], ranges: [{ id: Date.now().toString(), start: "09:00", end: "17:00" }], isNightShift: false }); };
     const openEditFixedScheduleDialog = (schedule: FixedSchedule) => { setIsFixedScheduleDialogOpen(true); setDialogFixedScheduleMode('edit'); setSelectedFixedSchedule(schedule); setFixedScheduleFormData(schedule); };
-    const handleFixedScheduleFormSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        const newSchedule = { id: uuidv4(), ...fixedScheduleFormData };
-        if (dialogFixedScheduleMode === 'add') {
-            setFixedSchedules(prev => [...prev, newSchedule]);
-        } else if (selectedFixedSchedule) {
-            setFixedSchedules(prev => prev.map(s => s.id === selectedFixedSchedule.id ? { ...newSchedule, id: s.id } : s));
-        }
-        setIsFixedScheduleDialogOpen(false);
-    };
-    const handleDeleteFixedSchedule = (scheduleId: string) => { setFixedSchedules(p => p.filter(s => s.id !== scheduleId)); };
+    const handleFixedScheduleFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: API call */ setIsFixedScheduleDialogOpen(false); };
+    const handleDeleteFixedSchedule = (scheduleId: string) => { setFixedSchedules(p => p.filter(s => s.id !== scheduleId)); /* TODO: API call */ };
 
     // Calendar & Holiday Handlers
     const handleSelectCalendar = (id: string) => setSelectedCalendarId(id);
     const handleBackToCalendars = () => setSelectedCalendarId(null);
-    const handleCalendarFormSubmit = async (e: React.FormEvent) => { 
-        e.preventDefault();
-        if (!newCalendarName) return;
-        setIsSubmitting(true);
-        try {
-            await createSetting('calendars', { name: newCalendarName, holidays: [] });
-            toast({ title: "Calendario creado" });
-            fetcher('calendars', setCalendars);
-            setNewCalendarName("");
-            setIsCalendarDialogOpen(false); 
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo crear el calendario' });
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-    const handleDeleteCalendar = async (id: string) => { 
-        setIsSubmitting(true);
-        try {
-            await deleteSetting('calendars', id);
-            toast({ title: "Calendario eliminado" });
-            fetcher('calendars', setCalendars);
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo eliminar el calendario' });
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-    const handleHolidayFormSubmit = async (e: React.FormEvent) => { 
-        e.preventDefault();
-        if (!holidayFormData.name || !holidayFormData.date || !selectedCalendarId) return;
-        
-        const calendarToUpdate = calendars.find(c => c.id === selectedCalendarId);
-        if (!calendarToUpdate) return;
-        
-        const newHoliday: Holiday = { id: uuidv4(), name: holidayFormData.name, date: format(holidayFormData.date, 'yyyy-MM-dd') };
-        const updatedHolidays = [...(calendarToUpdate.holidays || []), newHoliday];
-        
-        setIsSubmitting(true);
-        try {
-            await updateSetting('calendars', selectedCalendarId, { holidays: updatedHolidays });
-            toast({ title: "Festivo añadido" });
-            fetcher('calendars', setCalendars);
-            setHolidayFormData({ name: "", date: undefined });
-            setIsHolidayDialogOpen(false);
-        } catch(error) {
-            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo añadir el festivo' });
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-    const handleDeleteHoliday = async (holidayId: string) => {
-        if (!selectedCalendarId) return;
-        const calendarToUpdate = calendars.find(c => c.id === selectedCalendarId);
-        if (!calendarToUpdate) return;
-        
-        const updatedHolidays = calendarToUpdate.holidays.filter(h => h.id !== holidayId);
-        setIsSubmitting(true);
-        try {
-            await updateSetting('calendars', selectedCalendarId, { holidays: updatedHolidays });
-            toast({ title: "Festivo eliminado" });
-            fetcher('calendars', setCalendars);
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo eliminar el festivo' });
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-    const handleImportHolidays = () => { toast({ title: "Próximamente", description: "La importación de festivos estará disponible pronto." }) };
+    const handleCalendarFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: API call */ setIsCalendarDialogOpen(false); };
+    const handleDeleteCalendar = (id: string) => { setCalendars(p => p.filter(c => c.id !== id)); /* TODO: API call */ };
+    const handleHolidayFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: API call */ setIsHolidayDialogOpen(false); };
+    const handleDeleteHoliday = (holidayId: string) => { /* TODO: API call */ };
+    const handleImportHolidays = () => { /* TODO: API call */ };
     
     // Absence Type Handlers
-    const openAddAbsenceTypeDialog = () => { setIsAbsenceTypeDialogOpen(true); setDialogAbsenceTypeMode('add'); setAbsenceTypeFormData({ name: '', color: 'bg-blue-500', remunerated: true, unit: 'days', requiresApproval: true, allowAttachment: false, isDisabled: false, assignment: 'all', assignedTo: [] }); };
+    const openAddAbsenceTypeDialog = () => { setIsAbsenceTypeDialogOpen(true); setDialogAbsenceTypeMode('add'); setAbsenceTypeFormData({ name: '', color: 'bg-blue-500', remunerated: true, unit: 'days', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [], requiresApproval: true, allowAttachment: false, isDisabled: false, assignment: 'all', assignedTo: [] }); };
     const openEditAbsenceTypeDialog = (type: AbsenceType) => { setIsAbsenceTypeDialogOpen(true); setDialogAbsenceTypeMode('edit'); setSelectedAbsenceType(type); setAbsenceTypeFormData({ ...type, blockedPeriods: type.blockedPeriods ?? [] }); };
-    const handleAbsenceTypeFormSubmit = async (e: React.FormEvent) => { 
-        e.preventDefault();
-        setIsSubmitting(true);
-        try {
-            if (dialogAbsenceTypeMode === 'add') {
-                await createSetting('absenceTypes', absenceTypeFormData);
-                toast({ title: "Tipo de ausencia creado" });
-            } else if (selectedAbsenceType) {
-                await updateSetting('absenceTypes', selectedAbsenceType.id, absenceTypeFormData);
-                toast({ title: "Tipo de ausencia actualizado" });
-            }
-            fetcher('absenceTypes', setAbsenceTypes);
-            setIsAbsenceTypeDialogOpen(false);
-        } catch(error) {
-            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo guardar el tipo de ausencia' });
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-    const handleDeleteAbsenceType = async (id: string) => { 
-        setIsSubmitting(true);
-        try {
-            await deleteSetting('absenceTypes', id);
-            toast({ title: "Tipo de ausencia eliminado" });
-            fetcher('absenceTypes', setAbsenceTypes);
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo eliminar el tipo de ausencia' });
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
+    const handleAbsenceTypeFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: API call */ setIsAbsenceTypeDialogOpen(false); };
+    const handleDeleteAbsenceType = (id: string) => { setAbsenceTypes(p => p.filter(t => t.id !== id)); /* TODO: API call */ };
 
     // Vacation Policy Handlers
     const openAddVacationPolicyDialog = () => { setIsVacationPolicyDialogOpen(true); setDialogVacationPolicyMode('add'); setVacationPolicyFormData({ name: '', unit: 'days', amount: 22, countBy: 'workdays', limitRequests: false, requestLimit: 0, blockPeriods: false, blockedPeriods: [], assignment: 'all', assignedTo: [] }); };
     const openEditVacationPolicyDialog = (policy: VacationPolicy) => { setIsVacationPolicyDialogOpen(true); setDialogVacationPolicyMode('edit'); setSelectedVacationPolicy(policy); setVacationPolicyFormData({ ...policy, requestLimit: policy.requestLimit || 0, blockedPeriods: policy.blockedPeriods || [], assignment: policy.assignment || 'all', assignedTo: policy.assignedTo || [] }); };
-    const handleVacationPolicyFormSubmit = (e: React.FormEvent) => { 
-        e.preventDefault();
-        const newPolicy = { id: uuidv4(), ...vacationPolicyFormData };
-        if (dialogVacationPolicyMode === 'add') {
-            setVacationPolicies(prev => [...prev, newPolicy]);
-        } else if (selectedVacationPolicy) {
-            setVacationPolicies(prev => prev.map(p => p.id === selectedVacationPolicy.id ? { ...newPolicy, id: p.id } : p));
-        }
-        setIsVacationPolicyDialogOpen(false);
-    };
-    const handleDeleteVacationPolicy = (id: string) => { setVacationPolicies(p => p.filter(pol => pol.id !== id)); };
+    const handleVacationPolicyFormSubmit = (e: React.FormEvent) => { e.preventDefault(); /* TODO: API call */ setIsVacationPolicyDialogOpen(false); };
+    const handleDeleteVacationPolicy = (id: string) => { setVacationPolicies(p => p.filter(pol => pol.id !== id)); /* TODO: API call */ };
 
     // Incentive Handlers
     const openAddIncentiveDialog = () => { setIsIncentiveDialogOpen(true); setDialogIncentiveMode('add'); setIncentiveFormData({ name: "", type: "económico", value: "", period: "anual", active: true, condition_expression: { modality: 'all-or-nothing' } }); };
     const openEditIncentiveDialog = (incentive: Incentive) => { setIsIncentiveDialogOpen(true); setDialogIncentiveMode('edit'); setSelectedIncentive(incentive); setIncentiveFormData({ ...incentive, condition_expression: incentive.condition_expression || { modality: 'all-or-nothing' } }); };
-    const handleIncentiveFormSubmit = async (e: React.FormEvent) => { 
-        e.preventDefault();
-        setIsSubmitting(true);
-        try {
-            if (dialogIncentiveMode === 'add') {
-                await createIncentive(incentiveFormData);
-                toast({ title: "Incentivo creado" });
-            } else if (selectedIncentive) {
-                await updateIncentive(selectedIncentive.id, incentiveFormData);
-                toast({ title: "Incentivo actualizado" });
-            }
-            await fetchIncentives();
-            setIsIncentiveDialogOpen(false);
-        } catch (err) {
-            toast({ variant: "destructive", title: "Error", description: "No se pudo guardar el incentivo." });
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-    const handleDeleteIncentive = async (id: string) => { 
-        try {
-            await deleteIncentive(id);
-            toast({ title: "Incentivo eliminado" });
-            await fetchIncentives();
-        } catch(err) {
-             toast({ variant: "destructive", title: "Error", description: "No se pudo eliminar el incentivo." });
-        }
-    };
+    const handleIncentiveFormSubmit = async (e: React.FormEvent) => { e.preventDefault(); /* TODO: API call */ setIsIncentiveDialogOpen(false); };
+    const handleDeleteIncentive = (id: string) => { setIncentives(p => p.filter(i => i.id !== id)); /* TODO: API call */ };
     
     const selectedCalendar = calendars.find(c => c.id === selectedCalendarId);
-    const holidayDates = selectedCalendar?.holidays.map(h => parseISO(h.date)) || [];
+    const holidayDates = selectedCalendar?.holidays.map(h => new Date(h.date)) || [];
 
     return (
         <Tabs defaultValue="general" className="space-y-4 md:flex md:space-y-0 md:space-x-4">
@@ -987,144 +798,6 @@ const SettingsTabs = () => {
                     <CentersTabContent />
                 </TabsContent>
                 
-                <TabsContent value="schedules" className="m-0 space-y-4">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <div><CardTitle>Turnos</CardTitle><CardDescription>Define turnos de trabajo reutilizables.</CardDescription></div>
-                            <Button onClick={openAddShiftDialog}><PlusCircle className="mr-2 h-4 w-4"/> Crear Turno</Button>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader><TableRow><TableHead>Nombre</TableHead><TableHead>Inicio</TableHead><TableHead>Fin</TableHead><TableHead></TableHead></TableRow></TableHeader>
-                                <TableBody>
-                                    {shifts.map(s => (
-                                        <TableRow key={s.id}><TableCell>{s.name}</TableCell><TableCell>{s.start}</TableCell><TableCell>{s.end}</TableCell>
-                                            <TableCell className="text-right">
-                                                <Button variant="ghost" size="sm" onClick={() => openEditShiftDialog(s)}>Editar</Button>
-                                                <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteShift(s.id)}><Trash2 className="h-4 w-4"/></Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
-                    <Dialog open={isShiftDialogOpen} onOpenChange={setIsShiftDialogOpen}>
-                        <DialogContent>
-                            <DialogHeader><DialogTitle>{dialogShiftMode === 'add' ? 'Nuevo Turno' : 'Editar Turno'}</DialogTitle></DialogHeader>
-                            <form onSubmit={handleShiftFormSubmit} className="space-y-4 py-4">
-                                <Input placeholder="Nombre" value={shiftFormData.name} onChange={e => setShiftFormData({...shiftFormData, name: e.target.value})} />
-                                <div className="grid grid-cols-2 gap-4">
-                                    <Input type="time" placeholder="Hora de inicio" value={shiftFormData.start} onChange={e => setShiftFormData({...shiftFormData, start: e.target.value})} />
-                                    <Input type="time" placeholder="Hora de fin" value={shiftFormData.end} onChange={e => setShiftFormData({...shiftFormData, end: e.target.value})} />
-                                </div>
-                                <DialogFooter><Button>Guardar</Button></DialogFooter>
-                            </form>
-                        </DialogContent>
-                    </Dialog>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <div><CardTitle>Horarios Flexibles</CardTitle><CardDescription>Para empleados con flexibilidad de horario.</CardDescription></div>
-                            <Button onClick={openAddFlexibleScheduleDialog}><PlusCircle className="mr-2 h-4 w-4"/> Crear Horario Flexible</Button>
-                        </CardHeader>
-                        <CardContent>
-                           <Table>
-                                <TableHeader><TableRow><TableHead>Nombre</TableHead><TableHead>Días</TableHead><TableHead>Horas/Día</TableHead><TableHead></TableHead></TableRow></TableHeader>
-                                <TableBody>
-                                    {flexibleSchedules.map(s => (
-                                        <TableRow key={s.id}><TableCell>{s.name}</TableCell><TableCell>{s.workDays.join(', ')}</TableCell><TableCell>{s.hoursPerDay}</TableCell>
-                                            <TableCell className="text-right">
-                                                <Button variant="ghost" size="sm" onClick={() => openEditFlexibleScheduleDialog(s)}>Editar</Button>
-                                                <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteFlexibleSchedule(s.id)}><Trash2 className="h-4 w-4"/></Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
-                    <Dialog open={isFlexibleScheduleDialogOpen} onOpenChange={setIsFlexibleScheduleDialogOpen}>
-                        <DialogContent>
-                            <DialogHeader><DialogTitle>{dialogFlexibleScheduleMode === 'add' ? 'Nuevo Horario Flexible' : 'Editar Horario Flexible'}</DialogTitle></DialogHeader>
-                             <form onSubmit={handleFlexibleScheduleFormSubmit} className="space-y-4 py-4">
-                                <Input placeholder="Nombre" value={flexibleScheduleFormData.name} onChange={e => setFlexibleScheduleFormData({...flexibleScheduleFormData, name: e.target.value})} />
-                                <div className="flex justify-around p-2 rounded-md border">
-                                    {weekDays.map((day) => (
-                                        <Button key={day} type="button" variant={flexibleScheduleFormData.workDays.includes(day) ? 'secondary' : 'ghost'} size="icon" onClick={() => {
-                                            const currentDays = flexibleScheduleFormData.workDays;
-                                            const newDays = currentDays.includes(day) ? currentDays.filter(d => d !== day) : [...currentDays, day];
-                                            setFlexibleScheduleFormData({...flexibleScheduleFormData, workDays: newDays});
-                                        }}>{day}</Button>
-                                    ))}
-                                </div>
-                                <Input type="number" placeholder="Horas por día" value={flexibleScheduleFormData.hoursPerDay} onChange={e => setFlexibleScheduleFormData({...flexibleScheduleFormData, hoursPerDay: Number(e.target.value)})} />
-                                <DialogFooter><Button>Guardar</Button></DialogFooter>
-                            </form>
-                        </DialogContent>
-                    </Dialog>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <div><CardTitle>Horarios Fijos</CardTitle><CardDescription>Para empleados con un horario fijo.</CardDescription></div>
-                             <Button onClick={openAddFixedScheduleDialog}><PlusCircle className="mr-2 h-4 w-4"/> Crear Horario Fijo</Button>
-                        </CardHeader>
-                        <CardContent>
-                           <Table>
-                                <TableHeader><TableRow><TableHead>Nombre</TableHead><TableHead>Días</TableHead><TableHead>Rangos</TableHead><TableHead></TableHead></TableRow></TableHeader>
-                                <TableBody>
-                                    {fixedSchedules.map(s => (
-                                        <TableRow key={s.id}><TableCell>{s.name}</TableCell><TableCell>{s.workDays.join(', ')}</TableCell><TableCell>{s.ranges.map(r => `${r.start}-${r.end}`).join('; ')}</TableCell>
-                                            <TableCell className="text-right">
-                                                <Button variant="ghost" size="sm" onClick={() => openEditFixedScheduleDialog(s)}>Editar</Button>
-                                                <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteFixedSchedule(s.id)}><Trash2 className="h-4 w-4"/></Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
-                    <Dialog open={isFixedScheduleDialogOpen} onOpenChange={setIsFixedScheduleDialogOpen}>
-                        <DialogContent>
-                            <DialogHeader><DialogTitle>{dialogFixedScheduleMode === 'add' ? 'Nuevo Horario Fijo' : 'Editar Horario Fijo'}</DialogTitle></DialogHeader>
-                             <form onSubmit={handleFixedScheduleFormSubmit} className="space-y-4 py-4">
-                                <Input placeholder="Nombre" value={fixedScheduleFormData.name} onChange={e => setFixedScheduleFormData({...fixedScheduleFormData, name: e.target.value})} />
-                                <div className="flex justify-around p-2 rounded-md border">
-                                    {weekDays.map((day) => (
-                                        <Button key={day} type="button" variant={fixedScheduleFormData.workDays.includes(day) ? 'secondary' : 'ghost'} size="icon" onClick={() => {
-                                            const currentDays = fixedScheduleFormData.workDays;
-                                            const newDays = currentDays.includes(day) ? currentDays.filter(d => d !== day) : [...currentDays, day];
-                                            setFixedScheduleFormData({...fixedScheduleFormData, workDays: newDays});
-                                        }}>{day}</Button>
-                                    ))}
-                                </div>
-                                {fixedScheduleFormData.ranges.map((range, index) => (
-                                    <div key={range.id} className="flex items-center gap-2">
-                                        <Input type="time" value={range.start} onChange={e => {
-                                            const newRanges = [...fixedScheduleFormData.ranges];
-                                            newRanges[index].start = e.target.value;
-                                            setFixedScheduleFormData({...fixedScheduleFormData, ranges: newRanges});
-                                        }}/>
-                                        <span>-</span>
-                                        <Input type="time" value={range.end} onChange={e => {
-                                            const newRanges = [...fixedScheduleFormData.ranges];
-                                            newRanges[index].end = e.target.value;
-                                            setFixedScheduleFormData({...fixedScheduleFormData, ranges: newRanges});
-                                        }}/>
-                                        <Button type="button" variant="ghost" size="icon" onClick={() => {
-                                            const newRanges = fixedScheduleFormData.ranges.filter(r => r.id !== range.id);
-                                            setFixedScheduleFormData({...fixedScheduleFormData, ranges: newRanges});
-                                        }}><Trash2 className="h-4 w-4 text-destructive"/></Button>
-                                    </div>
-                                ))}
-                                <Button type="button" variant="outline" onClick={() => {
-                                    setFixedScheduleFormData({...fixedScheduleFormData, ranges: [...fixedScheduleFormData.ranges, {id: Date.now().toString(), start: "09:00", end: "17:00"}]});
-                                }}>Añadir Rango</Button>
-                                <DialogFooter><Button>Guardar</Button></DialogFooter>
-                            </form>
-                        </DialogContent>
-                    </Dialog>
-                </TabsContent>
-                
                 <TabsContent value="breaks" className="m-0">
                      <Card className="bg-gradient-accent-to-card">
                         <CardHeader className="flex flex-row items-center justify-between">
@@ -1144,7 +817,7 @@ const SettingsTabs = () => {
                                              <TableCell>{br.remunerated ? 'Remunerado' : 'No Remunerado'}</TableCell>
                                              <TableCell>{br.limit} min</TableCell>
                                              <TableCell>
-                                                 {br.assignedTo.length === 0 ? "Todos" : br.assignedTo.length > 2 ? `${br.assignedTo.slice(0, 2).join(', ')}...` : br.assignedTo.join(', ')}
+                                                 {br.assignedTo.length > 2 ? `${br.assignedTo.slice(0, 2).join(', ')}...` : br.assignedTo.join(', ')}
                                              </TableCell>
                                              <TableCell className="text-right">
                                                  <Button variant="ghost" size="sm" onClick={() => openEditBreakDialog(br)}>Editar</Button>
@@ -1166,226 +839,13 @@ const SettingsTabs = () => {
                                     {dialogBreakMode === 'add' ? 'Nuevo Descanso' : 'Editar Descanso'}
                                 </DialogTitle>
                             </DialogHeader>
-                            <form onSubmit={handleBreakFormSubmit} className="space-y-4 py-4">
-                                <Input value={breakFormData.name} onChange={e => setBreakFormData({...breakFormData, name: e.target.value})} placeholder="Nombre (ej. Pausa para comer)"/>
-                                <Checkbox checked={breakFormData.remunerated} onCheckedChange={c => setBreakFormData({...breakFormData, remunerated: !!c})} id="break-remunerated"/><Label htmlFor="break-remunerated">Remunerado</Label>
-                                <Input type="number" value={breakFormData.limit} onChange={e => setBreakFormData({...breakFormData, limit: Number(e.target.value)})} placeholder="Duración en minutos"/>
-                                <DialogFooter><Button>Guardar</Button></DialogFooter>
+                            <form onSubmit={handleBreakFormSubmit}>
+                                {/* Form fields for Breaks */}
                             </form>
                          </DialogContent>
                      </Dialog>
                 </TabsContent>
 
-                <TabsContent value="checkin-types" className="m-0">
-                    <Card className="bg-gradient-accent-to-card">
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <div><CardTitle>Tipos de Fichaje</CardTitle><CardDescription>Define y colorea los tipos de fichaje.</CardDescription></div>
-                            <Button onClick={openAddClockInTypeDialog}><PlusCircle className="mr-2 h-4 w-4"/> Crear Tipo</Button>
-                        </CardHeader>
-                        <CardContent>
-                             <Table>
-                                 <TableHeader><TableRow><TableHead>Nombre</TableHead><TableHead>Asignación</TableHead><TableHead></TableHead></TableRow></TableHeader>
-                                 <TableBody>
-                                     {clockInTypes.map(t => (
-                                         <TableRow key={t.id}>
-                                             <TableCell><Badge className={t.color}>{t.name}</Badge></TableCell>
-                                             <TableCell>{t.assignment === 'all' ? 'Todos' : 'Específico'}</TableCell>
-                                             <TableCell className="text-right">
-                                                 <Button variant="ghost" size="sm" onClick={() => openEditClockInTypeDialog(t)}>Editar</Button>
-                                                 <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteClockInType(t.id)}><Trash2 className="h-4 w-4"/></Button>
-                                             </TableCell>
-                                         </TableRow>
-                                     ))}
-                                 </TableBody>
-                             </Table>
-                        </CardContent>
-                    </Card>
-                    <Dialog open={isClockInTypeDialogOpen} onOpenChange={setIsClockInTypeDialogOpen}>
-                         <DialogContent>
-                            <DialogHeader><DialogTitle>{dialogClockInTypeMode === 'add' ? 'Nuevo Tipo de Fichaje' : 'Editar Tipo'}</DialogTitle></DialogHeader>
-                            <form onSubmit={handleClockInTypeFormSubmit} className="space-y-4 py-4">
-                                <Input value={clockInTypeFormData.name} onChange={e => setClockInTypeFormData({...clockInTypeFormData, name: e.target.value})} placeholder="Nombre"/>
-                                <Select value={clockInTypeFormData.color} onValueChange={c => setClockInTypeFormData({...clockInTypeFormData, color: c})}>
-                                    <SelectTrigger><SelectValue/></SelectTrigger>
-                                    <SelectContent>{projectColors.map(c => <SelectItem key={c.value} value={c.value}><div className="flex items-center gap-2"><div className={cn("w-3 h-3 rounded-full", c.value)}/>{c.label}</div></SelectItem>)}</SelectContent>
-                                </Select>
-                                <DialogFooter><Button>Guardar</Button></DialogFooter>
-                            </form>
-                         </DialogContent>
-                    </Dialog>
-                </TabsContent>
-
-                <TabsContent value="calendars" className="m-0">
-                    {selectedCalendarId && selectedCalendar ? (
-                        <Card className="bg-gradient-accent-to-card">
-                            <CardHeader className="flex flex-row items-center justify-between">
-                                <div><CardTitle>{selectedCalendar.name}</CardTitle><CardDescription>Gestiona los festivos del calendario.</CardDescription></div>
-                                <Button variant="ghost" onClick={handleBackToCalendars}><ArrowLeft className="mr-2 h-4 w-4"/> Volver</Button>
-                            </CardHeader>
-                            <CardContent className="grid md:grid-cols-2 gap-8">
-                                <div>
-                                    <div className="flex items-center justify-between mb-4">
-                                        <h3 className="font-semibold">Festivos</h3>
-                                        <div className="flex gap-2">
-                                            <Dialog open={isHolidayDialogOpen} onOpenChange={setIsHolidayDialogOpen}>
-                                                <DialogTrigger asChild><Button size="sm"><PlusCircle className="mr-2 h-4 w-4"/>Añadir</Button></DialogTrigger>
-                                                <DialogContent className="sm:max-w-xs">
-                                                    <DialogHeader><DialogTitle>Nuevo Festivo</DialogTitle></DialogHeader>
-                                                    <form onSubmit={handleHolidayFormSubmit} className="space-y-4 py-4">
-                                                        <Input placeholder="Nombre" value={holidayFormData.name} onChange={e => setHolidayFormData({...holidayFormData, name: e.target.value})}/>
-                                                        <Popover>
-                                                            <PopoverTrigger asChild><Button variant="outline" className="w-full justify-start">{holidayFormData.date ? format(holidayFormData.date, "PPP") : "Seleccionar fecha"}</Button></PopoverTrigger>
-                                                            <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={holidayFormData.date} onSelect={d => setHolidayFormData({...holidayFormData, date: d})}/></PopoverContent>
-                                                        </Popover>
-                                                        <DialogFooter><Button type="submit" disabled={isSubmitting}>{isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}Guardar</Button></DialogFooter>
-                                                    </form>
-                                                </DialogContent>
-                                            </Dialog>
-                                            <Button size="sm" variant="outline" onClick={handleImportHolidays}>Importar</Button>
-                                        </div>
-                                    </div>
-                                    <ScrollArea className="h-72 rounded-md border">
-                                        <Table>
-                                            <TableBody>
-                                                {selectedCalendar.holidays.map(h => (
-                                                    <TableRow key={h.id}>
-                                                        <TableCell>{h.name}</TableCell>
-                                                        <TableCell>{format(parseISO(h.date), "dd/MM/yyyy")}</TableCell>
-                                                        <TableCell className="text-right">
-                                                            <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteHoliday(h.id)} disabled={isSubmitting}>
-                                                                <Trash2 className="h-4 w-4"/>
-                                                            </Button>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
-                                    </ScrollArea>
-                                </div>
-                                <div>
-                                    <Calendar mode="multiple" selected={holidayDates} className="rounded-md border"/>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ) : (
-                        <Card className="bg-gradient-accent-to-card">
-                            <CardHeader className="flex flex-row items-center justify-between">
-                                <div><CardTitle>Calendarios Laborales</CardTitle><CardDescription>Gestiona los calendarios de festivos.</CardDescription></div>
-                                <Dialog open={isCalendarDialogOpen} onOpenChange={setIsCalendarDialogOpen}>
-                                    <DialogTrigger asChild><Button><PlusCircle className="mr-2 h-4 w-4"/> Nuevo Calendario</Button></DialogTrigger>
-                                    <DialogContent className="sm:max-w-xs">
-                                        <DialogHeader><DialogTitle>Nuevo Calendario</DialogTitle></DialogHeader>
-                                        <form onSubmit={handleCalendarFormSubmit} className="space-y-4 py-4">
-                                            <Input placeholder="Nombre del Calendario" value={newCalendarName} onChange={e => setNewCalendarName(e.target.value)} required/>
-                                            <DialogFooter><Button type="submit" disabled={isSubmitting}>{isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}Guardar</Button></DialogFooter>
-                                        </form>
-                                    </DialogContent>
-                                </Dialog>
-                            </CardHeader>
-                            <CardContent>
-                                {isLoading['calendars'] ? <div className="flex justify-center items-center py-4"><Loader2 className="animate-spin" /></div> : calendars.map(cal => (
-                                    <div key={cal.id} className="flex items-center justify-between rounded-xl border p-4 mb-4">
-                                        <h3 className="font-semibold">{cal.name}</h3>
-                                        <div className="flex items-center">
-                                            <Button variant="ghost" size="sm" onClick={() => handleSelectCalendar(cal.id)}>Gestionar</Button>
-                                            <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteCalendar(cal.id)} disabled={isSubmitting}><Trash2 className="h-4 w-4"/></Button>
-                                        </div>
-                                    </div>
-                                ))}
-                                {calendars.length === 0 && !isLoading['calendars'] && <p className="text-center text-muted-foreground py-4">No hay calendarios creados.</p>}
-                            </CardContent>
-                        </Card>
-                    )}
-                </TabsContent>
-                
-                <TabsContent value="vacations" className="m-0">
-                    <Card className="bg-gradient-accent-to-card">
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <div><CardTitle>Políticas de Vacaciones</CardTitle><CardDescription>Define cómo se acumulan y gestionan las vacaciones.</CardDescription></div>
-                            <Button onClick={openAddVacationPolicyDialog}><PlusCircle className="mr-2 h-4 w-4"/> Nueva Política</Button>
-                        </CardHeader>
-                        <CardContent>
-                            {vacationPolicies.map(pol => (
-                                <div key={pol.id} className="flex items-center justify-between rounded-xl border p-4">
-                                    <h3 className="font-semibold">{pol.name} ({pol.amount} {pol.unit})</h3>
-                                    <div className="flex items-center">
-                                        <Button variant="ghost" size="sm" onClick={() => openEditVacationPolicyDialog(pol)}>Editar</Button>
-                                        <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteVacationPolicy(pol.id)}><Trash2 className="h-4 w-4"/></Button>
-                                    </div>
-                                </div>
-                            ))}
-                        </CardContent>
-                    </Card>
-                    <Dialog open={isVacationPolicyDialogOpen} onOpenChange={setIsVacationPolicyDialogOpen}>
-                         <DialogContent className="sm:max-w-xl">
-                            <DialogHeader><DialogTitle>{dialogVacationPolicyMode === 'add' ? 'Nueva Política de Vacaciones' : 'Editar Política'}</DialogTitle></DialogHeader>
-                            <form onSubmit={handleVacationPolicyFormSubmit} className="space-y-4 py-4">
-                                <Input placeholder="Nombre" value={vacationPolicyFormData.name} onChange={e => setVacationPolicyFormData({...vacationPolicyFormData, name: e.target.value})}/>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <Select value={vacationPolicyFormData.unit} onValueChange={(v: any) => setVacationPolicyFormData({...vacationPolicyFormData, unit: v})}>
-                                        <SelectTrigger><SelectValue/></SelectTrigger>
-                                        <SelectContent><SelectItem value="days">Días</SelectItem><SelectItem value="hours">Horas</SelectItem></SelectContent>
-                                    </Select>
-                                    <Input type="number" placeholder="Cantidad" value={vacationPolicyFormData.amount} onChange={e => setVacationPolicyFormData({...vacationPolicyFormData, amount: Number(e.target.value)})}/>
-                                </div>
-                                 <RadioGroup value={vacationPolicyFormData.countBy} onValueChange={(v: any) => setVacationPolicyFormData({...vacationPolicyFormData, countBy: v})} className="flex gap-4">
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="workdays" id="wd"/><Label htmlFor="wd">Laborables</Label></div>
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="natural" id="nd"/><Label htmlFor="nd">Naturales</Label></div>
-                                </RadioGroup>
-                                <DialogFooter><Button>Guardar</Button></DialogFooter>
-                            </form>
-                         </DialogContent>
-                    </Dialog>
-                </TabsContent>
-                
-                <TabsContent value="absences" className="m-0">
-                    <Card className="bg-gradient-accent-to-card">
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <div><CardTitle>Tipos de Ausencia</CardTitle><CardDescription>Configura los diferentes tipos de ausencias que existen.</CardDescription></div>
-                            <Button onClick={openAddAbsenceTypeDialog}><PlusCircle className="mr-2 h-4 w-4"/> Nuevo Tipo</Button>
-                        </CardHeader>
-                        <CardContent>
-                            {isLoading['absenceTypes'] ? <div className="flex justify-center items-center py-4"><Loader2 className="animate-spin" /></div> : <Table>
-                                <TableHeader><TableRow><TableHead>Nombre</TableHead><TableHead>Unidad</TableHead><TableHead>Estado</TableHead><TableHead></TableHead></TableRow></TableHeader>
-                                <TableBody>
-                                    {absenceTypes.map(t => (
-                                        <TableRow key={t.id}>
-                                            <TableCell><Badge className={cn("border-transparent", t.color)}>{t.name}</Badge></TableCell>
-                                            <TableCell>{t.unit}</TableCell>
-                                            <TableCell>{t.isDisabled ? 'Deshabilitado' : 'Activo'}</TableCell>
-                                            <TableCell className="text-right">
-                                                <Button variant="ghost" size="sm" onClick={() => openEditAbsenceTypeDialog(t)}>Editar</Button>
-                                                <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteAbsenceType(t.id)} disabled={isSubmitting}><Trash2 className="h-4 w-4"/></Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>}
-                        </CardContent>
-                    </Card>
-                     <Dialog open={isAbsenceTypeDialogOpen} onOpenChange={setIsAbsenceTypeDialogOpen}>
-                         <DialogContent className="sm:max-w-xl">
-                            <DialogHeader><DialogTitle>{dialogAbsenceTypeMode === 'add' ? 'Nuevo Tipo de Ausencia' : 'Editar Tipo'}</DialogTitle></DialogHeader>
-                            <form onSubmit={handleAbsenceTypeFormSubmit} className="space-y-4 py-4">
-                                <Input placeholder="Nombre" value={absenceTypeFormData.name} onChange={e => setAbsenceTypeFormData({...absenceTypeFormData, name: e.target.value})}/>
-                                <Select value={absenceTypeFormData.color} onValueChange={c => setAbsenceTypeFormData({...absenceTypeFormData, color: c})}>
-                                    <SelectTrigger><SelectValue/></SelectTrigger>
-                                    <SelectContent>{projectColors.map(c => <SelectItem key={c.value} value={c.value}><div className="flex items-center gap-2"><div className={cn("w-3 h-3 rounded-full", c.value)}/>{c.label}</div></SelectItem>)}</SelectContent>
-                                </Select>
-                                 <RadioGroup value={absenceTypeFormData.unit} onValueChange={(v: any) => setAbsenceTypeFormData({...absenceTypeFormData, unit: v})} className="flex gap-4">
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="days" id="days"/><Label htmlFor="days">Días</Label></div>
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="hours" id="hours"/><Label htmlFor="hours">Horas</Label></div>
-                                </RadioGroup>
-                                <div className="flex items-center space-x-2"><Switch checked={absenceTypeFormData.remunerated} onCheckedChange={c => setAbsenceTypeFormData({...absenceTypeFormData, remunerated: c})}/><Label>Remunerado</Label></div>
-                                <div className="flex items-center space-x-2"><Switch checked={absenceTypeFormData.requiresApproval} onCheckedChange={c => setAbsenceTypeFormData({...absenceTypeFormData, requiresApproval: c})}/><Label>Requiere aprobación</Label></div>
-                                <div className="flex items-center space-x-2"><Switch checked={absenceTypeFormData.allowAttachment} onCheckedChange={c => setAbsenceTypeFormData({...absenceTypeFormData, allowAttachment: c})}/><Label>Permitir adjunto</Label></div>
-                                <div className="flex items-center space-x-2"><Switch checked={absenceTypeFormData.isDisabled} onCheckedChange={c => setAbsenceTypeFormData({...absenceTypeFormData, isDisabled: c})}/><Label>Deshabilitado</Label></div>
-                                <DialogFooter><Button type="submit" disabled={isSubmitting}>{isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}Guardar</Button></DialogFooter>
-                            </form>
-                         </DialogContent>
-                    </Dialog>
-                </TabsContent>
-                
                 <TabsContent value="incentives" className="space-y-4 m-0">
                     <Card className="bg-gradient-accent-to-card">
                         <CardHeader className="flex flex-row items-center justify-between">
@@ -1396,7 +856,7 @@ const SettingsTabs = () => {
                              <Button onClick={openAddIncentiveDialog}><PlusCircle className="mr-2 h-4 w-4"/> Crear Incentivo</Button>
                         </CardHeader>
                         <CardContent>
-                             {isLoading['incentives'] ? <div className="flex justify-center items-center py-4"><Loader2 className="animate-spin" /></div> : <Table>
+                             {isLoading['incentives'] ? <Loader2 className="animate-spin" /> : <Table>
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Nombre</TableHead>
@@ -1501,7 +961,7 @@ const SettingsTabs = () => {
                                         </div>
                                     </RadioGroup>
                                 </div>
-                                <DialogFooter><Button type="submit" disabled={isSubmitting}>{isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}Guardar</Button></DialogFooter>
+                                <DialogFooter><Button type="submit">Guardar</Button></DialogFooter>
                             </form>
                         </DialogContent>
                     </Dialog>

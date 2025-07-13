@@ -1,4 +1,4 @@
-"use client"
+'use client';
 
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
@@ -14,19 +14,22 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Separator } from "./separator";
 
 const SIDEBAR_PINNED_COOKIE_NAME = "sidebar_pinned_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 365 // 1 year
 
 interface SidebarContextType {
-  isOpen: boolean
-  isPinned: boolean
-  isMobile: boolean
-  onOpenChange: (open: boolean) => void
-  togglePin: () => void
-  toggleSidebar: () => void
-  openMobile: boolean
-  setOpenMobile: (open: boolean) => void
+  isOpen: boolean;
+  isPinned: boolean;
+  isMobile: boolean;
+  onOpenChange: (open: boolean) => void;
+  togglePin: () => void;
+  toggleSidebar: () => void;
+  openMobile: boolean;
+  setOpenMobile: (open: boolean) => void;
 }
 
 const SidebarContext = React.createContext<SidebarContextType | null>(null)
@@ -117,10 +120,10 @@ const sidebarVariants = cva(
 
 export const Sidebar = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => {
-  const { isOpen, isMobile, onOpenChange, openMobile, setOpenMobile } = useSidebar()
-  const state = isOpen ? "expanded" : "collapsed"
+  React.HTMLAttributes<HTMLDivElement> & { isCollapsed: boolean }
+>(({ className, isCollapsed, ...props }, ref) => {
+  const { isMobile, onOpenChange, openMobile, setOpenMobile } = useSidebar()
+  const state = isCollapsed ? "collapsed" : "expanded"
   
   if (isMobile) {
     return (
@@ -136,12 +139,12 @@ export const Sidebar = React.forwardRef<
     <aside
       ref={ref}
       className={cn(
-        "group/sidebar flex flex-col",
+        "group/sidebar hidden md:flex flex-col",
         sidebarVariants({ state }),
         className
       )}
-      onMouseEnter={() => onOpenChange(true)}
-      onMouseLeave={() => onOpenChange(false)}
+      onMouseEnter={() => !isCollapsed && onOpenChange(true)}
+      onMouseLeave={() => !isCollapsed && onOpenChange(false)}
       data-state={state}
       {...props}
     />
