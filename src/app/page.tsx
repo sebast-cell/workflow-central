@@ -1,12 +1,22 @@
 
 'use client';
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { LogIn } from "lucide-react";
 import Link from "next/link";
+import { useAuth } from '@/contexts/auth-context';
 
 export default function PortalSelectionPage() {
+  const { logout } = useAuth();
+  
+  // Ensure user is logged out when they land on this page
+  useEffect(() => {
+    logout();
+  }, [logout]);
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-muted/40 p-4">
       <div className="w-full max-w-4xl p-8">
