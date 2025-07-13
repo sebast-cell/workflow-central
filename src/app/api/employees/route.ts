@@ -6,7 +6,7 @@ import type { Employee } from '@/lib/api';
 
 export async function GET() {
     try {
-        const employeesSnapshot = await firestore.collection('employees').get();
+        const employeesSnapshot = await firestore.collection('employee').get();
         const employees = employeesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Omit<Employee, 'id'> }));
         return NextResponse.json(employees);
     } catch (error) {
@@ -62,7 +62,7 @@ export async function POST(request: Request) {
         };
 
         // 5. Create employee document in Firestore with the UID as the document ID
-        await firestore.collection('employees').doc(userRecord.uid).set(firestoreEmployeeData);
+        await firestore.collection('employee').doc(userRecord.uid).set(firestoreEmployeeData);
 
         // We use the uid from Auth as the ID for the Firestore document for consistency
         const newEmployee = { id: userRecord.uid, ...firestoreEmployeeData };

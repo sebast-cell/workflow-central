@@ -44,7 +44,7 @@ export async function POST(request: Request) {
         }
         
         // 2. Use the UID from Auth to find the employee document in Firestore
-        const employeeDocRef = firestore.collection('employees').doc(userRecord.uid);
+        const employeeDocRef = firestore.collection('employee').doc(userRecord.uid);
         const employeeDoc = await employeeDocRef.get();
 
         if (!employeeDoc.exists) {
