@@ -1,14 +1,9 @@
-<<<<<<< HEAD
 
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import LayoutProvider from '@/components/layout-provider';
 import { AuthProvider } from '@/contexts/auth-context';
-=======
-// src/app/layout.tsx
-import './globals.css'; // Asegúrate de que esta ruta sea correcta si tienes un globals.css
->>>>>>> f82117f479ac19379af2965913c66ec24753ba05
 
 export const metadata = {
   title: 'Workflow Central App',
@@ -21,7 +16,6 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-<<<<<<< HEAD
     <html lang="es" suppressHydrationWarning>
       <body className="font-body antialiased">
         <AuthProvider>
@@ -29,10 +23,6 @@ export default function RootLayout({
         </AuthProvider>
         <Toaster />
       </body>
-=======
-    <html lang="es">
-      <body>{children}</body>
->>>>>>> f82117f479ac19379af2965913c66ec24753ba05
     </html>
   );
 }
