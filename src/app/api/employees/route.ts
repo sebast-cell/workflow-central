@@ -17,10 +17,17 @@ export async function GET() {
 export async function POST(request: Request) {
     try {
         const employeeData: Omit<Employee, 'id' | 'status' | 'avatar'> = await request.json();
+
+        // Add validation for required fields
+        if (!employeeData.name || !employeeData.email) {
+            return NextResponse.json({ message: "Name and email are required" }, { status: 400 });
+        }
+
         const newEmployeeData = {
             ...employeeData,
             status: "Activo",
-            avatar: employeeData.name.split(' ').map(n => n[0]).join('').toUpperCase(),
+            // Add fallback for avatar generation
+            avatar: (employeeData.name.split(' ').map(n => n[0]).join('') || 'U').toUpperCase(),
         };
         
         const docRef = await firestore.collection('employees').add(newEmployeeData);
@@ -29,6 +36,7 @@ export async function POST(request: Request) {
         return NextResponse.json(newEmployee, { status: 201 });
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        return NextResponse.json({ error: errorMessage }, { status: 500 });
+        console.error("Error creating employee:", errorMessage);
+        return NextResponse.json({ error: "Internal server error while creating employee.", details: errorMessage }, { status: 500 });
     }
 }
