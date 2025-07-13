@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -22,7 +23,7 @@ import {
 
 const navItems = [
   { href: '/dashboard', label: 'Panel', icon: LayoutDashboard },
-  { href: '/employees', label: 'Empleados', icon: Users },
+  { href: '/employee', label: 'Empleados', icon: Users },
   { href: '/attendance', label: 'Asistencia', icon: Clock },
   { href: '/absences', label: 'Ausencias y TL', icon: CalendarOff },
   { href: '/projects', label: 'Proyectos', icon: Briefcase },

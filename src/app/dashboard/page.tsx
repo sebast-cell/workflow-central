@@ -128,7 +128,7 @@ export default function Dashboard() {
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="bg-gradient-accent-to-card">
-          <Link href="/employees">
+          <Link href="/employee">
             <>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Empleados Activos</CardTitle>
@@ -237,7 +237,7 @@ export default function Dashboard() {
                 <CardDescription>Un vistazo rápido al estado actual de tu equipo.</CardDescription>
               </div>
               <Button asChild size="sm" variant="outline">
-                <Link href="/employees">
+                <Link href="/employee">
                   <>
                     Ver Todos
                     <ArrowUpRight className="h-4 w-4 ml-2" />
@@ -252,7 +252,7 @@ export default function Dashboard() {
               <TableBody>
                 {teamSummary.length > 0 ? (
                   teamSummary.map((member) => (
-                      <TableRow key={member.id} className="hover:bg-muted/50 cursor-pointer" onClick={() => window.location.href = '/employees'}>
+                      <TableRow key={member.id} className="hover:bg-muted/50 cursor-pointer" onClick={() => window.location.href = '/employee'}>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar>
