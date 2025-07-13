@@ -1,3 +1,4 @@
+
 import { Suspense } from 'react';
 import { LoginForm } from '@/components/auth/login-form';
 import { Logo } from '@/components/logo';
@@ -23,7 +24,7 @@ export default function LoginPage() {
         </div>
         <p className="mt-8 text-center text-sm text-muted-foreground">
           ¿No tienes una cuenta?{" "}
-          <Link href="/register" className="font-semibold underline">
+          <Link href="/signup" className="font-semibold underline hover:text-primary">
             Regístrate
           </Link>
         </p>
