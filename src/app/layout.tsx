@@ -1,29 +1,19 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-import { Toaster } from "@/components/ui/toaster";
-import { SidebarProvider } from "@/components/ui/sidebar";
+// src/app/layout.tsx
+import './globals.css'; // Asegúrate de que esta ruta sea correcta si tienes un globals.css
 
-const inter = Inter({ subsets: ["latin"] });
-
-export const metadata: Metadata = {
-  title: "WorkFlow Central",
-  description: "Tu centro de mando para la gestión de equipos.",
+export const metadata = {
+  title: 'Workflow Central App',
+  description: 'Tu centro de mando para la gestión de equipos.',
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="es">
-      <body className={inter.className}>
-        <SidebarProvider>
-          {children}
-        </SidebarProvider>
-        <Toaster />
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
