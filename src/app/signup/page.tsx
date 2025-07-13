@@ -29,8 +29,6 @@ export default function SignupPage() {
     setError('');
 
     try {
-      // In a real app, you'd have a separate signup API that also creates a user in Firebase Auth.
-      // For now, we'll just create an employee record and log them in.
       const newEmployee = await createEmployee({
         name,
         email,
@@ -42,11 +40,15 @@ export default function SignupPage() {
         phone: '',
       });
       
+      // Log the user in with the newly created employee data
       login(newEmployee);
+      
+      // Redirect to the employee portal
       router.push('/portal');
 
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Could not create account.';
+      console.error("Signup failed:", err);
+      const errorMessage = err.response?.data?.message || 'Could not create account. Please try again.';
       setError(errorMessage);
     } finally {
       setIsLoading(false);

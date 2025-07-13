@@ -19,6 +19,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // This effect runs once on mount to load the user from localStorage.
     try {
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
@@ -33,13 +34,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const login = (userData: Employee) => {
+    // This function synchronously updates the state and localStorage.
     setUser(userData);
-    localStorage.setItem('user', JSON.stringify(userData));
+    try {
+      localStorage.setItem('user', JSON.stringify(userData));
+    } catch (error) {
+      console.error("Failed to save user to localStorage", error);
+    }
   };
 
   const logout = () => {
+    // This function synchronously clears the state and localStorage.
     setUser(null);
-    localStorage.removeItem('user');
+    try {
+      localStorage.removeItem('user');
+    } catch (error) {
+      console.error("Failed to remove user from localStorage", error);
+    }
   };
 
   return (
