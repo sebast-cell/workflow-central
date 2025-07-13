@@ -33,16 +33,17 @@ export async function POST(request: Request) {
             disabled: false,
         });
 
-        // 3. Generate avatar initials safely
+        // 3. Generate avatar initials safely and robustly
         let avatarInitials = 'U';
-        if (employeeData.name && typeof employeeData.name === 'string' && employeeData.name.trim().length > 0) {
+        if (employeeData.name && typeof employeeData.name === 'string') {
             const nameParts = employeeData.name.trim().split(' ').filter(Boolean);
-            if (nameParts.length > 1) {
+            if (nameParts.length >= 2) {
                 avatarInitials = (nameParts[0][0] + nameParts[1][0]).toUpperCase();
-            } else if (nameParts.length === 1 && nameParts[0].length > 1) {
-                avatarInitials = nameParts[0].substring(0, 2).toUpperCase();
-            } else if (nameParts.length === 1) {
-                avatarInitials = nameParts[0][0].toUpperCase();
+            } else if (nameParts.length === 1 && nameParts[0].length > 0) {
+                 avatarInitials = nameParts[0].substring(0, 2).toUpperCase();
+                 if (nameParts[0].length === 1) {
+                    avatarInitials = nameParts[0][0].toUpperCase();
+                 }
             }
         }
         
