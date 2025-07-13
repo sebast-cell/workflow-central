@@ -35,20 +35,22 @@ export async function POST(request: Request) {
 
         // 3. Generate avatar initials safely
         let avatarInitials = 'U';
-        const nameParts = typeof employeeData.name === 'string' ? employeeData.name.trim().split(' ').filter(Boolean) : [];
-        if (nameParts.length > 1) {
-            avatarInitials = (nameParts[0][0] + nameParts[1][0]).toUpperCase();
-        } else if (nameParts.length === 1 && nameParts[0].length > 1) {
-            avatarInitials = nameParts[0].substring(0, 2).toUpperCase();
-        } else if (nameParts.length === 1) {
-             avatarInitials = nameParts[0][0].toUpperCase();
+        if (employeeData.name && typeof employeeData.name === 'string') {
+            const nameParts = employeeData.name.trim().split(' ').filter(Boolean);
+            if (nameParts.length > 1) {
+                avatarInitials = (nameParts[0][0] + nameParts[1][0]).toUpperCase();
+            } else if (nameParts.length === 1 && nameParts[0].length > 1) {
+                avatarInitials = nameParts[0].substring(0, 2).toUpperCase();
+            } else if (nameParts.length === 1) {
+                avatarInitials = nameParts[0][0].toUpperCase();
+            }
         }
         
         // 4. Prepare data for Firestore document (without password)
         const firestoreEmployeeData = {
             name: employeeData.name,
             email: employeeData.email,
-            department: employeeData.department || 'Sin Asignar',
+            department: employeeData.department || 'Sin Asignar', // Correct field name
             role: employeeData.role || 'Empleado',
             schedule: employeeData.schedule || 'No Definido',
             hireDate: employeeData.hireDate || new Date().toISOString().split('T')[0],
