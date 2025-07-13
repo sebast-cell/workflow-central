@@ -1,61 +1,59 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // -- Helper Functions --
+    
+    // Helper functions
     function isAuth() {
       return request.auth != null;
     }
 
     function isAdmin() {
-      return isAuth() && exists(/databases/$(database)/documents/employee/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/employee/$(request.auth.uid)).data.role == 'Admin';
+      // Check if the user document exists and has the 'Admin' role
+      return isAuth() && get(/databases/$(database)/documents/employee/$(request.auth.uid)).data.role == 'Admin';
     }
 
-    // -- Employee Profiles --
+    // Collection: employee
+    // Employees can read their own profile and update it.
+    // Admins can read/write any profile.
     match /employee/{userId} {
-      // Any authenticated user can read employee profiles (e.g., for selectors)
       allow read: if isAuth();
-      // An employee can update their own profile
-      allow update: if isAuth() && request.auth.uid == userId;
-      // Only Admins can create or delete employee records (which are linked to Auth)
       allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (isAuth() && request.auth.uid == userId);
     }
-
-    // -- Attendance Logs --
+    
+    // Collection: attendance
+    // Employees can create their own logs and read their own logs.
+    // Admins can read, update, and delete any log.
     match /attendance/{logId} {
-      // Admins can read all logs; employees can only read their own.
       allow read: if isAdmin() || (isAuth() && resource.data.employeeId == request.auth.uid);
-      // Employees can only create logs for themselves.
       allow create: if isAuth() && request.resource.data.employeeId == request.auth.uid;
-      // Only Admins can modify or delete logs.
       allow update, delete: if isAdmin();
     }
-
-    // -- Absence Requests --
+    
+    // Collection: absenceRequests
+    // Employees can create their own requests and read their own requests.
+    // Admins can read, update, and delete any request.
     match /absenceRequests/{reqId} {
-      // Admins can read all requests; employees can only read their own.
       allow read: if isAdmin() || (isAuth() && resource.data.employeeId == request.auth.uid);
-      // Employees can only create requests for themselves.
       allow create: if isAuth() && request.resource.data.employeeId == request.auth.uid;
-      // Only Admins can approve/reject (update) or delete requests.
       allow update, delete: if isAdmin();
     }
 
-    // -- Core Business Logic Collections (Projects, Objectives, Tasks, Incentives) --
+    // Business-logic collections (projects, objectives, etc.)
+    // Only Admins should have write access to these core business collections.
+    // Authenticated users can read them (e.g., for an employee to see their objectives).
     match /{collection}/{docId}
       where collection in ['projects', 'objectives', 'tasks', 'incentives'] {
-      // Any authenticated user can read these for display purposes.
-      allow read: if isAuth();
-      // Only Admins can create, update, or delete them.
-      allow write: if isAdmin();
+        allow read: if isAuth();
+        allow write: if isAdmin();
     }
-
-    // -- Settings Collections --
-    match /{settingCollection}/{settingId}
+    
+    // Settings collections
+    // Only Admins can read or write any configuration.
+     match /{settingCollection}/{settingId} 
       where settingCollection in ['roles', 'centers', 'departments', 'breaks', 'clockInTypes', 'shifts', 'flexibleSchedules', 'fixedSchedules', 'absenceTypes', 'calendars', 'vacationPolicies'] {
-        // Only Admins can read or write any configuration settings.
         allow read, write: if isAdmin();
     }
   }
