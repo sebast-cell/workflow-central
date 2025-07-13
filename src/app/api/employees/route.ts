@@ -35,7 +35,7 @@ export async function POST(request: Request) {
 
         // 3. Generate avatar initials safely
         let avatarInitials = 'U';
-        if (employeeData.name && typeof employeeData.name === 'string') {
+        if (employeeData.name && typeof employeeData.name === 'string' && employeeData.name.trim().length > 0) {
             const nameParts = employeeData.name.trim().split(' ').filter(Boolean);
             if (nameParts.length > 1) {
                 avatarInitials = (nameParts[0][0] + nameParts[1][0]).toUpperCase();
@@ -50,8 +50,8 @@ export async function POST(request: Request) {
         const firestoreEmployeeData = {
             name: employeeData.name,
             email: employeeData.email,
-            department: employeeData.department || 'Sin Asignar', // Correct field name
-            role: employeeData.role || 'Empleado',
+            department: employeeData.department || 'Sin Asignar',
+            role: employeeData.role || 'Empleado', // Use role from form, default to Empleado
             schedule: employeeData.schedule || 'No Definido',
             hireDate: employeeData.hireDate || new Date().toISOString().split('T')[0],
             phone: employeeData.phone || '',

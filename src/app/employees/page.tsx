@@ -41,7 +41,7 @@ export default function EmployeesPage() {
     email: "",
     password: "",
     department: "",
-    role: "",
+    role: "Empleado",
     schedule: "",
     hireDate: format(new Date(), 'yyyy-MM-dd'),
     phone: "",
@@ -69,7 +69,7 @@ export default function EmployeesPage() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [toast]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -83,7 +83,7 @@ export default function EmployeesPage() {
   const openAddSheet = () => {
     setSheetMode('add');
     setSelectedEmployee(null);
-    setFormData({ name: "", email: "", password: "", department: "", role: "", schedule: "", hireDate: format(new Date(), 'yyyy-MM-dd'), phone: "" });
+    setFormData({ name: "", email: "", password: "", department: "", role: "Empleado", schedule: "", hireDate: format(new Date(), 'yyyy-MM-dd'), phone: "" });
     setIsSheetOpen(true);
   }
 
@@ -279,8 +279,16 @@ export default function EmployeesPage() {
                                     </Select>
                                   </div>
                                   <div className="space-y-2">
-                                    <Label htmlFor="role">Cargo</Label>
-                                    <Input id="role" value={formData.role || ''} onChange={handleInputChange} placeholder="Ej. Desarrollador Frontend" />
+                                    <Label htmlFor="role">Rol</Label>
+                                     <Select value={formData.role} onValueChange={(value) => handleSelectChange('role', value)}>
+                                      <SelectTrigger id="role">
+                                        <SelectValue placeholder="Seleccionar Rol" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="Empleado">Empleado</SelectItem>
+                                        <SelectItem value="Admin">Administrador</SelectItem>
+                                      </SelectContent>
+                                    </Select>
                                   </div>
                                   <div className="space-y-2">
                                     <Label htmlFor="hireDate">Fecha de Contratación</Label>
