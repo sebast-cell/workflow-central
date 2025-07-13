@@ -1,5 +1,5 @@
-import { Suspense } from 'react'; // <-- Se importa Suspense
-import { LoginForm } from './_components/login-form';
+import { Suspense } from 'react';
+import { LoginForm } from '@/components/auth/login-form';
 import { Logo } from '@/components/logo';
 import Link from 'next/link';
 
@@ -17,7 +17,6 @@ export default function LoginPage() {
           Introduce tus credenciales para acceder a tu panel
         </p>
         <div className="mt-6">
-          {/* Se envuelve el formulario en Suspense */}
           <Suspense fallback={<div>Cargando...</div>}>
             <LoginForm />
           </Suspense>
