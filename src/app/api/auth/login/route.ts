@@ -40,7 +40,7 @@ export async function POST(request: Request) {
         
         if (!userRecord) {
             console.log(`Login failed for email: ${email}. User not found in Firebase Auth.`);
-            return NextResponse.json({ message: "Invalid credentials" }, { status: 401 });
+            return NextResponse.json({ message: "Credenciales inválidas" }, { status: 401 });
         }
         
         // 2. Use the UID from Auth to find the employee document in Firestore
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
 
         if (!employeeDoc.exists) {
             console.log(`Login failed for email: ${email}. User found in Auth (UID: ${userRecord.uid}) but no matching profile in Firestore.`);
-            return NextResponse.json({ message: "User profile not found." }, { status: 404 });
+            return NextResponse.json({ message: "Perfil de usuario no encontrado." }, { status: 404 });
         }
         
         const employeeData = { id: employeeDoc.id, ...employeeDoc.data() } as Employee;
@@ -59,6 +59,6 @@ export async function POST(request: Request) {
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         console.error("Login API error:", error);
-        return NextResponse.json({ message: "An internal server error occurred.", error: errorMessage }, { status: 500 });
+        return NextResponse.json({ message: "Ocurrió un error interno en el servidor.", error: errorMessage }, { status: 500 });
     }
 }
