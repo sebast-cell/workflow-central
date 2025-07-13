@@ -22,12 +22,15 @@ export async function POST(request: Request) {
             return NextResponse.json({ message: "Name and email are required" }, { status: 400 });
         }
 
-        const nameParts = employeeData.name.split(' ').filter(Boolean);
-        let avatarInitials = 'U';
+        const nameParts = employeeData.name.trim().split(' ').filter(Boolean);
+        let avatarInitials = 'U'; // Default 'User'
+
         if (nameParts.length > 0) {
             if (nameParts.length > 1) {
+                // Two or more words: take first char of first two words
                 avatarInitials = (nameParts[0][0] + nameParts[1][0]).toUpperCase();
             } else {
+                // One word: take first two chars of that word
                 avatarInitials = nameParts[0].substring(0, 2).toUpperCase();
             }
         }
