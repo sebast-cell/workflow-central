@@ -111,7 +111,6 @@ export default function SignupPage() {
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isLoading ? 'Creando cuenta...' : 'Crear Cuenta'}
-              <UserPlus className="ml-2 h-4 w-4" />
             </Button>
             <p className="text-xs text-center text-muted-foreground">
               ¿Ya tienes una cuenta? <Link href="/login?role=employee" className="underline hover:text-primary">Inicia sesión</Link>.
