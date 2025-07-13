@@ -1,35 +1,64 @@
 
+'use server';
 import { NextResponse } from 'next/server';
+import * as admin from 'firebase-admin';
 import { firestore } from '@/lib/firebase-admin';
 import type { Employee } from '@/lib/api';
 
+// This function simulates checking credentials with Firebase Auth.
+// In a real scenario, you'd use a client-side SDK to sign in and send the ID token here for verification.
+// For this environment, we'll verify the password directly, which is NOT recommended for production.
+async function verifyUserCredentials(email: string, password: string): Promise<admin.auth.UserRecord | null> {
+    try {
+        // Get user by email to get the UID. This doesn't verify the password.
+        const userRecord = await admin.auth().getUserByEmail(email);
+        // THERE IS NO SERVER-SIDE SDK METHOD TO VERIFY A PASSWORD.
+        // This is a major limitation of the Admin SDK. Password verification MUST happen on the client.
+        // For our simulation, we will assume if the user exists, the password is correct.
+        // This is INSECURE and for DEMO PURPOSES ONLY.
+        return userRecord;
+    } catch (error: any) {
+        if (error.code === 'auth/user-not-found') {
+            return null; // User doesn't exist
+        }
+        console.error("Firebase Auth error:", error);
+        throw error; // Rethrow other auth errors
+    }
+}
+
+
 export async function POST(request: Request) {
     try {
-        const { email, password, role } = await request.json();
+        const { email, password } = await request.json();
 
-        if (!email) {
-            return NextResponse.json({ message: "Email is required" }, { status: 400 });
+        if (!email || !password) {
+            return NextResponse.json({ message: "Email and password are required" }, { status: 400 });
         }
 
-        // In a real application, you would validate the password against a stored hash.
-        // For this demo, we'll just find the user by email.
-        const employeesSnapshot = await firestore.collection('employees').where('email', '==', email).limit(1).get();
-
-        if (employeesSnapshot.empty) {
+        // 1. "Verify" credentials with Firebase Auth to get the UID
+        const userRecord = await verifyUserCredentials(email, password);
+        
+        if (!userRecord) {
+            console.log(`Login failed for email: ${email}. User not found in Firebase Auth.`);
             return NextResponse.json({ message: "Invalid credentials" }, { status: 401 });
         }
+        
+        // 2. Use the UID from Auth to find the employee document in Firestore
+        const employeeDocRef = firestore.collection('employees').doc(userRecord.uid);
+        const employeeDoc = await employeeDocRef.get();
 
-        const employeeDoc = employeesSnapshot.docs[0];
+        if (!employeeDoc.exists) {
+            console.log(`Login failed for email: ${email}. User found in Auth (UID: ${userRecord.uid}) but no matching profile in Firestore.`);
+            return NextResponse.json({ message: "User profile not found." }, { status: 404 });
+        }
+        
         const employeeData = { id: employeeDoc.id, ...employeeDoc.data() } as Employee;
         
-        // You could add role-based access control here if needed.
-        // For example, check if employee.role matches the requested `role`.
-
         return NextResponse.json(employeeData);
 
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.error("Login error:", errorMessage);
-        return NextResponse.json({ error: errorMessage }, { status: 500 });
+        console.error("Login API error:", error);
+        return NextResponse.json({ message: "An internal server error occurred.", error: errorMessage }, { status: 500 });
     }
 }
