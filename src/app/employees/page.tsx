@@ -36,9 +36,10 @@ export default function EmployeesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("all");
 
-  const [formData, setFormData] = useState<Partial<Employee>>({
+  const [formData, setFormData] = useState<Partial<Employee> & { password?: string }>({
     name: "",
     email: "",
+    password: "",
     department: "",
     role: "",
     schedule: "",
@@ -82,14 +83,14 @@ export default function EmployeesPage() {
   const openAddSheet = () => {
     setSheetMode('add');
     setSelectedEmployee(null);
-    setFormData({ name: "", email: "", department: "", role: "", schedule: "", hireDate: format(new Date(), 'yyyy-MM-dd'), phone: "" });
+    setFormData({ name: "", email: "", password: "", department: "", role: "", schedule: "", hireDate: format(new Date(), 'yyyy-MM-dd'), phone: "" });
     setIsSheetOpen(true);
   }
 
   const openEditSheet = (employee: Employee) => {
     setSheetMode('edit');
     setSelectedEmployee(employee);
-    setFormData(employee);
+    setFormData({ ...employee, password: '' });
     setIsSheetOpen(true);
   }
 
@@ -100,25 +101,25 @@ export default function EmployeesPage() {
     setIsSubmitting(true);
     try {
         if (sheetMode === 'add') {
-            const newEmployeeData = {
-                name: formData.name,
-                email: formData.email,
-                department: formData.department || '',
-                role: formData.role || '',
-                schedule: formData.schedule || '',
-                hireDate: formData.hireDate ? format(parseISO(formData.hireDate), 'yyyy-MM-dd') : '',
-                phone: formData.phone || '',
-            };
-            await createEmployee(newEmployeeData);
-            toast({ title: "Empleado añadido", description: `${newEmployeeData.name} ha sido añadido al equipo.` });
+            if (!formData.password) {
+                toast({ variant: "destructive", title: "Contraseña requerida", description: "Debes establecer una contraseña para el nuevo empleado." });
+                setIsSubmitting(false);
+                return;
+            }
+            await createEmployee(formData as any); // The API expects the password field now
+            toast({ title: "Empleado añadido", description: `${formData.name} ha sido añadido al equipo.` });
         } else if (sheetMode === 'edit' && selectedEmployee) {
-            await updateEmployee(selectedEmployee.id, formData);
+            const { password, ...updateData } = formData;
+            // Note: Password update logic would need a separate, more secure flow.
+            // We're only updating Firestore data here.
+            await updateEmployee(selectedEmployee.id, updateData);
             toast({ title: "Empleado actualizado", description: `Los datos de ${formData.name} han sido guardados.` });
         }
         await fetchData(); // Refresh data from server
         setIsSheetOpen(false);
-    } catch (error) {
-        toast({ variant: "destructive", title: "Error al guardar", description: "No se pudo guardar el empleado." });
+    } catch (error: any) {
+        const errorMsg = error.response?.data?.details || "No se pudo guardar el empleado.";
+        toast({ variant: "destructive", title: "Error al guardar", description: errorMsg });
     } finally {
         setIsSubmitting(false);
     }
@@ -256,6 +257,12 @@ export default function EmployeesPage() {
                                     <Label htmlFor="email">Email</Label>
                                     <Input id="email" type="email" value={formData.email || ''} onChange={handleInputChange} placeholder="juan@ejemplo.com" required />
                                   </div>
+                                   {sheetMode === 'add' && (
+                                    <div className="space-y-2">
+                                        <Label htmlFor="password">Contraseña</Label>
+                                        <Input id="password" type="password" value={formData.password || ''} onChange={handleInputChange} placeholder="Establece una contraseña temporal" required />
+                                    </div>
+                                    )}
                                   <div className="space-y-2">
                                     <Label htmlFor="phone">Teléfono</Label>
                                     <Input id="phone" type="tel" value={formData.phone || ''} onChange={handleInputChange} placeholder="+34 600 000 000" />
