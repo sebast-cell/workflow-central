@@ -18,21 +18,21 @@ export async function POST(request: Request) {
     try {
         const employeeData: Omit<Employee, 'id' | 'status' | 'avatar'> = await request.json();
 
+        // Stricter validation
         if (!employeeData.name || !employeeData.email) {
             return NextResponse.json({ message: "Name and email are required" }, { status: 400 });
         }
 
-        const nameParts = employeeData.name.trim().split(' ').filter(Boolean);
+        // Robust avatar generation
         let avatarInitials = 'U'; // Default 'User'
+        const nameParts = typeof employeeData.name === 'string' ? employeeData.name.trim().split(' ').filter(Boolean) : [];
 
-        if (nameParts.length > 0) {
-            if (nameParts.length > 1) {
-                // Two or more words: take first char of first two words
-                avatarInitials = (nameParts[0][0] + nameParts[1][0]).toUpperCase();
-            } else {
-                // One word: take first two chars of that word
-                avatarInitials = nameParts[0].substring(0, 2).toUpperCase();
-            }
+        if (nameParts.length > 1) {
+            // Two or more words: take first char of first two words
+            avatarInitials = (nameParts[0][0] + nameParts[1][0]).toUpperCase();
+        } else if (nameParts.length === 1) {
+            // One word: take first two chars of that word (if available)
+            avatarInitials = nameParts[0].substring(0, 2).toUpperCase();
         }
 
         const newEmployeeData = {
@@ -46,8 +46,9 @@ export async function POST(request: Request) {
         
         return NextResponse.json(newEmployee, { status: 201 });
     } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.error("Error creating employee:", errorMessage, error);
+        // Detailed error logging on the server
+        console.error("Error creating employee:", error);
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
         return NextResponse.json({ error: "Internal server error while creating employee.", details: errorMessage }, { status: 500 });
     }
 }
