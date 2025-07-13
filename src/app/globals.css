@@ -38,12 +38,12 @@
     --status-destructive-bg: hsl(var(--destructive) / 0.1);
     --status-destructive-text: hsl(4 70% 35%);
 
-    --sidebar-background: 220 15% 18%; /* Dark Slate */
-    --sidebar-foreground: 220 14% 80%;
-    --sidebar-border: 220 13% 25%;
+    --sidebar-background: 220 14% 96%;
+    --sidebar-foreground: 220 29% 25%;
+    --sidebar-border: 220 13% 88%;
     --sidebar-muted-foreground: 220 12% 55%;
-    --sidebar-accent: 220, 13%, 25%;
-    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-accent: 220 13% 91%;
+    --sidebar-accent-foreground: 220 29% 15%;
     --sidebar-active: hsl(var(--primary));
     --sidebar-active-foreground: hsl(var(--primary-foreground));
     --sidebar-ring: hsl(var(--primary));
@@ -81,11 +81,11 @@
     --status-destructive-bg: hsl(var(--destructive) / 0.15);
     --status-destructive-text: hsl(4 84% 85%);
 
-    --sidebar-background: 220 15% 18%; /* Dark Slate */
+    --sidebar-background: 220 29% 10%;
     --sidebar-foreground: 220 14% 80%;
     --sidebar-border: 220 13% 25%;
     --sidebar-muted-foreground: 220 12% 55%;
-    --sidebar-accent: 220, 13%, 25%;
+    --sidebar-accent: 220 13% 25%;
     --sidebar-accent-foreground: 0 0% 100%;
     --sidebar-active: hsl(var(--primary));
     --sidebar-active-foreground: hsl(var(--primary-foreground));
