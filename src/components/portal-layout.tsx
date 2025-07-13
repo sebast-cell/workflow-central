@@ -32,13 +32,11 @@ function PortalSidebarContent() {
   )
 }
 
-export function PortalLayout({ children }: { children: React.ReactNode }) {
-  // Se añade esta línea para obtener el estado de la barra lateral
+function PortalLayoutContent({ children }: { children: React.ReactNode }) {
   const { isOpen } = useSidebar();
   
   return (
-    <SidebarProvider>
-      {/* Se añade la propiedad isCollapsed */}
+    <>
       <Sidebar isCollapsed={!isOpen}>
         <PortalSidebarContent />
       </Sidebar>
@@ -46,6 +44,14 @@ export function PortalLayout({ children }: { children: React.ReactNode }) {
         <Header/>
         <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
       </SidebarInset>
+    </>
+  );
+}
+
+export function PortalLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <SidebarProvider>
+        <PortalLayoutContent>{children}</PortalLayoutContent>
     </SidebarProvider>
   );
 }

@@ -1,23 +1,29 @@
 'use client';
 
-import { Sidebar, SidebarProvider, useSidebar } from '@/components/ui/sidebar';
+import { Sidebar, SidebarProvider, useSidebar, SidebarInset } from '@/components/ui/sidebar';
 import { Header } from '@/components/header';
-import SidebarNav from '@/components/sidebar-nav'; // <-- CORRECCIÓN 1
+import SidebarNav from '@/components/sidebar-nav';
 
-export function AdminLayout({ children }: { children: React.ReactNode }) {
-  // Se añade esta línea para obtener el estado de la barra lateral
+function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   const { isOpen } = useSidebar();
 
   return (
-    <SidebarProvider>
-      {/* CORRECCIÓN 2: Se añade la propiedad isCollapsed */}
+    <>
       <Sidebar isCollapsed={!isOpen}>
         <SidebarNav />
       </Sidebar>
-      <main className="flex-1">
+      <SidebarInset>
         <Header />
-        <div className="p-4 sm:p-6 lg:p-8">{children}</div>
-      </main>
+        <main className="p-4 sm:p-6 lg:p-8">{children}</main>
+      </SidebarInset>
+    </>
+  );
+}
+
+export function AdminLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <SidebarProvider>
+      <AdminLayoutContent>{children}</AdminLayoutContent>
     </SidebarProvider>
   );
 }
