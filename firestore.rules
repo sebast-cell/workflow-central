@@ -3,33 +3,43 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check if a user is an Admin.
+    // Helper function to check if a user is an Admin
     function isAdmin(userId) {
       return exists(/databases/$(database)/documents/employee/$(userId)) &&
              get(/databases/$(database)/documents/employee/$(userId)).data.role == 'Admin';
     }
-    
-    // Employee collection: Read for any authenticated user, write only for Admins.
+
+    // -- Employee Collection: Profile Data --
+    // Anyone authenticated can read employee profiles (for lists, etc.)
+    // Only Admins can create, update, or delete employees.
     match /employee/{userId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null && isAdmin(request.auth.uid);
     }
     
-    // Absence Requests: Authenticated users can create their own requests.
-    // Admins can read all and update/delete.
+    // -- Absence Requests: Personal Data --
     match /absenceRequests/{requestId} {
-      allow read, update, delete: if request.auth != null && isAdmin(request.auth.uid);
-      allow create: if request.auth != null; // Further rules could check ownership (request.resource.data.employeeId == request.auth.uid)
+      // Allow read if user is Admin OR if they are the owner of the request.
+      allow read: if request.auth != null && (isAdmin(request.auth.uid) || resource.data.employeeId == request.auth.uid);
+      // Allow create only if the user is creating a request for themselves.
+      allow create: if request.auth != null && request.resource.data.employeeId == request.auth.uid;
+      // Only Admins can update (approve/reject) or delete requests.
+      allow update, delete: if request.auth != null && isAdmin(request.auth.uid);
     }
 
-    // Attendance: Authenticated users can create their own logs.
-    // Admins can read all.
+    // -- Attendance Logs: Personal Data --
     match /attendance/{logId} {
-        allow read: if request.auth != null && isAdmin(request.auth.uid);
-        allow create: if request.auth != null;
+       // Allow read if user is Admin OR if they are the owner of the log.
+      allow read: if request.auth != null && (isAdmin(request.auth.uid) || resource.data.employeeId == request.auth.uid);
+      // Allow create only if the user is creating a log for themselves.
+      allow create: if request.auth != null && request.resource.data.employeeId == request.auth.uid;
+       // Only Admins can update or delete logs.
+      allow update, delete: if request.auth != null && isAdmin(request.auth.uid);
     }
-    
-    // Projects, Objectives, Tasks, Incentives: Read for authenticated users, write for Admins.
+
+    // -- Business-level Data (Projects, Objectives, Tasks, etc.) --
+    // For these collections, any authenticated user can read, but only Admins can write.
+    // This is a secure default for company-wide information.
     match /projects/{projectId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null && isAdmin(request.auth.uid);
@@ -39,26 +49,21 @@ service cloud.firestore {
       allow read: if request.auth != null;
       allow write: if request.auth != null && isAdmin(request.auth.uid);
     }
-    
+
     match /tasks/{taskId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null && isAdmin(request.auth.uid);
     }
-    
+
     match /incentives/{incentiveId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null && isAdmin(request.auth.uid);
     }
     
-    // Settings collections: Read for authenticated users, write for Admins.
-    // This single rule covers all dynamic setting types.
-    match /{settingCollection}/{settingId}
-      where settingCollection in ['roles', 'centers', 'departments', 'breaks', 'clockInTypes', 'shifts', 'flexibleSchedules', 'fixedSchedules', 'absenceTypes', 'calendars', 'vacationPolicies'] {
-        allow read: if request.auth != null;
-        allow write: if request.auth != null && isAdmin(request.auth.uid);
+    // -- Settings Collections --
+    // Only Admins should be able to read or write any settings.
+    match /settings/{collection}/{docId} {
+      allow read, write: if request.auth != null && isAdmin(request.auth.uid);
     }
-
-    // By default, no other collection is accessible.
-    // This removes the overly permissive wildcard.
   }
 }
