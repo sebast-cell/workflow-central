@@ -1,26 +1,21 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check if a user is an Admin
     function isAdmin(userId) {
-      return exists(/databases/$(database)/documents/employees/$(userId)) &&
-             get(/databases/$(database)/documents/employees/$(userId)).data.role == 'Admin';
+      return exists(/databases/$(database)/documents/employee/$(userId)) &&
+             get(/databases/$(database)/documents/employee/$(userId)).data.role == 'Admin';
     }
 
-    // Employees collection can be read by any authenticated user.
-    // Creation, update, and deletion is restricted to Admins.
-    match /employees/{userId} {
+    match /employee/{userId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null && isAdmin(request.auth.uid);
     }
-    
-    // Any other collection can be read/written by authenticated users.
-    // This is a broad rule, you might want to tighten this for specific collections.
-    match /{collection}/{docId} {
-       allow read, write: if request.auth != null;
+
+    // Regla para el resto de las colecciones
+    match /{document=**} {
+       allow read, write: if request.auth != null && isAdmin(request.auth.uid);
     }
   }
 }
