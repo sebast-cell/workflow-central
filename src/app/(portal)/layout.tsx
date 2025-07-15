@@ -1,37 +1,15 @@
-import { redirect } from 'next/navigation';
-import { getSession } from '@/lib/session';
-import { Header } from '@/components/header';
-import { PortalNav } from '@/components/portal-nav';
+'use client';
 
-export default async function PortalLayout({
+import DashboardLayout from '@/components/layouts/dashboard-layout';
+
+// Este layout se aplicará a todas las rutas dentro del grupo (portal)
+// como /portal, /portal/absences, etc.
+export default function PortalPagesLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const user = await getSession();
-
-  if (!user) {
-    redirect('/login');
-  }
-  
-  if (user.role !== 'Employee') {
-    redirect('/dashboard');
-  }
-
-  return (
-    <div className="min-h-screen w-full flex">
-      <aside className="hidden md:flex h-screen w-56 flex-col fixed border-r">
-         <div className="flex h-16 items-center border-b px-6">
-           <h1 className="text-lg font-bold font-headline text-primary">Employee Portal</h1>
-        </div>
-        <PortalNav />
-      </aside>
-      <div className="flex flex-col w-full md:pl-56">
-        <Header user={user} />
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-muted/40">
-            {children}
-        </main>
-      </div>
-    </div>
-  );
+  // Reutilizamos el mismo layout principal.
+  // Se adaptará automáticamente para mostrar el menú de empleado.
+  return <DashboardLayout>{children}</DashboardLayout>;
 }

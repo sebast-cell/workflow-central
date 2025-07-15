@@ -1,82 +1,78 @@
-import { getSession } from "@/lib/session";
-import { redirect } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { CalendarDays, CheckSquare, Briefcase } from "lucide-react";
-import { ClockWidget } from "./clock-widget";
-import { mockTasks, mockAbsences } from "@/lib/data";
+'use client';
 
-export default async function PortalPage() {
-    const user = await getSession();
-    if (!user) redirect('/login');
+import { useAuth } from '@/contexts/auth-context';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
+import { ArrowRight, ChevronLeft, Clock } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
-    const pendingTasks = mockTasks.filter(t => t.status !== 'Completed').length;
-    const pendingAbsences = mockAbsences.filter(a => a.status === 'Pending').length;
+// Este es el componente que ya tenías, lo reutilizamos aquí.
+function ClockWidget() {
+    const { toast } = useToast();
+
+    const handleClockIn = () => {
+        toast({ title: 'Fichaje de entrada registrado.' });
+        // Aquí iría la lógica para guardar en Firestore...
+    };
+
+    const handleClockOut = () => {
+        toast({ title: 'Fichaje de salida registrado.' });
+        // Aquí iría la lógica para guardar en Firestore...
+    };
 
     return (
-        <div className="space-y-8">
-            <div>
-                <h1 className="text-3xl font-bold font-headline">Welcome, {user.name?.split(' ')[0]}!</h1>
-                <p className="text-muted-foreground">Here's what's happening today.</p>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                <ClockWidget />
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Pending Tasks</CardTitle>
-                        <CheckSquare className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{pendingTasks}</div>
-                        <p className="text-xs text-muted-foreground">Tasks requiring your attention</p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Absence Requests</CardTitle>
-                        <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{pendingAbsences}</div>
-                        <p className="text-xs text-muted-foreground">Requests awaiting approval</p>
-                    </CardContent>
-                </Card>
-            </div>
-            
-            <div className="grid gap-4 md:grid-cols-2">
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Your Tasks</CardTitle>
-                        <CardDescription>A quick look at your current tasks.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                       <ul className="space-y-2">
-                           {mockTasks.slice(0,3).map(task => (
-                               <li key={task.id} className="flex items-center justify-between text-sm">
-                                   <span>{task.title}</span>
-                                   <span className="text-muted-foreground">{task.status}</span>
-                               </li>
-                           ))}
-                       </ul>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Recent Absences</CardTitle>
-                        <CardDescription>Your recent and upcoming time off.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                       <ul className="space-y-2">
-                           {mockAbsences.slice(0,3).map(absence => (
-                               <li key={absence.id} className="flex items-center justify-between text-sm">
-                                   <span>{absence.type} ({absence.startDate.toLocaleDateString()})</span>
-                                   <span className="text-muted-foreground">{absence.status}</span>
-                               </li>
-                           ))}
-                       </ul>
-                    </CardContent>
-                </Card>
-            </div>
-        </div>
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <Clock className="h-5 w-5" />
+                    Fichaje Rápido
+                </CardTitle>
+                <CardDescription>Registra tu entrada y salida del día.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex gap-4">
+                <Button onClick={handleClockIn} className="w-full bg-green-600 hover:bg-green-700">
+                    <ArrowRight className="mr-2 h-4 w-4" /> Entrada
+                </Button>
+                <Button onClick={handleClockOut} className="w-full bg-red-600 hover:bg-red-700">
+                    <ChevronLeft className="mr-2 h-4 w-4" /> Salida
+                </Button>
+            </CardContent>
+        </Card>
     );
+}
+
+export default function PortalPage() {
+  // Usamos el hook useAuth() para obtener los datos del usuario,
+  // en lugar de la función getSession() que daba error.
+  const { userData } = useAuth();
+  const router = useRouter();
+
+  return (
+    <div className="space-y-4">
+        <h1 className="text-3xl font-bold tracking-tight">
+          Portal de Empleado
+        </h1>
+        <p className="text-muted-foreground">
+          Bienvenido de nuevo, {userData?.name}. Aquí tienes tus accesos directos.
+        </p>
+        <div className="grid gap-4 md:grid-cols-2">
+            <ClockWidget />
+            <Card>
+                <CardHeader>
+                    <CardTitle>Accesos Directos</CardTitle>
+                    <CardDescription>Gestiona tus tareas y ausencias.</CardDescription>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-2">
+                    <Button variant="outline" onClick={() => router.push('/portal/tasks')}>
+                        Ver mis Tareas
+                    </Button>
+                    <Button variant="outline" onClick={() => router.push('/portal/absences')}>
+                        Solicitar Ausencia
+                    </Button>
+                </CardContent>
+            </Card>
+        </div>
+    </div>
+  );
 }

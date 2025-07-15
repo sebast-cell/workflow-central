@@ -1,41 +1,71 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { decrypt } from '@/lib/session';
+import { jwtVerify } from 'jose';
 
-const protectedAdminRoutes = ['/dashboard', '/employees', '/reports', '/settings'];
-const protectedEmployeeRoutes = ['/portal', '/absences', '/tasks'];
-const publicRoutes = ['/login'];
+const ADMIN_ROUTES = ['/dashboard', '/employees', '/reports', '/settings'];
+const EMPLOYEE_ROUTES = ['/portal'];
+const PUBLIC_ROUTES = ['/login'];
+
+// Función para obtener la clave secreta de forma segura
+const getJwtSecretKey = () => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_SECRET no está definido en las variables de entorno.');
+  }
+  return new TextEncoder().encode(secret);
+};
 
 export async function middleware(request: NextRequest) {
-  const path = request.nextUrl.pathname;
-  const isProtectedRoute = protectedAdminRoutes.some(p => path.startsWith(p)) || protectedEmployeeRoutes.some(p => path.startsWith(p));
-  const isPublicRoute = publicRoutes.includes(path);
+  const { pathname } = request.nextUrl;
+  const sessionCookie = request.cookies.get('session')?.value;
 
-  const cookie = request.cookies.get('session')?.value;
-  const session = await decrypt(cookie);
-  const user = session?.user as { role: string } | null;
-
-  if (isProtectedRoute && !user) {
-    return NextResponse.redirect(new URL('/login', request.nextUrl));
-  }
-
-  if (isPublicRoute && user) {
-    const redirectUrl = user.role === 'Admin' ? '/dashboard' : '/portal';
-    return NextResponse.redirect(new URL(redirectUrl, request.nextUrl));
-  }
-  
-  if (user) {
-    if (user.role === 'Admin' && protectedEmployeeRoutes.some(p => path.startsWith(p))) {
-      return NextResponse.redirect(new URL('/dashboard', request.nextUrl));
+  // --- LÓGICA MEJORADA ---
+  // 1. Si NO hay cookie, y la ruta NO es pública, redirigir a /login
+  if (!sessionCookie) {
+    if (!PUBLIC_ROUTES.includes(pathname)) {
+      return NextResponse.redirect(new URL('/login', request.url));
     }
-    if (user.role === 'Employee' && protectedAdminRoutes.some(p => path.startsWith(p))) {
-      return NextResponse.redirect(new URL('/portal', request.nextUrl));
-    }
+    return NextResponse.next();
   }
 
+  // 2. Si SÍ hay cookie, intentar verificarla
+  let userPayload = null;
+  try {
+    const { payload } = await jwtVerify(sessionCookie, getJwtSecretKey());
+    userPayload = payload;
+  } catch (error) {
+    // Si la verificación falla (token inválido, expirado, etc.), borrar la cookie mala y redirigir a login
+    console.error('Fallo al verificar la cookie, borrándola:', error);
+    const response = NextResponse.redirect(new URL('/login', request.url));
+    response.cookies.delete('session');
+    return response;
+  }
+
+  // 3. Si la verificación es exitosa y tenemos los datos del usuario
+  const userRole = (userPayload as any).role;
+
+  // Si un usuario autenticado intenta ir a /login, redirigirlo a su panel
+  if (pathname === '/login') {
+    const url = userRole === 'Admin' || userRole === 'Owner' ? '/dashboard' : '/portal';
+    return NextResponse.redirect(new URL(url, request.url));
+  }
+
+  // 4. Lógica de redirección por roles
+  const isAdmin = userRole === 'Admin' || userRole === 'Owner';
+  if (!isAdmin && ADMIN_ROUTES.some(route => pathname.startsWith(route))) {
+    return NextResponse.redirect(new URL('/portal', request.url));
+  }
+  if (isAdmin && EMPLOYEE_ROUTES.some(route => pathname.startsWith(route))) {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
+  // 5. Si todo está en orden, permitir el paso
   return NextResponse.next();
 }
 
+// Configuración para que el middleware se ejecute en todas las rutas excepto las estáticas
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|.*\\.png$).*)'],
+  matcher: [
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+  ],
 };
