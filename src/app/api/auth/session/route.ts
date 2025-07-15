@@ -1,51 +1,59 @@
 import { NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
-import { createSession, deleteSession } from '@/lib/session';
-import type { User } from '@/lib/types';
+import { SignJWT } from 'jose';
+
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET as string);
 
 export async function POST(request: Request) {
-  const body = await request.json();
-  const { idToken } = body;
-
   try {
-    const decodedToken = await adminAuth.verifyIdToken(idToken);
-    const { uid, email, name, picture } = decodedToken;
+    const { idToken } = await request.json();
 
-    let userDoc = await adminDb.collection('employees').doc(uid).get();
-    
-    // For this example, if user doesn't exist in Firestore, create one.
-    // In a real app, you might have a different registration flow.
-    if (!userDoc.exists) {
-        const newUser: Partial<User> = {
-            email: email || null,
-            name: name || 'New User',
-            role: 'Employee', // Default role
-            department: 'Unassigned',
-            status: 'Active',
-            hireDate: new Date().toISOString(),
-            photoURL: picture || null,
-        };
-        await adminDb.collection('employees').doc(uid).set(newUser);
-        userDoc = await adminDb.collection('employees').doc(uid).get();
+    if (!idToken) {
+      return NextResponse.json({ error: 'ID token no proporcionado' }, { status: 400 });
     }
-    
-    const user = { uid, ...userDoc.data() } as User;
 
-    await createSession(user);
+    // 1. Verificar el ID token con Firebase Admin
+    const decodedToken = await adminAuth.verifyIdToken(idToken);
+    const { uid } = decodedToken;
 
-    return NextResponse.json({ status: 'success', user });
+    // 2. Obtener el rol del usuario desde Firestore
+    const userDoc = await adminDb.collection('employees').doc(uid).get();
+    if (!userDoc.exists) {
+      return NextResponse.json({ error: 'Usuario no encontrado en Firestore' }, { status: 404 });
+    }
+    const { role } = userDoc.data()!;
+
+    // 3. Crear el payload para nuestro propio token de sesión (JWT)
+    const payload = {
+      uid,
+      email: decodedToken.email,
+      role, // Incluimos el rol para que el middleware pueda usarlo
+    };
+
+    // 4. Crear el token de sesión JWT
+    const sessionToken = await new SignJWT(payload)
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('1h') // La sesión expira en 1 hora
+      .sign(JWT_SECRET);
+
+    // 5. Crear la respuesta JSON que tu página de login espera
+    const response = NextResponse.json({ 
+      success: true, 
+      user: { role } // Devolvemos el rol del usuario
+    });
+
+    // 6. Establecer el token como una cookie HttpOnly en la respuesta
+    response.cookies.set('session', sessionToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60, // 1 hora en segundos
+      path: '/',
+    });
+
+    return response;
   } catch (error) {
-    console.error('Session login error:', error);
-    return NextResponse.json({ status: 'error', message: 'Authentication failed.' }, { status: 401 });
-  }
-}
-
-export async function DELETE() {
-  try {
-    await deleteSession();
-    return NextResponse.json({ status: 'success' });
-  } catch (error) {
-    console.error('Session logout error:', error);
-    return NextResponse.json({ status: 'error', message: 'Logout failed.' }, { status: 500 });
+    console.error('Error en la ruta de sesión:', error);
+    return NextResponse.json({ error: 'Autenticación fallida' }, { status: 401 });
   }
 }

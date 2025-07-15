@@ -1,9 +1,22 @@
-
 {
-  "firestore": {
-    "rules": "firestore.rules"
+  "hosting": {
+    "public": "out",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
   },
-  "storage": {
-    "rules": "storage.rules"
+  "firestore": {
+    "database": "workflow-central",
+    "location": "eur3",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
   }
 }

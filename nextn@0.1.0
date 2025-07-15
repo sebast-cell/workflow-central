@@ -1,0 +1,14 @@
+NAME:
+   bitmagnet v0.9.5 - A new cli application
+
+USAGE:
+   bitmagnet v0.9.5 [global options] command [command options] 
+
+COMMANDS:
+   gorm     
+   migrate  
+   help, h  Shows a list of commands or help for one command
+
+GLOBAL OPTIONS:
+   --help, -h  show help
+dev is not installed, but available in the following packages, pick one to run it, Ctrl+C to cancel.
