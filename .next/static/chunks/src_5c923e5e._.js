@@ -430,7 +430,7 @@ const firebaseConfig = {
     apiKey: ("TURBOPACK compile-time value", "AIzaSyABSWgXESeVRI5FcW0HncGrF07Ya1GqnosY"),
     authDomain: ("TURBOPACK compile-time value", "mi-workflow-app.firebaseapp.com"),
     projectId: ("TURBOPACK compile-time value", "mi-workflow-app"),
-    storageBucket: ("TURBOPACK compile-time value", "mi-workflow-app.firebasestorage.app"),
+    storageBucket: ("TURBOPACK compile-time value", "mi-workflow-app.appspot.com"),
     messagingSenderId: ("TURBOPACK compile-time value", "895117243506"),
     appId: ("TURBOPACK compile-time value", "1:895117243506:web:ee35a0e412a3040ebe3eeb")
 };
