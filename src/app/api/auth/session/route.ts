@@ -14,40 +14,55 @@ export async function POST(request: Request) {
 
     // 1. Verificar el ID token con Firebase Admin
     const decodedToken = await adminAuth.verifyIdToken(idToken);
-    const { uid } = decodedToken;
+    const { uid, email, name } = decodedToken;
 
-    // 2. Obtener el rol del usuario desde Firestore
-    const userDoc = await adminDb.collection('employees').doc(uid).get();
-    if (!userDoc.exists) {
-      return NextResponse.json({ error: 'Usuario no encontrado en Firestore' }, { status: 404 });
+    // 2. Intentar obtener el perfil del usuario desde Firestore
+    const userDocRef = adminDb.collection('employees').doc(uid);
+    const userDoc = await userDocRef.get();
+    
+    let userRole = 'Employee'; // Rol por defecto
+
+    if (userDoc.exists) {
+      // Si el usuario ya existe, usamos su rol guardado
+      userRole = userDoc.data()!.role;
+    } else {
+      // SI EL USUARIO NO EXISTE, LO CREAMOS AHORA
+      console.log(`Usuario no encontrado en Firestore, creando perfil para UID: ${uid}`);
+      await userDocRef.set({
+        name: name || email, // Usamos el nombre de Google/GitHub o el email
+        email: email,
+        role: 'Employee', // Asignamos el rol por defecto
+        status: 'Active',
+        hireDate: new Date(),
+      });
+      console.log(`Perfil creado con éxito.`);
     }
-    const { role } = userDoc.data()!;
 
-    // 3. Crear el payload para nuestro propio token de sesión (JWT)
+    // 3. Crear el payload para nuestro propio token de sesión
     const payload = {
       uid,
-      email: decodedToken.email,
-      role, // Incluimos el rol para que el middleware pueda usarlo
+      email,
+      role: userRole,
     };
 
     // 4. Crear el token de sesión JWT
     const sessionToken = await new SignJWT(payload)
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
-      .setExpirationTime('1h') // La sesión expira en 1 hora
+      .setExpirationTime('1h')
       .sign(JWT_SECRET);
 
     // 5. Crear la respuesta JSON que tu página de login espera
     const response = NextResponse.json({ 
       success: true, 
-      user: { role } // Devolvemos el rol del usuario
+      user: { role: userRole } 
     });
 
-    // 6. Establecer el token como una cookie HttpOnly en la respuesta
+    // 6. Establecer el token como una cookie HttpOnly
     response.cookies.set('session', sessionToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60, // 1 hora en segundos
+      maxAge: 60 * 60,
       path: '/',
     });
 
