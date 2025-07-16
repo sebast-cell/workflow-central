@@ -5,7 +5,7 @@ import { jwtVerify } from 'jose';
 
 const ADMIN_ROUTES = ['/dashboard', '/employees', '/reports', '/settings'];
 const EMPLOYEE_ROUTES = ['/portal'];
-// AÑADIMOS LA RUTA RAÍZ ('/') A LAS RUTAS PÚBLICAS
+// AÑADIMOS LA RUTA RAÍZ ('/') A LAS RUTAS PÚBLICAS PARA EVITAR BUCLES
 const PUBLIC_ROUTES = ['/login']; 
 
 // Función para obtener la clave secreta de forma segura
@@ -24,11 +24,11 @@ export async function middleware(request: NextRequest) {
   // --- LÓGICA MEJORADA ---
   // 1. Si NO hay cookie...
   if (!sessionCookie) {
-    // Si la ruta a la que intenta acceder no es pública, lo redirigimos a /login.
-    if (!PUBLIC_ROUTES.includes(pathname) && pathname !== '/') {
-      return NextResponse.redirect(new URL('/login', request.url));
+    // Si está intentando acceder a la raíz o a cualquier otra ruta no pública, redirigir a /login
+    if (pathname !== '/login') {
+       return NextResponse.redirect(new URL('/login', request.url));
     }
-    // Si es una ruta pública, le dejamos pasar.
+    // Si ya está en /login, permitir el paso.
     return NextResponse.next();
   }
 
@@ -50,8 +50,8 @@ export async function middleware(request: NextRequest) {
   const isAdmin = userRole === 'Admin' || userRole === 'Owner';
   const homeUrl = isAdmin ? '/dashboard' : '/portal';
 
-  // Si un usuario autenticado intenta ir a una ruta pública como /login, lo redirigimos a su panel
-  if (PUBLIC_ROUTES.includes(pathname)) {
+  // Si un usuario autenticado intenta ir a /login, lo redirigimos a su panel
+  if (pathname === '/login' || pathname === '/') {
     return NextResponse.redirect(new URL(homeUrl, request.url));
   }
 
