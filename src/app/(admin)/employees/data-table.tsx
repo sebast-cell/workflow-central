@@ -16,8 +16,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
+import { AddEmployeeSheet } from './add-employee-sheet';
+
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -46,10 +46,7 @@ export function DataTable<TData, TValue>({
             }
             className="max-w-sm"
             />
-            <Button>
-                <PlusCircle className="mr-2 h-4 w-4"/>
-                Add Employee
-            </Button>
+            <AddEmployeeSheet />
       </div>
       <div className="rounded-md border">
         <Table>
