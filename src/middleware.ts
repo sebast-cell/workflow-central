@@ -23,7 +23,7 @@ export async function middleware(request: NextRequest) {
   // 1. Si NO hay cookie
   if (!sessionCookie) {
     // Si intenta acceder a una ruta protegida o a la raíz, redirigir a /login
-    if (!PUBLIC_ROUTES.includes(pathname) && pathname !== '/') {
+    if (!PUBLIC_ROUTES.includes(pathname)) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
     // Si está en la raíz, redirigir a login
