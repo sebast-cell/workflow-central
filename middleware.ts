@@ -4,7 +4,8 @@ import { jwtVerify } from 'jose';
 
 const ADMIN_ROUTES = ['/dashboard', '/employees', '/reports', '/settings'];
 const EMPLOYEE_ROUTES = ['/portal'];
-const PUBLIC_ROUTES = ['/login'];
+// AÑADIMOS LA RUTA RAÍZ ('/') A LAS RUTAS PÚBLICAS
+const PUBLIC_ROUTES = ['/', '/login', '/signup']; 
 
 // Función para obtener la clave secreta de forma segura
 const getJwtSecretKey = () => {
@@ -20,11 +21,13 @@ export async function middleware(request: NextRequest) {
   const sessionCookie = request.cookies.get('session')?.value;
 
   // --- LÓGICA MEJORADA ---
-  // 1. Si NO hay cookie, y la ruta NO es pública, redirigir a /login
+  // 1. Si NO hay cookie...
   if (!sessionCookie) {
+    // Si la ruta a la que intenta acceder no es pública, lo redirigimos a /login.
     if (!PUBLIC_ROUTES.includes(pathname)) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
+    // Si es una ruta pública, le dejamos pasar.
     return NextResponse.next();
   }
 
@@ -34,7 +37,7 @@ export async function middleware(request: NextRequest) {
     const { payload } = await jwtVerify(sessionCookie, getJwtSecretKey());
     userPayload = payload;
   } catch (error) {
-    // Si la verificación falla (token inválido, expirado, etc.), borrar la cookie mala y redirigir a login
+    // Si la verificación falla (token inválido, etc.), borramos la cookie mala y redirigimos a login
     console.error('Fallo al verificar la cookie, borrándola:', error);
     const response = NextResponse.redirect(new URL('/login', request.url));
     response.cookies.delete('session');
@@ -43,15 +46,15 @@ export async function middleware(request: NextRequest) {
 
   // 3. Si la verificación es exitosa y tenemos los datos del usuario
   const userRole = (userPayload as any).role;
+  const isAdmin = userRole === 'Admin' || userRole === 'Owner';
+  const homeUrl = isAdmin ? '/dashboard' : '/portal';
 
-  // Si un usuario autenticado intenta ir a /login, redirigirlo a su panel
-  if (pathname === '/login') {
-    const url = userRole === 'Admin' || userRole === 'Owner' ? '/dashboard' : '/portal';
-    return NextResponse.redirect(new URL(url, request.url));
+  // Si un usuario autenticado intenta ir a una ruta pública, lo redirigimos a su panel
+  if (PUBLIC_ROUTES.includes(pathname)) {
+    return NextResponse.redirect(new URL(homeUrl, request.url));
   }
 
   // 4. Lógica de redirección por roles
-  const isAdmin = userRole === 'Admin' || userRole === 'Owner';
   if (!isAdmin && ADMIN_ROUTES.some(route => pathname.startsWith(route))) {
     return NextResponse.redirect(new URL('/portal', request.url));
   }

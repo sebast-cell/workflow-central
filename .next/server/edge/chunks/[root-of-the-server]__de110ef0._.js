@@ -39,8 +39,11 @@ const ADMIN_ROUTES = [
 const EMPLOYEE_ROUTES = [
     '/portal'
 ];
+// AÑADIMOS LA RUTA RAÍZ ('/') A LAS RUTAS PÚBLICAS
 const PUBLIC_ROUTES = [
-    '/login'
+    '/',
+    '/login',
+    '/signup'
 ];
 // Función para obtener la clave secreta de forma segura
 const getJwtSecretKey = ()=>{
@@ -54,11 +57,13 @@ async function middleware(request) {
     const { pathname } = request.nextUrl;
     const sessionCookie = request.cookies.get('session')?.value;
     // --- LÓGICA MEJORADA ---
-    // 1. Si NO hay cookie, y la ruta NO es pública, redirigir a /login
+    // 1. Si NO hay cookie...
     if (!sessionCookie) {
+        // Si la ruta a la que intenta acceder no es pública, lo redirigimos a /login.
         if (!PUBLIC_ROUTES.includes(pathname)) {
             return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$esm$2f$server$2f$web$2f$spec$2d$extension$2f$response$2e$js__$5b$middleware$2d$edge$5d$__$28$ecmascript$29$__["NextResponse"].redirect(new URL('/login', request.url));
         }
+        // Si es una ruta pública, le dejamos pasar.
         return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$esm$2f$server$2f$web$2f$spec$2d$extension$2f$response$2e$js__$5b$middleware$2d$edge$5d$__$28$ecmascript$29$__["NextResponse"].next();
     }
     // 2. Si SÍ hay cookie, intentar verificarla
@@ -67,7 +72,7 @@ async function middleware(request) {
         const { payload } = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$jose$2f$dist$2f$browser$2f$jwt$2f$verify$2e$js__$5b$middleware$2d$edge$5d$__$28$ecmascript$29$__["jwtVerify"])(sessionCookie, getJwtSecretKey());
         userPayload = payload;
     } catch (error) {
-        // Si la verificación falla (token inválido, expirado, etc.), borrar la cookie mala y redirigir a login
+        // Si la verificación falla (token inválido, etc.), borramos la cookie mala y redirigimos a login
         console.error('Fallo al verificar la cookie, borrándola:', error);
         const response = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$esm$2f$server$2f$web$2f$spec$2d$extension$2f$response$2e$js__$5b$middleware$2d$edge$5d$__$28$ecmascript$29$__["NextResponse"].redirect(new URL('/login', request.url));
         response.cookies.delete('session');
@@ -75,13 +80,13 @@ async function middleware(request) {
     }
     // 3. Si la verificación es exitosa y tenemos los datos del usuario
     const userRole = userPayload.role;
-    // Si un usuario autenticado intenta ir a /login, redirigirlo a su panel
-    if (pathname === '/login') {
-        const url = userRole === 'Admin' || userRole === 'Owner' ? '/dashboard' : '/portal';
-        return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$esm$2f$server$2f$web$2f$spec$2d$extension$2f$response$2e$js__$5b$middleware$2d$edge$5d$__$28$ecmascript$29$__["NextResponse"].redirect(new URL(url, request.url));
+    const isAdmin = userRole === 'Admin' || userRole === 'Owner';
+    const homeUrl = isAdmin ? '/dashboard' : '/portal';
+    // Si un usuario autenticado intenta ir a una ruta pública, lo redirigimos a su panel
+    if (PUBLIC_ROUTES.includes(pathname)) {
+        return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$esm$2f$server$2f$web$2f$spec$2d$extension$2f$response$2e$js__$5b$middleware$2d$edge$5d$__$28$ecmascript$29$__["NextResponse"].redirect(new URL(homeUrl, request.url));
     }
     // 4. Lógica de redirección por roles
-    const isAdmin = userRole === 'Admin' || userRole === 'Owner';
     if (!isAdmin && ADMIN_ROUTES.some((route)=>pathname.startsWith(route))) {
         return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$esm$2f$server$2f$web$2f$spec$2d$extension$2f$response$2e$js__$5b$middleware$2d$edge$5d$__$28$ecmascript$29$__["NextResponse"].redirect(new URL('/portal', request.url));
     }
