@@ -1,7 +1,8 @@
-// Esta página ahora se renderiza en el servidor, 
-// pero el middleware se encargará de redirigir al usuario.
-// No necesitamos hacer nada aquí.
+
+import { redirect } from 'next/navigation';
 
 export default function Home() {
-  return null;
+  // Redirige permanentemente a la página de inicio de sesión.
+  // El middleware se encargará de redirigir a los usuarios que ya han iniciado sesión.
+  redirect('/login');
 }
