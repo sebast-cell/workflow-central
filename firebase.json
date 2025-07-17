@@ -1,3 +1,4 @@
+
 {
   "hosting": {
     "source": ".",
@@ -8,13 +9,7 @@
     ],
     "frameworksBackend": {
       "region": "us-central1"
-    },
-    "rewrites": [
-      {
-        "source": "**",
-        "function": "nextApp"
-      }
-    ]
+    }
   },
   "firestore": {
     "rules": "firestore.rules"
