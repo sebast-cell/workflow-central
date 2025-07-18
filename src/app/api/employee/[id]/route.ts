@@ -1,4 +1,3 @@
-
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/firebase-admin';
 import type { Employee } from '@/lib/api';

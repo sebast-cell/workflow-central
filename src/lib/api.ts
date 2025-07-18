@@ -279,22 +279,22 @@ export const deleteSetting = async (setting: string, id: string): Promise<void> 
 
 // -- Employees --
 export const listEmployees = async (): Promise<Employee[]> => {
-    const response = await apiClient.get('/api/employee');
+    const response = await apiClient.get('/api/employees');
     return response.data;
 };
 
 export const createEmployee = async (employeeData: Omit<Employee, 'id' | 'status' | 'avatar'>): Promise<Employee> => {
-    const response = await apiClient.post('/api/employee', employeeData);
+    const response = await apiClient.post('/api/employees', employeeData);
     return response.data;
 };
 
 export const updateEmployee = async (id: string, employeeData: Partial<Employee>): Promise<Employee> => {
-    const response = await apiClient.put(`/api/employee/${id}`, employeeData);
+    const response = await apiClient.put(`/api/employees/${id}`, employeeData);
     return response.data;
 };
 
 export const deleteEmployee = async (id: string): Promise<void> => {
-    await apiClient.delete(`/api/employee/${id}`);
+    await apiClient.delete(`/api/employees/${id}`);
 };
 
 // -- Incentives --
@@ -360,3 +360,5 @@ export const createProject = async (projectData: Omit<Project, 'id'>): Promise<P
     const response = await apiClient.post('/api/projects', projectData);
     return response.data;
 };
+
+    

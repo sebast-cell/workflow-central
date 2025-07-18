@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from "react";
@@ -22,7 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-export default function EmployeePage() {
+export default function EmployeesPage() {
   const { toast } = useToast();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);

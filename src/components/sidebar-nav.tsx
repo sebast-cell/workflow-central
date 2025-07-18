@@ -23,7 +23,7 @@ import {
 
 const navItems = [
   { href: '/dashboard', label: 'Panel', icon: LayoutDashboard },
-  { href: '/employee', label: 'Empleados', icon: Users },
+  { href: '/employees', label: 'Empleados', icon: Users },
   { href: '/attendance', label: 'Asistencia', icon: Clock },
   { href: '/absences', label: 'Ausencias y TL', icon: CalendarOff },
   { href: '/projects', label: 'Proyectos', icon: Briefcase },
@@ -77,3 +77,5 @@ export default function SidebarNav() {
     </div>
   );
 }
+
+    
