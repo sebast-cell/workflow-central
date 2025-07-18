@@ -1,21 +1,23 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/firebase-admin';
+// Importa los tipos y funciones necesarios de firebase-admin/firestore
+import { QueryDocumentSnapshot } from 'firebase-admin/firestore'; // <--- ¡CAMBIO AQUÍ! Importa QueryDocumentSnapshot
 import { isPast } from 'date-fns';
-import type { Objective, Incentive, Task } from '@/lib/api';
+import type { Objective, Incentive, Task } from '@/lib/api'; // Asegúrate de que esta ruta y tipos sean correctos
 
 export async function GET(
     request: Request,
     { params }: { params: { obj_id: string } }
 ) {
     if (!db) {
-        return NextResponse.json({ error: "Firestore is not initialized" }, { status: 500 });
+        return NextResponse.json({ error: "Firestore Admin SDK no inicializado." }, { status: 500 });
     }
     try {
         const obj_id = params.obj_id;
         const objDoc = await db.collection('objectives').doc(obj_id).get();
 
         if (!objDoc.exists) {
-            return NextResponse.json({ message: "Objective not found" }, { status: 404 });
+            return NextResponse.json({ message: "Objetivo no encontrado" }, { status: 404 });
         }
 
         const obj = objDoc.data() as Objective;
@@ -33,10 +35,11 @@ export async function GET(
         const incentive = incentiveDoc.data() as Incentive;
 
         const tasksSnapshot = await db.collection('tasks').where('objective_id', '==', obj_id).get();
-        const tasks = tasksSnapshot.docs.map(doc => doc.data() as Task);
+        // Tipea explícitamente 'doc' en el map para evitar TS7006
+        const tasks = tasksSnapshot.docs.map((doc: QueryDocumentSnapshot) => doc.data() as Task); // <--- ¡CAMBIO AQUÍ!
         
         const total = tasks.length;
-        const completed = tasks.filter(t => t.completed).length;
+        const completed = tasks.filter((t: Task) => t.completed).length; // <--- ¡CAMBIO AQUÍ! Tipado de 't'
 
         if (total === 0) {
             return NextResponse.json({ result: 0, message: "No hay tareas" });
@@ -74,6 +77,7 @@ export async function GET(
 
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.error("Error en GET /api/objectives/[obj_id]/incentive:", error);
         return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 }
