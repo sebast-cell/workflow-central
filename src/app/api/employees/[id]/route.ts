@@ -9,16 +9,24 @@ export async function GET(
     { params }: { params: { id: string } }
 ) {
     if (!db) {
-        return NextResponse.json({ error: "Firestore is not initialized" }, { status: 500 });
+        return NextResponse.json({ error: "Firestore Admin SDK no inicializado." }, { status: 500 });
     }
     try {
-        const doc = await db.collection('employees').doc(params.id).get();
-        if (!doc.exists) {
-            return NextResponse.json({ message: "Employee not found" }, { status: 404 });
+        const employeeDocRef = db.collection('employees').doc(params.id);
+        const snapshot = await employeeDocRef.get();
+
+        if (!snapshot.exists) {
+            return NextResponse.json({ message: "Empleado no encontrado" }, { status: 404 });
         }
-        return NextResponse.json({ id: doc.id, ...doc.data() });
+        
+        if (!snapshot.data()) {
+            return NextResponse.json({ message: "Datos de empleado no encontrados" }, { status: 500 });
+        }
+
+        return NextResponse.json({ id: snapshot.id, ...snapshot.data() });
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.error("Error en GET /api/employees/[id]:", error);
         return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 }
@@ -29,17 +37,25 @@ export async function PUT(
     { params }: { params: { id: string } }
 ) {
     if (!db) {
-        return NextResponse.json({ error: "Firestore is not initialized" }, { status: 500 });
+        return NextResponse.json({ error: "Firestore Admin SDK no inicializado." }, { status: 500 });
     }
     try {
         const updatedData: Partial<Employee> = await request.json();
-        // Exclude properties that shouldn't be overwritten from the client like id
         const { id, ...rest } = updatedData;
-        await db.collection('employees').doc(params.id).update(rest);
-        const updatedDoc = await db.collection('employees').doc(params.id).get();
-        return NextResponse.json({ id: updatedDoc.id, ...updatedDoc.data() });
+        
+        const employeeDocRef = db.collection('employees').doc(params.id);
+        await employeeDocRef.update(rest);
+
+        const updatedSnapshot = await employeeDocRef.get();
+        
+        if (!updatedSnapshot.data()) {
+            return NextResponse.json({ message: "Datos de empleado actualizados no encontrados" }, { status: 500 });
+        }
+
+        return NextResponse.json({ id: updatedSnapshot.id, ...updatedSnapshot.data() });
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.error("Error en PUT /api/employees/[id]:", error);
         return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 }
@@ -50,13 +66,14 @@ export async function DELETE(
     { params }: { params: { id: string } }
 ) {
     if (!db) {
-        return NextResponse.json({ error: "Firestore is not initialized" }, { status: 500 });
+        return NextResponse.json({ error: "Firestore Admin SDK no inicializado." }, { status: 500 });
     }
     try {
         await db.collection('employees').doc(params.id).delete();
-        return NextResponse.json({ message: "Employee deleted" }, { status: 200 });
+        return NextResponse.json({ message: "Empleado eliminado" }, { status: 200 });
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.error("Error en DELETE /api/employees/[id]:", error);
         return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 }
@@ -67,17 +84,25 @@ export async function PATCH(
     { params }: { params: { id: string } }
 ) {
     if (!db) {
-        return NextResponse.json({ error: "Firestore is not initialized" }, { status: 500 });
+        return NextResponse.json({ error: "Firestore Admin SDK no inicializado." }, { status: 500 });
     }
     try {
         const { status } = await request.json();
         if (status) {
             await db.collection('employees').doc(params.id).update({ status });
         }
-        const updatedDoc = await db.collection('employees').doc(params.id).get();
-        return NextResponse.json({ id: updatedDoc.id, ...updatedDoc.data() });
+        
+        const updatedDocRef = db.collection('employees').doc(params.id);
+        const updatedSnapshot = await updatedDocRef.get();
+        
+        if (!updatedSnapshot.data()) {
+            return NextResponse.json({ message: "Datos de empleado actualizados no encontrados" }, { status: 500 });
+        }
+
+        return NextResponse.json({ id: updatedSnapshot.id, ...updatedSnapshot.data() });
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.error("Error en PATCH /api/employees/[id]:", error);
         return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 }
