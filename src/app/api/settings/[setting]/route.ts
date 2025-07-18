@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/firebase-admin';
 // Importa los tipos y funciones necesarios de firebase-admin/firestore
-import { collection, addDoc, QueryDocumentSnapshot } from 'firebase-admin/firestore'; // <--- ¡CAMBIO AQUÍ! Importa funciones y tipos
+import { QueryDocumentSnapshot } from 'firebase-admin/firestore'; // <--- ¡CAMBIO AQUÍ! Importa funciones y tipos
 
 // This is a generic handler for multiple settings collections.
 // E.g. /api/settings/roles will target the 'roles' collection.
