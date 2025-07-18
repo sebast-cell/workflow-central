@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
-import { firestore } from '@/lib/firebase-admin';
+import { db } from '@/lib/firebase-admin';
 import type { Project } from '@/lib/api';
 
 export async function GET() {
+    if (!db) {
+        return NextResponse.json({ error: "Firestore is not initialized" }, { status: 500 });
+    }
     try {
-        const projectsSnapshot = await firestore.collection('projects').get();
+        const projectsSnapshot = await db.collection('projects').get();
         const projects = projectsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Omit<Project, 'id'> }));
         return NextResponse.json(projects);
     } catch (error) {
@@ -14,9 +17,12 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+    if (!db) {
+        return NextResponse.json({ error: "Firestore is not initialized" }, { status: 500 });
+    }
     try {
         const projectData: Omit<Project, 'id'> = await request.json();
-        const docRef = await firestore.collection('projects').add(projectData);
+        const docRef = await db.collection('projects').add(projectData);
         const newProject = { id: docRef.id, ...projectData };
         return NextResponse.json(newProject, { status: 201 });
     } catch (error) {

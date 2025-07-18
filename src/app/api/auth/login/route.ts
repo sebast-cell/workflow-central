@@ -2,7 +2,7 @@
 'use server';
 import { NextResponse } from 'next/server';
 import * as admin from 'firebase-admin';
-import { firestore } from '@/lib/firebase-admin';
+import { db } from '@/lib/firebase-admin';
 import type { Employee } from '@/lib/api';
 
 // This function simulates checking credentials with Firebase Auth.
@@ -28,6 +28,9 @@ async function verifyUserCredentials(email: string, password: string): Promise<a
 
 
 export async function POST(request: Request) {
+    if (!db) {
+        return NextResponse.json({ error: "Firestore is not initialized" }, { status: 500 });
+    }
     try {
         const { email, password } = await request.json();
 
@@ -44,7 +47,7 @@ export async function POST(request: Request) {
         }
         
         // 2. Use the UID from Auth to find the employee document in Firestore
-        const employeeDocRef = firestore.collection('employee').doc(userRecord.uid);
+        const employeeDocRef = db.collection('employee').doc(userRecord.uid);
         const employeeDoc = await employeeDocRef.get();
 
         if (!employeeDoc.exists) {

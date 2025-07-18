@@ -1,13 +1,16 @@
 
 
 import { NextResponse } from 'next/server';
-import { firestore } from '@/lib/firebase-admin';
+import { db } from '@/lib/firebase-admin';
 import * as admin from 'firebase-admin';
 import type { Employee } from '@/lib/api';
 
 export async function GET() {
+    if (!db) {
+        return NextResponse.json({ error: "Firestore is not initialized" }, { status: 500 });
+    }
     try {
-        const employeesSnapshot = await firestore.collection('employee').get();
+        const employeesSnapshot = await db.collection('employee').get();
         const employees = employeesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as Omit<Employee, 'id'> }));
         return NextResponse.json(employees);
     } catch (error) {
@@ -17,6 +20,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+    if (!db) {
+        return NextResponse.json({ error: "Firestore is not initialized" }, { status: 500 });
+    }
     try {
         const employeeData: Omit<Employee, 'id' | 'status' | 'avatar'> & { password?: string } = await request.json();
 
@@ -63,7 +69,7 @@ export async function POST(request: Request) {
         };
 
         // 5. Create employee document in Firestore with the UID as the document ID
-        await firestore.collection('employee').doc(userRecord.uid).set(firestoreEmployeeData);
+        await db.collection('employee').doc(userRecord.uid).set(firestoreEmployeeData);
 
         // We use the uid from Auth as the ID for the Firestore document for consistency
         const newEmployee = { id: userRecord.uid, ...firestoreEmployeeData };

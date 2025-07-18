@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { firestore } from '@/lib/firebase-admin';
+import { db } from '@/lib/firebase-admin';
 import { isPast } from 'date-fns';
 import type { Objective, Incentive, Task } from '@/lib/api';
 
@@ -7,9 +7,12 @@ export async function GET(
     request: Request,
     { params }: { params: { obj_id: string } }
 ) {
+    if (!db) {
+        return NextResponse.json({ error: "Firestore is not initialized" }, { status: 500 });
+    }
     try {
         const obj_id = params.obj_id;
-        const objDoc = await firestore.collection('objectives').doc(obj_id).get();
+        const objDoc = await db.collection('objectives').doc(obj_id).get();
 
         if (!objDoc.exists) {
             return NextResponse.json({ message: "Objective not found" }, { status: 404 });
@@ -23,13 +26,13 @@ export async function GET(
 
         const isExpired = isPast(new Date(obj.end_date));
 
-        const incentiveDoc = await firestore.collection('incentives').doc(obj.incentive_id).get();
+        const incentiveDoc = await db.collection('incentives').doc(obj.incentive_id).get();
         if (!incentiveDoc.exists) {
             return NextResponse.json({ result: 0, message: "Incentivo no encontrado" });
         }
         const incentive = incentiveDoc.data() as Incentive;
 
-        const tasksSnapshot = await firestore.collection('tasks').where('objective_id', '==', obj_id).get();
+        const tasksSnapshot = await db.collection('tasks').where('objective_id', '==', obj_id).get();
         const tasks = tasksSnapshot.docs.map(doc => doc.data() as Task);
         
         const total = tasks.length;

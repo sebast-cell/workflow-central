@@ -1,18 +1,21 @@
 import { NextResponse } from 'next/server';
-import { firestore } from '@/lib/firebase-admin';
+import { db } from '@/lib/firebase-admin';
 
 // PATCH for updating status
 export async function PATCH(
     request: Request,
     { params }: { params: { id: string } }
 ) {
+    if (!db) {
+        return NextResponse.json({ error: "Firestore is not initialized" }, { status: 500 });
+    }
     try {
         const { status } = await request.json();
         if (!status || !['Pendiente', 'Aprobado', 'Rechazado'].includes(status)) {
             return NextResponse.json({ message: "Invalid status provided" }, { status: 400 });
         }
 
-        const docRef = firestore.collection('absenceRequests').doc(params.id);
+        const docRef = db.collection('absenceRequests').doc(params.id);
         const doc = await docRef.get();
 
         if (!doc.exists) {
