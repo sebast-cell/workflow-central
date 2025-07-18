@@ -45,7 +45,7 @@ const auth = admin.auth(); // Accede a auth a través de la instancia admin
 const firestore = admin.firestore(); // Accede a firestore a través de la instancia admin
 
 // El email del usuario que debe ser el Owner.
-const OWNER_EMAIL = "aluminiosmediterraneo@gmail.com";
+const OWNER_EMAIL = process.env.OWNER_EMAIL;
 
 if (!OWNER_EMAIL) {
     console.error("Error: La variable de entorno OWNER_EMAIL no está configurada.");
