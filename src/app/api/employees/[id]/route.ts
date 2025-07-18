@@ -12,7 +12,7 @@ export async function GET(
         return NextResponse.json({ error: "Firestore is not initialized" }, { status: 500 });
     }
     try {
-        const doc = await db.collection('employee').doc(params.id).get();
+        const doc = await db.collection('employees').doc(params.id).get();
         if (!doc.exists) {
             return NextResponse.json({ message: "Employee not found" }, { status: 404 });
         }
@@ -35,8 +35,8 @@ export async function PUT(
         const updatedData: Partial<Employee> = await request.json();
         // Exclude properties that shouldn't be overwritten from the client like id
         const { id, ...rest } = updatedData;
-        await db.collection('employee').doc(params.id).update(rest);
-        const updatedDoc = await db.collection('employee').doc(params.id).get();
+        await db.collection('employees').doc(params.id).update(rest);
+        const updatedDoc = await db.collection('employees').doc(params.id).get();
         return NextResponse.json({ id: updatedDoc.id, ...updatedDoc.data() });
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -53,7 +53,7 @@ export async function DELETE(
         return NextResponse.json({ error: "Firestore is not initialized" }, { status: 500 });
     }
     try {
-        await db.collection('employee').doc(params.id).delete();
+        await db.collection('employees').doc(params.id).delete();
         return NextResponse.json({ message: "Employee deleted" }, { status: 200 });
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -72,14 +72,12 @@ export async function PATCH(
     try {
         const { status } = await request.json();
         if (status) {
-            await db.collection('employee').doc(params.id).update({ status });
+            await db.collection('employees').doc(params.id).update({ status });
         }
-        const updatedDoc = await db.collection('employee').doc(params.id).get();
+        const updatedDoc = await db.collection('employees').doc(params.id).get();
         return NextResponse.json({ id: updatedDoc.id, ...updatedDoc.data() });
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 }
-
-    

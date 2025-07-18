@@ -1,8 +1,9 @@
+
 /**
- * @fileoverview Syncs Firebase Authentication users to the Firestore `employee` collection.
+ * @fileoverview Syncs Firebase Authentication users to the Firestore `employees` collection.
  *
  * This script iterates through all users in Firebase Authentication and ensures
- * that a corresponding document exists in the `employee` collection in Firestore.
+ * that a corresponding document exists in the `employees` collection in Firestore.
  * The Firestore document ID is set to be the same as the user's UID from Authentication.
  *
  * If a document already exists, it will be updated (merged) with the latest
@@ -56,7 +57,7 @@ async function syncAllUsersToFirestore() {
 
       const promises = listUsersResult.users.map(async (userRecord) => {
         const { uid, email, displayName } = userRecord;
-        const employeeDocRef = firestore.collection('employee').doc(uid);
+        const employeeDocRef = firestore.collection('employees').doc(uid);
         
         console.log(`- Processing user: ${email || 'No Email'} (UID: ${uid})`);
 
