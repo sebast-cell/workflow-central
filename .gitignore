@@ -16,7 +16,7 @@
 /build # Si usas React con create-react-app (o similar)
 
 # Directorios de Firebase CLI y artefactos de despliegue
-.firebase/ # <--- ¡ESTA ES LA LÍNEA CRÍTICA QUE FALTABA!
+.firebase/
 firebase-debug.log*
 firestore-debug.log
 hosting-debug.log*
@@ -35,6 +35,14 @@ yarn-error.log*
 .pnpm-debug.log*
 *.tsbuildinfo # Archivos de caché de TypeScript
 next-env.d.ts # Archivo de declaración de tipos generado por Next.js
+
+# ¡CRÍTICO! Claves de servicio de Firebase Admin (NUNCA SUBIR A GIT)
+# Si el archivo JSON está en la raíz del proyecto:
+mi-workflow-app-firebase-adminsdk-fbsvc-*.json
+# Si el archivo JSON está en una carpeta 'credentials' en la raíz del proyecto:
+/credentials/ # Ignora toda la carpeta de credenciales
+# Si el archivo JSON está en una carpeta 'secrets' en la raíz del proyecto:
+/secrets/ # Ignora toda la carpeta de secretos
 
 # Vercel
 .vercel
