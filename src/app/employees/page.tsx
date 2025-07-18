@@ -15,6 +15,7 @@ import { Download, MoreHorizontal, PlusCircle, Search, UploadCloud, Link as Link
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { VariantProps } from "class-variance-authority";
 import type { Employee, Department } from "@/lib/api";
+// Importa las funciones de API. Asegúrate de que listEmployees, createEmployee, etc. llamen a /api/employees (plural)
 import { listEmployees, createEmployee, updateEmployee, deleteEmployee, listSettings } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from "date-fns";
@@ -22,7 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-export default function EmployeesPage() {
+export default function EmployeesPage() { // <--- Asegúrate de que el nombre de la función exportada sea EmployeesPage
   const { toast } = useToast();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -39,7 +40,7 @@ export default function EmployeesPage() {
   const [formData, setFormData] = useState<Partial<Employee> & { password?: string }>({
     name: "",
     email: "",
-    password: "",
+    password: "", // Contraseña solo para el formulario, no se envía directamente a Firestore
     department: "",
     role: "Empleado",
     schedule: "",
@@ -51,7 +52,7 @@ export default function EmployeesPage() {
     setIsLoading(true);
     try {
         const [employeesData, departmentsData] = await Promise.all([
-            listEmployees(),
+            listEmployees(), // Llama a /api/employees
             listSettings<Department>('departments')
         ]);
         setEmployees(employeesData);
@@ -69,7 +70,7 @@ export default function EmployeesPage() {
 
   useEffect(() => {
     fetchData();
-  }, [toast]);
+  }, [toast]); // Dependencia en toast para evitar bucles si toast cambia
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -90,7 +91,8 @@ export default function EmployeesPage() {
   const openEditSheet = (employee: Employee) => {
     setSheetMode('edit');
     setSelectedEmployee(employee);
-    setFormData({ ...employee, password: '' });
+    // Al editar, no precargues la contraseña
+    setFormData({ ...employee, password: '' }); 
     setIsSheetOpen(true);
   }
 
@@ -106,19 +108,18 @@ export default function EmployeesPage() {
                 setIsSubmitting(false);
                 return;
             }
-            await createEmployee(formData as any); // The API expects the password field now
+            await createEmployee(formData as any); 
             toast({ title: "Empleado añadido", description: `${formData.name} ha sido añadido al equipo.` });
         } else if (sheetMode === 'edit' && selectedEmployee) {
-            const { password, ...updateData } = formData;
-            // Note: Password update logic would need a separate, more secure flow.
-            // We're only updating Firestore data here.
+            const { password, ...updateData } = formData; // Excluir password para la API
+            // La lógica de actualización de contraseña debe ser separada y segura (Firebase Auth)
             await updateEmployee(selectedEmployee.id, updateData);
             toast({ title: "Empleado actualizado", description: `Los datos de ${formData.name} han sido guardados.` });
         }
-        await fetchData(); // Refresh data from server
+        await fetchData(); // Refrescar datos del servidor
         setIsSheetOpen(false);
     } catch (error: any) {
-        const errorMsg = error.response?.data?.details || "No se pudo guardar el empleado.";
+        const errorMsg = error.response?.data?.details || error.message || "No se pudo guardar el empleado.";
         toast({ variant: "destructive", title: "Error al guardar", description: errorMsg });
     } finally {
         setIsSubmitting(false);
@@ -215,7 +216,7 @@ export default function EmployeesPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos los Deptos.</SelectItem>
-                  {departments.map(dept => <SelectItem key={dept.id} value={dept.name}>{dept.name}</SelectItem>)}
+                  {departments.map(d => <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>)}
                 </SelectContent>
               </Select>
               <Button variant="outline" className="w-full sm:w-auto">
