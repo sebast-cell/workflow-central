@@ -20,7 +20,6 @@ export function LoginForm() {
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('admin');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [authInstance, setAuthInstance] = useState<Auth | null>(null);
@@ -33,9 +32,6 @@ export function LoginForm() {
       setError("No se pudieron cargar los servicios de autenticación.");
     }
     const roleFromQuery = searchParams.get('role');
-    if (roleFromQuery && ['admin', 'employee'].includes(roleFromQuery)) {
-        setRole(roleFromQuery);
-    }
   }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
