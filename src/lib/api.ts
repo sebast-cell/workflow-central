@@ -1,6 +1,8 @@
 
 'use client';
 import axios from 'axios';
+import { getFirebaseAuth } from './firebase';
+import { type Auth } from 'firebase/auth';
 
 const apiClient = axios.create({
     baseURL: '/', // Use relative paths for Next.js API Routes
@@ -8,6 +10,29 @@ const apiClient = axios.create({
         'Content-Type': 'application/json',
     }
 });
+
+let authInstance: Auth | null = null;
+try {
+  if (typeof window !== 'undefined') {
+    authInstance = getFirebaseAuth();
+  }
+} catch (e) {
+  console.error("Could not get firebase auth instance in api client.", e)
+}
+
+
+apiClient.interceptors.request.use(
+  async (config) => {
+    if (authInstance?.currentUser) {
+      const token = await authInstance.currentUser.getIdToken();
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 
 // -------- TYPE DEFINITIONS -------- //
@@ -360,5 +385,3 @@ export const createProject = async (projectData: Omit<Project, 'id'>): Promise<P
     const response = await apiClient.post('/api/projects', projectData);
     return response.data;
 };
-
-    

@@ -18,7 +18,7 @@ export default function LoginPage() {
           Introduce tus credenciales para acceder a tu panel
         </p>
         <div className="mt-6">
-          <Suspense fallback={<div>Cargando...</div>}>
+          <Suspense fallback={<div className="text-center">Cargando formulario...</div>}>
             <LoginForm />
           </Suspense>
         </div>

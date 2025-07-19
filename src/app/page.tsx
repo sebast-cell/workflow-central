@@ -10,12 +10,32 @@ import Link from "next/link";
 import { useAuth } from '@/contexts/auth-context';
 
 export default function PortalSelectionPage() {
-  const { logout } = useAuth();
+  const { logout, user, isLoading } = useAuth();
+  const router = useRouter();
   
-  // Ensure user is logged out when they land on this page
+  // This effect ensures user is logged out when they land on this page,
+  // unless they are navigating back while already logged in.
   useEffect(() => {
-    logout();
-  }, [logout]);
+    if (!isLoading && !user) {
+        logout();
+    }
+  }, [logout, user, isLoading]);
+
+  // If user is already logged in, redirect them to their respective dashboard
+  useEffect(() => {
+    if (!isLoading && user) {
+        if (user.role === 'Owner' || user.role === 'Admin') {
+            router.push('/dashboard');
+        } else {
+            router.push('/portal');
+        }
+    }
+  }, [user, isLoading, router]);
+  
+  // Render nothing while checking auth status to prevent flash of content
+  if (isLoading || user) {
+      return <div className="flex h-screen w-full items-center justify-center"><LogIn className="h-8 w-8 animate-spin" /></div>;
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-muted/40 p-4">
