@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect } from 'react';
@@ -10,31 +9,25 @@ import Link from "next/link";
 import { useAuth } from '@/contexts/auth-context';
 
 export default function PortalSelectionPage() {
-  const { logout, user, isLoading } = useAuth();
+  const { user, isLoading } = useAuth();
   const router = useRouter();
   
-  // This effect ensures user is logged out when they land on this page,
-  // unless they are navigating back while already logged in.
-  useEffect(() => {
-    if (!isLoading && !user) {
-        logout();
-    }
-  }, [logout, user, isLoading]);
-
-  // If user is already logged in, redirect them to their respective dashboard
   useEffect(() => {
     if (!isLoading && user) {
         if (user.role === 'Owner' || user.role === 'Admin') {
             router.push('/dashboard');
-        } else {
+        } else if (user.role === 'Employee') {
             router.push('/portal');
         }
     }
   }, [user, isLoading, router]);
   
-  // Render nothing while checking auth status to prevent flash of content
   if (isLoading || user) {
-      return <div className="flex h-screen w-full items-center justify-center"><LogIn className="h-8 w-8 animate-spin" /></div>;
+      return (
+        <div className="flex h-screen w-full items-center justify-center bg-muted/40">
+          <LogIn className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      );
   }
 
   return (

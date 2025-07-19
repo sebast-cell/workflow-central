@@ -1,75 +1,146 @@
-
+// src/contexts/auth-context.tsx
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { type Employee, listEmployees } from '@/lib/api';
+import React, { createContext, useContext, useEffect, useState, useMemo, ReactNode, useCallback } from 'react';
+import { type User, onAuthStateChanged, signOut, Auth } from 'firebase/auth';
+import { doc, getDoc, Firestore } from 'firebase/firestore';
+import { getFirebaseAuth, getFirebaseDB } from '@/lib/firebase';
+import type { Employee } from '@/lib/api';
+import { Loader2 } from 'lucide-react';
+import axios from 'axios';
 
 interface AuthContextType {
   user: Employee | null;
+  firebaseUser: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (userData: Employee) => void;
-  logout: () => void;
-  fetchUser: (uid: string) => Promise<void>;
+  error: string | null;
+  login: (employeeData: Employee) => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<Employee | null>(null);
+  const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [authInstance, setAuthInstance] = useState<Auth | null>(null);
+  const [dbInstance, setDbInstance] = useState<Firestore | null>(null);
+
+  const initializeFirebaseInstances = useCallback(() => {
+    try {
+      const auth = getFirebaseAuth();
+      const db = getFirebaseDB();
+      setAuthInstance(auth);
+      setDbInstance(db);
+      return { auth, db };
+    } catch (e: any) {
+      console.error("Error al inicializar Firebase en AuthProvider:", e);
+      setError("Error crítico de Firebase: " + e.message);
+      return { auth: null, db: null };
+    }
+  }, []);
+
+  const fetchUserRoleAndData = useCallback(async (fbUser: User) => {
+    if (!dbInstance) {
+      console.error("Firestore DB no disponible para fetchUserRoleAndData.");
+      setError("Servicio de base de datos no disponible.");
+      return;
+    }
+    try {
+        const docRef = doc(dbInstance, 'employees', fbUser.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const employeeData = docSnap.data() as Omit<Employee, 'id' | 'uid'>;
+          const fullEmployeeProfile: Employee = {
+              id: docSnap.id,
+              uid: fbUser.uid,
+              ...employeeData
+          };
+          setUser(fullEmployeeProfile);
+        } else {
+          console.warn("Perfil de empleado no encontrado en Firestore para UID:", fbUser.uid);
+          setError("Perfil de usuario no encontrado.");
+          setUser(null);
+          if (authInstance) await signOut(authInstance);
+        }
+    } catch (error: any) {
+        console.error("Error fetching user data from Firestore:", error);
+        setError("Error al cargar perfil de usuario: " + error.message);
+        setUser(null);
+        if (authInstance) await signOut(authInstance);
+    }
+  }, [dbInstance, authInstance]);
+
+  const login = useCallback((employeeData: Employee) => {
+    setUser(employeeData);
+  }, []);
+
+  const logout = useCallback(async () => {
+    setIsLoading(true);
+    if (authInstance) {
+      await signOut(authInstance);
+    }
+    await axios.post('/api/auth/logout');
+    setUser(null);
+    setFirebaseUser(null);
+    setIsLoading(false);
+  }, [authInstance]);
 
   useEffect(() => {
-    // This effect runs once on mount to load the user from localStorage.
-    try {
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
-      }
-    } catch (error) {
-      console.error("Failed to parse user from localStorage", error);
-      localStorage.removeItem('user');
-    } finally {
+    const { auth: currentAuth } = initializeFirebaseInstances();
+    setAuthInstance(currentAuth);
+
+    let unsubscribe: (() => void) | undefined;
+    if (currentAuth) {
+      unsubscribe = onAuthStateChanged(currentAuth, async (fbUser) => {
+        setIsLoading(true);
+        if (fbUser) {
+          setFirebaseUser(fbUser);
+          if (!user || user.uid !== fbUser.uid) {
+            await fetchUserRoleAndData(fbUser);
+          }
+        } else {
+          setUser(null);
+          setFirebaseUser(null);
+        }
+        setIsLoading(false);
+      });
+    } else {
       setIsLoading(false);
     }
-  }, []);
 
-  const login = useCallback((userData: Employee) => {
-    setUser(userData);
-    try {
-      localStorage.setItem('user', JSON.stringify(userData));
-    } catch (error) {
-      console.error("Failed to save user to localStorage", error);
-    }
-  }, []);
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [initializeFirebaseInstances, fetchUserRoleAndData, user]);
 
-  const logout = useCallback(() => {
-    setUser(null);
-    try {
-      localStorage.removeItem('user');
-    } catch (error) {
-      console.error("Failed to remove user from localStorage", error);
-    }
-  }, []);
+  const isAuthenticated = useMemo(() => !!user && !!firebaseUser, [user, firebaseUser]);
 
-  const fetchUser = useCallback(async (uid: string) => {
-      try {
-        // In a real high-performance app, you'd have a `getEmployee(uid)` endpoint
-        const allEmployees = await listEmployees();
-        const foundUser = allEmployees.find(e => e.id === uid);
-        if (foundUser) {
-            login(foundUser);
-        } else {
-            throw new Error("User profile not found in Firestore.");
-        }
-      } catch (error) {
-        console.error("Failed to fetch user profile:", error);
-        logout(); // Log out if profile can't be fetched
-      }
-  }, [login, logout]);
+  const value = useMemo(() => ({
+    user,
+    firebaseUser,
+    isAuthenticated,
+    isLoading,
+    error,
+    login,
+    logout,
+  }), [user, firebaseUser, isAuthenticated, isLoading, error, login, logout]);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <p className="ml-2">Cargando autenticación...</p>
+      </div>
+    );
+  }
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, logout, fetchUser }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

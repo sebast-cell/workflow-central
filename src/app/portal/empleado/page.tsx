@@ -1,62 +1,67 @@
 // src/app/portal/empleado/page.tsx
-"use client"; // <--- ¡CRÍTICO! Emoĩ ko'ãva Client Component ramo
+"use client";
 
 import { useEffect, useState } from 'react';
-import { doc, getDoc } from 'firebase/firestore'; // Emoĩ doc ha getDoc SDK CLIENTE-gui
-import { getFirebaseAuth, getFirebaseDB } from '@/lib/firebase'; // <--- ¡CAMBIO KO'ÁPE! Emoĩ función-kuéra
+import { doc, getDoc, Firestore } from 'firebase/firestore';
+import { getFirebaseAuth, getFirebaseDB } from '@/lib/firebase';
+import { Auth, User } from 'firebase/auth'; // Importa User para tipado
+import type { Employee } from '@/lib/api'; // Asegúrate de que este tipo sea correcto
 
 export default function EmpleadoPage() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Firebase instancia-kuéra ojehupytýva condicionalmente
-  const [authInstance, setAuthInstance] = useState<any>(null); // Ikatu ha'e tipo Auth
-  const [dbInstance, setDbInstance] = useState<any>(null);   // Ikatu ha'e tipo Firestore
+  const [authInstance, setAuthInstance] = useState<Auth | null>(null);
+  const [dbInstance, setDbInstance] = useState<Firestore | null>(null);
 
   useEffect(() => {
     try {
-      const auth = getFirebaseAuth(); // Ejapo Auth instancia
-      const db = getFirebaseDB();     // Ejapo DB instancia
+      const auth = getFirebaseAuth();
+      const db = getFirebaseDB();
       setAuthInstance(auth);
       setDbInstance(db);
 
-      const fetchUserData = async () => {
-        const currentUser = auth.currentUser;
-        if (currentUser) {
-          setUserEmail(currentUser.email);
-          try {
-            if (db) { // Ejesareko db oĩporãpa
-              const userDocRef = doc(db, 'employees', currentUser.uid); // <--- ¡CAMBIO KO'ÁPE! Colección 'employees'
-              const userDoc = await getDoc(userDocRef);
-              if (userDoc.exists()) {
-                setUserRole(userDoc.data()?.role as string);
-              }
+      const fetchUserData = async (currentUser: User) => { // Recibe currentUser como parámetro
+        setUserEmail(currentUser.email);
+        try {
+          if (db) {
+            const userDocRef = doc(db, 'employees', currentUser.uid);
+            const userDoc = await getDoc(userDocRef);
+            if (userDoc.exists()) {
+              setUserRole(userDoc.data()?.role as string);
             }
-          } catch (err) {
-            console.error("Error ojejapo jave usuario rembiapokue EmpleadoPage-pe:", err);
           }
+        } catch (err) {
+          console.error("Error al obtener datos de usuario para EmpleadoPage:", err);
+        } finally {
+          setLoading(false);
         }
-        setLoading(false);
       };
-      fetchUserData();
-    } catch (e) {
-      console.error("Error oñepyrũ jave Firebase EmpleadoPage-pe:", e);
-      setLoading(false); // Ndojapoivéi carga oĩramo jepe error
-    }
-  }, []); // Dependencia vacía ojejapo hag̃ua peteĩ jey
 
-  if (loading || !authInstance || !dbInstance) { // Ohechauka carga oĩramo instancia-kuéra ndoĩporãi
-    return <p>Ojejapo jave empleado rembiapokue...</p>;
+      if (auth.currentUser) { // Si ya hay un usuario logueado al cargar la página
+        fetchUserData(auth.currentUser);
+      } else {
+        // Si no hay usuario, espera onAuthStateChanged en el layout o redirige
+        setLoading(false);
+        // Opcional: router.push('/login'); si esta página no debe ser accesible sin autenticación
+      }
+    } catch (e) {
+      console.error("Error al inicializar Firebase en EmpleadoPage:", e);
+      setLoading(false);
+    }
+  }, []);
+
+  if (loading || !authInstance || !dbInstance) {
+    return <p>Cargando datos de empleado...</p>;
   }
 
   return (
     <div>
-      <h1>Empleado rembiapokue</h1>
-      <p>Nde bienvenida empleado portal-pe.</p>
-      {userEmail && <p>Oñembohekóva: {userEmail}</p>}
-      {userRole && <p>Nde rol: {userRole}</p>}
-      {/* Ko'ápe oho ambue UI componente-kuéra empleado-pe guarã */}
+      <h1>Página de Empleado</h1>
+      <p>Bienvenido a tu portal de empleado.</p>
+      {userEmail && <p>Autenticado como: {userEmail}</p>}
+      {userRole && <p>Tu rol: {userRole}</p>}
     </div>
   );
 }

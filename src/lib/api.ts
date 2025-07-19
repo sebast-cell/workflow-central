@@ -1,47 +1,42 @@
-
+// src/lib/api.ts
 'use client';
+
 import axios from 'axios';
 import { getFirebaseAuth } from './firebase';
-import { type Auth } from 'firebase/auth';
 
 const apiClient = axios.create({
-    baseURL: '/', // Use relative paths for Next.js API Routes
+    baseURL: '/',
     headers: {
         'Content-Type': 'application/json',
     }
 });
 
-let authInstance: Auth | null = null;
-try {
-  if (typeof window !== 'undefined') {
-    authInstance = getFirebaseAuth();
-  }
-} catch (e) {
-  console.error("Could not get firebase auth instance in api client.", e)
-}
-
-
-apiClient.interceptors.request.use(
-  async (config) => {
-    if (authInstance?.currentUser) {
-      const token = await authInstance.currentUser.getIdToken();
-      config.headers.Authorization = `Bearer ${token}`;
+apiClient.interceptors.request.use(async (config) => {
+    if (typeof window !== 'undefined') {
+        try {
+            const auth = getFirebaseAuth();
+            const user = auth.currentUser;
+            if (user) {
+                const token = await user.getIdToken();
+                config.headers.Authorization = `Bearer ${token}`;
+            }
+        } catch (error) {
+            console.error("No se pudo obtener el token de autenticación:", error);
+        }
     }
     return config;
-  },
-  (error) => {
+}, (error) => {
     return Promise.reject(error);
-  }
-);
+});
 
 
 // -------- TYPE DEFINITIONS -------- //
 export type AttendanceLog = {
     id: string;
     employeeId: string;
-    employeeName: string; // denormalized for easier display
-    department: string; // denormalized for easier display
-    timestamp: string; // ISO 8601
+    employeeName: string;
+    department: string;
+    timestamp: string;
     type: 'Entrada' | 'Salida' | 'Descanso';
     location: string;
     lat?: number;
@@ -51,49 +46,50 @@ export type AttendanceLog = {
 }
 
 export type Incentive = {
-  id: string; // UUID
+  id: string;
   name: string;
   type: 'económico' | 'días_libres' | 'formación' | 'otro';
   value: string;
   period: 'mensual' | 'trimestral' | 'anual';
   active: boolean;
-  company_id: string; // UUID
+  company_id: string;
   condition_expression?: {
     modality?: 'proportional' | 'all-or-nothing';
   };
 };
 
 export type Project = {
-    id: string; // UUID
+    id: string;
     name: string;
     description?: string;
 };
 
 export type Objective = {
-  id: string; // UUID
+  id: string;
   title: string;
   description?: string;
   type: 'individual' | 'equipo' | 'empresa';
-  assigned_to: string; // UserID or TeamID or CompanyID
-  project_id?: string; // UUID (nullable)
+  assigned_to: string;
+  project_id?: string;
   is_incentivized: boolean;
-  incentive_id?: string; // UUID (nullable)
-  weight?: number; // decimal
-  start_date: string; // date
-  end_date: string; // date
+  incentive_id?: string;
+  weight?: number;
+  start_date: string;
+  end_date: string;
 };
 
 export type Task = {
-  id: string; // UUID
+  id: string;
   title: string;
-  objective_id: string; // UUID
+  objective_id: string;
   is_incentivized: boolean;
-  incentive_id?: string; // UUID (nullable)
+  incentive_id?: string;
   completed: boolean;
 };
 
 export type Employee = {
     id: string;
+    uid: string; // Asegúrate de que esta propiedad esté aquí
     name: string;
     email: string;
     department: string;
@@ -131,7 +127,7 @@ export type Break = {
     id: string;
     name: string;
     remunerated: boolean;
-    limit: number; // in minutes
+    limit: number;
     isAutomatic: boolean;
     intervalStart?: string;
     intervalEnd?: string;
@@ -197,7 +193,7 @@ export type AbsenceType = {
 export type Holiday = {
     id: string;
     name: string;
-    date: string; // ISO string for localStorage
+    date: string;
 };
 
 export type CalendarData = {
@@ -226,17 +222,16 @@ export type AbsenceRequest = {
   employeeName: string;
   absenceTypeId: string;
   absenceTypeName: string;
-  startDate: string; // ISO Date string
-  endDate: string;   // ISO Date string
+  startDate: string;
+  endDate: string;
   status: 'Pendiente' | 'Aprobado' | 'Rechazado';
   reason?: string;
-  requestedAt: string; // ISO DateTime string
+  requestedAt: string;
 };
 
 
 // -------- HELPER FUNCTIONS -------- //
 
-// This function resolves the name for an objective's assigned_to field
 export const getAssignedToName = (objective: Objective, employees: Employee[], departments: Department[]): string => {
     if (objective.type === 'individual') {
         const employee = employees.find(e => e.id === objective.assigned_to);

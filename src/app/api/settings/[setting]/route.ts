@@ -1,10 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/firebase-admin';
-// Importa los tipos y funciones necesarios de firebase-admin/firestore
-import { QueryDocumentSnapshot } from 'firebase-admin/firestore'; // <--- ¡CAMBIO AQUÍ! Importa funciones y tipos
-
-// This is a generic handler for multiple settings collections.
-// E.g. /api/settings/roles will target the 'roles' collection.
+import { QueryDocumentSnapshot } from 'firebase-admin/firestore';
 
 export async function GET(
     request: Request,
@@ -19,9 +15,7 @@ export async function GET(
     }
 
     try {
-        // Usa 'db' para acceder a la colección dinámicamente
         const snapshot = await db.collection(model).get();
-        // Tipea explícitamente 'doc' en el map para evitar TS7006
         const data = snapshot.docs.map((doc: QueryDocumentSnapshot) => ({ id: doc.id, ...doc.data() }));
         return NextResponse.json(data);
     } catch (error) {
@@ -45,10 +39,8 @@ export async function POST(
     
     try {
         const data = await request.json();
-        // Remove id from data if it exists, as Firestore generates it
         const { id, ...postData } = data;
-        // Usa 'db' para acceder a la colección y añadir el documento
-        const docRef = await db.collection(model).add(postData); // <--- Usa add() en la colección
+        const docRef = await db.collection(model).add(postData);
         return NextResponse.json({ id: docRef.id, ...postData }, { status: 201 });
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';

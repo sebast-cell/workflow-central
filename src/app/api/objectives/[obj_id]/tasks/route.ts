@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/firebase-admin';
-// Importa solo los tipos necesarios de firebase-admin/firestore
-// Las funciones como collection, where, etc., se usan como métodos de la instancia 'db'.
 import { QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import type { Task } from '@/lib/api';
 
@@ -14,11 +12,8 @@ export async function GET(
     }
     try {
         const obj_id = params.obj_id;
-        // Usa 'db' para acceder a la colección 'tasks' y aplicar la consulta con where
-        // Las funciones se encadenan directamente a 'db'
         const tasksSnapshot = await db.collection('tasks').where('objective_id', '==', obj_id).get();
         
-        // Tipea explícitamente 'doc' en el map para evitar TS7006
         const tasks = tasksSnapshot.docs.map((doc: QueryDocumentSnapshot) => ({ 
             id: doc.id, 
             ...doc.data() as Omit<Task, 'id'> 

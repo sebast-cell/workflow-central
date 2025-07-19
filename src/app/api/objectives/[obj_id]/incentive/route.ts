@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/firebase-admin';
-// Importa los tipos y funciones necesarios de firebase-admin/firestore
-import { QueryDocumentSnapshot } from 'firebase-admin/firestore'; // <--- ¡CAMBIO AQUÍ! Importa QueryDocumentSnapshot
+import { QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { isPast } from 'date-fns';
-import type { Objective, Incentive, Task } from '@/lib/api'; // Asegúrate de que esta ruta y tipos sean correctos
+import type { Objective, Incentive, Task } from '@/lib/api';
 
 export async function GET(
     request: Request,
@@ -35,11 +34,10 @@ export async function GET(
         const incentive = incentiveDoc.data() as Incentive;
 
         const tasksSnapshot = await db.collection('tasks').where('objective_id', '==', obj_id).get();
-        // Tipea explícitamente 'doc' en el map para evitar TS7006
-        const tasks = tasksSnapshot.docs.map((doc: QueryDocumentSnapshot) => doc.data() as Task); // <--- ¡CAMBIO AQUÍ!
+        const tasks = tasksSnapshot.docs.map((doc: QueryDocumentSnapshot) => doc.data() as Task);
         
         const total = tasks.length;
-        const completed = tasks.filter((t: Task) => t.completed).length; // <--- ¡CAMBIO AQUÍ! Tipado de 't'
+        const completed = tasks.filter((t: Task) => t.completed).length;
 
         if (total === 0) {
             return NextResponse.json({ result: 0, message: "No hay tareas" });

@@ -1,29 +1,29 @@
 // src/app/portal/layout.tsx
-"use client"; // <--- ¡CRÍTICO! Este layout necesita ser un Client Component
+"use client";
 
-import { useEffect, useState, useCallback } from 'react'; // Añadido useCallback
+import { useEffect, useState, useCallback, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { onAuthStateChanged, Auth } from 'firebase/auth'; // Importa Auth para tipado
-import { doc, getDoc } from 'firebase/firestore'; // Importa doc y getDoc del SDK CLIENTE
-import { getFirebaseAuth, getFirebaseDB } from '@/lib/firebase'; // <--- ¡CAMBIO AQUÍ! Importa las funciones
-import { Firestore } from 'firebase/firestore'; // Importa Firestore para tipado
-import type { Employee } from '@/lib/api'; // Asegúrate de que este tipo sea correcto
+import { onAuthStateChanged, Auth } from 'firebase/auth';
+import { doc, getDoc, Firestore } from 'firebase/firestore';
+import { getFirebaseAuth, getFirebaseDB } from '@/lib/firebase';
+import type { Employee } from '@/lib/api';
+import { Loader2 } from 'lucide-react';
+import axios from 'axios'; // Para logout
+import { PortalLayout as PortalLayoutComponent } from '@/components/portal-layout'; // Renombrado para evitar conflicto
 
 export default function PortalLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   const router = useRouter();
-  const [loading, setLoading] = useState(true); // Estado para el indicador de carga
+  const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Instancias de Firebase obtenidas de forma condicional
   const [authInstance, setAuthInstance] = useState<Auth | null>(null);
   const [dbInstance, setDbInstance] = useState<Firestore | null>(null);
 
-  // Función para inicializar las instancias de Firebase
   const initializeFirebaseInstances = useCallback(() => {
     try {
       const auth = getFirebaseAuth();
@@ -33,25 +33,33 @@ export default function PortalLayout({
       return { auth, db };
     } catch (e: any) {
       console.error("Error al inicializar Firebase en PortalLayout:", e);
-      // No se establece error en el estado aquí para evitar bucles o problemas de UI
-      // Se asume que la redirección a login manejará el fallo
+      // Si Firebase no se puede inicializar, redirige a login
+      router.push('/login');
       return { auth: null, db: null };
     }
+  }, [router]);
+
+  const handleSessionLogout = useCallback(async () => {
+      try {
+        await axios.post('/api/auth/logout');
+      } catch (error) {
+        console.error("Failed to clear session cookie on portal layout:", error);
+      }
   }, []);
 
   useEffect(() => {
     const { auth: currentAuth, db: currentDb } = initializeFirebaseInstances();
     
     let unsubscribe: (() => void) | undefined;
-    if (currentAuth && currentDb) { // Solo si auth y db se inicializaron correctamente
+    if (currentAuth && currentDb) {
       unsubscribe = onAuthStateChanged(currentAuth, async (user) => {
         if (user) {
           setIsAuthenticated(true);
-          setLoading(true); // Vuelve a poner loading mientras verifica rol
+          setLoading(true); // Pone loading mientras verifica rol
           try {
-            const userDocRef = doc(currentDb, 'employees', user.uid); // <--- ¡CAMBIO AQUÍ! Colección 'employees'
+            const userDocRef = doc(currentDb, 'employees', user.uid);
             const userDoc = await getDoc(userDocRef);
-            if (userDoc.exists()) { // <--- CAMBIO AQUÍ! .exists es propiedad, no método
+            if (userDoc.exists()) {
               setUserRole(userDoc.data()?.role as string);
             } else {
               console.warn("Documento de rol no encontrado para UID:", user.uid);
@@ -59,52 +67,46 @@ export default function PortalLayout({
             }
           } catch (err) {
             console.error("Error al obtener rol del usuario:", err);
-            router.push('/login'); // Redirige en caso de error al obtener rol
+            router.push('/login'); // Redirige en caso de error
           } finally {
-            setLoading(false); // <--- ¡CORREGIDO! Usar setLoading
+            setLoading(false);
           }
         } else {
           // No hay usuario autenticado, redirigir a la página de login
           setIsAuthenticated(false);
-          setLoading(false); // <--- ¡CORREGIDO! Usar setLoading
+          setLoading(false);
+          handleSessionLogout(); // Limpia la cookie por si acaso
           router.push('/login');
         }
       });
     } else {
       // Si Firebase no se pudo inicializar, no hay usuario
-      setLoading(false); // <--- ¡CORREGIDO! Usar setLoading
-      router.push('/login'); // Redirige si hay un error crítico de Firebase
+      setLoading(false);
+      handleSessionLogout(); // Limpia la cookie por si acaso
+      router.push('/login');
     }
     
     return () => {
-      if (unsubscribe) unsubscribe(); // Limpia el listener
+      if (unsubscribe) unsubscribe();
     };
-  }, [router, initializeFirebaseInstances]); // Dependencias: router y la función de inicialización
+  }, [router, initializeFirebaseInstances, handleSessionLogout]);
 
-  if (loading || !authInstance || !dbInstance) { // Muestra cargando si las instancias no están listas
+  if (loading || !authInstance || !dbInstance) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <p className="text-gray-600">Verificando acceso al portal...</p>
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        <p className="ml-2">Verificando acceso al portal...</p>
       </div>
     );
   }
-
-  // Lógica de autorización basada en roles (si es necesaria a este nivel)
-  // Por ejemplo, si solo ciertos roles pueden ver el portal en general
-  // if (userRole === 'Employee' && pathname.startsWith('/portal/admin')) {
-  //   router.push('/access-denied');
-  //   return null;
-  // }
 
   if (isAuthenticated) {
     return (
-      <div>
-        <h2>Layout del Portal ({userRole})</h2>
+      <PortalLayoutComponent>
         {children}
-      </div>
+      </PortalLayoutComponent>
     );
   }
 
-  // Si no está autenticado y no está cargando, no renderiza nada (ya fue redirigido)
   return null;
 }

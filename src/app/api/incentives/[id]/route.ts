@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/firebase-admin';
 import type { Incentive } from '@/lib/api';
 
-// GET a single incentive
 export async function GET(
     request: Request,
     { params }: { params: { id: string } }
@@ -22,7 +21,6 @@ export async function GET(
     }
 }
 
-// UPDATE an incentive
 export async function PUT(
     request: Request,
     { params }: { params: { id: string } }
@@ -32,7 +30,6 @@ export async function PUT(
     }
     try {
         const updatedData: Partial<Incentive> = await request.json();
-        // Exclude properties that shouldn't be overwritten from the client like id
         const { id, company_id, ...rest } = updatedData;
         await db.collection('incentives').doc(params.id).update(rest);
         const updatedDoc = await db.collection('incentives').doc(params.id).get();
@@ -43,7 +40,6 @@ export async function PUT(
     }
 }
 
-// DELETE an incentive
 export async function DELETE(
     request: Request,
     { params }: { params: { id: string } }

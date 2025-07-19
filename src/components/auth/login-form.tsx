@@ -1,8 +1,8 @@
+// src/components/auth/login-form.tsx
+"use client";
 
-'use client';
-
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,10 +15,12 @@ import { signInWithEmailAndPassword, Auth } from 'firebase/auth';
 
 export function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login } = useAuth();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState('admin'); // Estado para el rol de la URL
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [authInstance, setAuthInstance] = useState<Auth | null>(null);
@@ -26,15 +28,18 @@ export function LoginForm() {
 
   useEffect(() => {
     try {
-      // Initialize Firebase Auth on the client
       setAuthInstance(getFirebaseAuth());
-    } catch(e) {
+    } catch(e: any) {
       console.error("Failed to initialize Firebase Auth", e);
       setError("No se pudieron cargar los servicios de autenticación.");
     } finally {
       setIsFirebaseLoading(false);
     }
-  }, []);
+    const roleFromQuery = searchParams.get('role');
+    if (roleFromQuery && ['admin', 'employee'].includes(roleFromQuery)) {
+        setRole(roleFromQuery);
+    }
+  }, [searchParams]); // Dependencia en searchParams
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,10 +66,10 @@ export function LoginForm() {
       // 4. Update the auth context with the employee data from Firestore
       login(employee);
 
-      // 5. Redirect to the correct dashboard
+      // 5. Redirect to the correct dashboard based on the actual role from Firestore
       if (employee.role === 'Owner' || employee.role === 'Admin') {
         router.push('/dashboard');
-      } else {
+      } else { // Asume que cualquier otro rol va al portal general
         router.push('/portal');
       }
 
@@ -85,6 +90,8 @@ export function LoginForm() {
         }
       } else if (err.response?.data?.message) {
          errorMessage = err.response.data.message;
+      } else if (err.message) {
+         errorMessage = err.message;
       }
       setError(errorMessage);
     } finally {

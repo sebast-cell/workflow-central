@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/firebase-admin';
-import * as admin from 'firebase-admin';
+import { db, auth as adminAuth } from '@/lib/firebase-admin'; // Importa también auth
 import { QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import type { Employee } from '@/lib/api';
 
@@ -23,27 +22,27 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-    if (!db) {
-        return NextResponse.json({ error: "Firestore Admin SDK no inicializado." }, { status: 500 });
+    if (!db || !adminAuth) { // Verifica ambos
+        return NextResponse.json({ error: "Firebase Admin SDK no inicializado." }, { status: 500 });
     }
     try {
+        // El tipo ahora incluye `password` y `uid` como opcionales
         const employeeData: Omit<Employee, 'id' | 'status' | 'avatar'> & { password?: string; uid?: string } = await request.json();
 
-        // If UID is provided, it means user was created on client, and we just need to create the Firestore doc.
-        // Otherwise, we create the user in Auth first.
-        let userRecord: admin.auth.UserRecord;
-
+        let userRecord;
         if (employeeData.uid) {
-             userRecord = await admin.auth().getUser(employeeData.uid);
+            // Si el UID ya existe (creado en el cliente), solo lo obtenemos
+            userRecord = await adminAuth.getUser(employeeData.uid);
         } else {
-             if (!employeeData.name || !employeeData.email || !employeeData.password) {
-                return NextResponse.json({ message: "Nombre, correo electrónico y contraseña son requeridos" }, { status: 400 });
+            // Si no hay UID, creamos el usuario en Firebase Auth
+            if (!employeeData.name || !employeeData.email || !employeeData.password) {
+                return NextResponse.json({ message: "Nombre, email y contraseña son requeridos para un nuevo usuario." }, { status: 400 });
             }
-             userRecord = await admin.auth().createUser({
+            userRecord = await adminAuth.createUser({
                 email: employeeData.email,
                 password: employeeData.password,
                 displayName: employeeData.name,
-                emailVerified: true,
+                emailVerified: true, // Puedes cambiar esto según tu flujo
                 disabled: false,
             });
         }
@@ -51,17 +50,17 @@ export async function POST(request: Request) {
         let avatarInitials = 'U';
         if (employeeData.name && typeof employeeData.name === 'string') {
             const nameParts = employeeData.name.trim().split(' ').filter(Boolean);
-            if (nameParts.length >= 2) {
-                avatarInitials = (nameParts[0][0] + nameParts[1][0]).toUpperCase();
-            } else if (nameParts.length === 1 && nameParts[0].length > 0) {
-                 avatarInitials = nameParts[0].substring(0, 2).toUpperCase();
-                 if (nameParts[0].length === 1) {
-                    avatarInitials = nameParts[0][0].toUpperCase();
-                 }
+            if (nameParts.length > 0) {
+                avatarInitials = nameParts[0][0].toUpperCase();
+                if (nameParts.length > 1) {
+                    avatarInitials += nameParts[1][0].toUpperCase();
+                }
             }
         }
         
+        // Creamos el documento en Firestore con el UID de Auth como ID del documento
         const firestoreEmployeeData = {
+            uid: userRecord.uid, // Guardamos el uid también dentro del documento
             name: employeeData.name,
             email: employeeData.email,
             department: employeeData.department || 'Sin Asignar',
@@ -71,9 +70,9 @@ export async function POST(request: Request) {
             phone: employeeData.phone || '',
             status: "Activo",
             avatar: avatarInitials,
-            uid: userRecord.uid
         };
 
+        // Usamos el UID de Auth como ID del documento en Firestore
         await db.collection('employees').doc(userRecord.uid).set(firestoreEmployeeData);
         
         const newEmployee = { id: userRecord.uid, ...firestoreEmployeeData };

@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/firebase-admin';
-// Importa los tipos y funciones necesarios de firebase-admin/firestore
-import { QueryDocumentSnapshot } from 'firebase-admin/firestore'; // <--- ¡CAMBIO AQUÍ! Importa QueryDocumentSnapshot
-import type { Task } from '@/lib/api'; // Asegúrate de que esta ruta y tipo sean correctos
+import { QueryDocumentSnapshot } from 'firebase-admin/firestore';
+import type { Task } from '@/lib/api';
 
 export async function GET() {
     if (!db) {
@@ -10,7 +9,6 @@ export async function GET() {
     }
     try {
         const tasksSnapshot = await db.collection('tasks').get();
-        // Tipea explícitamente 'doc' en el map para evitar TS7006
         const tasks = tasksSnapshot.docs.map((doc: QueryDocumentSnapshot) => ({ 
             id: doc.id, 
             ...doc.data() as Omit<Task, 'id'> 
