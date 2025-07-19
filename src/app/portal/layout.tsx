@@ -1,112 +1,49 @@
 // src/app/portal/layout.tsx
 "use client";
 
-import { useEffect, useState, useCallback, ReactNode } from 'react';
+import { ReactNode } from 'react';
+import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
-import { onAuthStateChanged, Auth } from 'firebase/auth';
-import { doc, getDoc, Firestore } from 'firebase/firestore';
-import { getFirebaseAuth, getFirebaseDB } from '@/lib/firebase';
-import type { Employee } from '@/lib/api';
 import { Loader2 } from 'lucide-react';
-import axios from 'axios'; // Para logout
-import { PortalLayout as PortalLayoutComponent } from '@/components/portal-layout'; // Renombrado para evitar conflicto
+import { PortalLayout as PortalLayoutComponent } from '@/components/portal-layout';
 
 export default function PortalLayout({
   children,
 }: {
   children: ReactNode;
 }) {
+  const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [userRole, setUserRole] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  const [authInstance, setAuthInstance] = useState<Auth | null>(null);
-  const [dbInstance, setDbInstance] = useState<Firestore | null>(null);
-
-  const initializeFirebaseInstances = useCallback(() => {
-    try {
-      const auth = getFirebaseAuth();
-      const db = getFirebaseDB();
-      setAuthInstance(auth);
-      setDbInstance(db);
-      return { auth, db };
-    } catch (e: any) {
-      console.error("Error al inicializar Firebase en PortalLayout:", e);
-      // Si Firebase no se puede inicializar, redirige a login
-      router.push('/login');
-      return { auth: null, db: null };
-    }
-  }, [router]);
-
-  const handleSessionLogout = useCallback(async () => {
-      try {
-        await axios.post('/api/auth/logout');
-      } catch (error) {
-        console.error("Failed to clear session cookie on portal layout:", error);
-      }
-  }, []);
-
-  useEffect(() => {
-    const { auth: currentAuth, db: currentDb } = initializeFirebaseInstances();
-    
-    let unsubscribe: (() => void) | undefined;
-    if (currentAuth && currentDb) {
-      unsubscribe = onAuthStateChanged(currentAuth, async (user) => {
-        if (user) {
-          setIsAuthenticated(true);
-          setLoading(true); // Pone loading mientras verifica rol
-          try {
-            const userDocRef = doc(currentDb, 'employees', user.uid);
-            const userDoc = await getDoc(userDocRef);
-            if (userDoc.exists()) {
-              setUserRole(userDoc.data()?.role as string);
-            } else {
-              console.warn("Documento de rol no encontrado para UID:", user.uid);
-              router.push('/login'); // Redirige si no hay datos de rol
-            }
-          } catch (err) {
-            console.error("Error al obtener rol del usuario:", err);
-            router.push('/login'); // Redirige en caso de error
-          } finally {
-            setLoading(false);
-          }
-        } else {
-          // No hay usuario autenticado, redirigir a la página de login
-          setIsAuthenticated(false);
-          setLoading(false);
-          handleSessionLogout(); // Limpia la cookie por si acaso
-          router.push('/login');
-        }
-      });
-    } else {
-      // Si Firebase no se pudo inicializar, no hay usuario
-      setLoading(false);
-      handleSessionLogout(); // Limpia la cookie por si acaso
-      router.push('/login');
-    }
-    
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
-  }, [router, initializeFirebaseInstances, handleSessionLogout]);
-
-  if (loading || !authInstance || !dbInstance) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        <p className="ml-2">Verificando acceso al portal...</p>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="mr-2 h-8 w-8 animate-spin" />
+        <p className="ml-2 text-lg">Verificando acceso al portal...</p>
       </div>
     );
   }
-
-  if (isAuthenticated) {
-    return (
-      <PortalLayoutComponent>
-        {children}
-      </PortalLayoutComponent>
-    );
+  
+  if (!isAuthenticated || !user) {
+    // Esto podría ocurrir en un flash mientras redirige.
+    // El AuthProvider ya debería haber redirigido, pero esta es una salvaguarda.
+    if(typeof window !== 'undefined') {
+      router.push('/login?role=employee');
+    }
+    return null;
+  }
+  
+  // Opcional: Redirección si un Admin o Owner intenta acceder al portal de empleado directamente.
+  if (user.role === 'Admin' || user.role === 'Owner') {
+     if(typeof window !== 'undefined') {
+      router.push('/dashboard');
+    }
+    return null;
   }
 
-  return null;
+  return (
+    <PortalLayoutComponent>
+      {children}
+    </PortalLayoutComponent>
+  );
 }
