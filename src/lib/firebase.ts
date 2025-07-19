@@ -1,9 +1,9 @@
 // src/lib/firebase.ts
 
-import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
-import { getAnalytics, Analytics } from "firebase/analytics";
-import { getAuth, Auth } from "firebase/auth";
-import { getFirestore, Firestore } from "firebase/firestore";
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -17,43 +17,53 @@ const firebaseConfig = {
 
 // --- SOLUCIÓN: Exportar funciones que inicializan condicionalmente ---
 
-let app: FirebaseApp;
-let auth: Auth;
-let db: Firestore;
-let analytics: Analytics | undefined;
-
-
-if (typeof window !== 'undefined' && !getApps().length) {
-    app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-    db = getFirestore(app);
-    if (firebaseConfig.measurementId) {
-        analytics = getAnalytics(app);
-    }
-} else if (getApps().length > 0) {
-    app = getApp();
-    auth = getAuth(app);
-    db = getFirestore(app);
-    if (firebaseConfig.measurementId) {
-        analytics = getAnalytics(app);
-    }
+// Función para obtener la instancia de la app de Firebase
+export function getFirebaseApp() {
+  // Asegura que esta función solo se llame en el lado del cliente (navegador)
+  if (typeof window === "undefined") {
+    throw new Error("getFirebaseApp should only be called client-side.");
+  }
+  // Inicializa la app si no ha sido inicializada ya
+  if (!getApps().length) {
+    return initializeApp(firebaseConfig);
+  }
+  // Si ya está inicializada, devuelve la instancia existente
+  return getApp();
 }
 
-// Export instances directly for client-side usage
-// The check above ensures they are only initialized on the client
-export { app, auth, db, analytics };
+// Funciones para obtener las instancias de los servicios de Firebase
+export function getFirebaseAuth() {
+  return getAuth(getFirebaseApp());
+}
+
+export function getFirebaseDB() {
+  return getFirestore(getFirebaseApp());
+}
+
+export function getFirebaseAnalytics() {
+  return getAnalytics(getFirebaseApp());
+}
 
 // --- NOTA IMPORTANTE PARA EL USO EN COMPONENTES ---
 // En tus componentes de React (que sean Client Components),
-// ya puedes importar `auth` y `db` directamente.
+// debes llamar a estas funciones dentro de un useEffect o en un manejador de eventos.
 // Ejemplo:
 // "use client";
-// import { auth, db } from "@/lib/firebase";
+// import { useEffect, useState } from "react";
+// import { getFirebaseAuth, getFirebaseDB } from "@/lib/firebase";
 //
 // export default function MyComponent() {
-//   // Ya no es necesario usar useState y useEffect para la inicialización
+//   const [authInstance, setAuthInstance] = useState(null);
+//   const [dbInstance, setDbInstance] = useState(null);
 //
-//   // Puedes usar auth y db directamente
+//   useEffect(() => {
+//     setAuthInstance(getFirebaseAuth());
+//     setDbInstance(getFirebaseDB());
+//   }, []);
+//
+//   if (!authInstance || !dbInstance) {
+//     return <p>Cargando Firebase...</p>;
+//   }
 //
 //   return <div>Hola Firebase!</div>;
 // }

@@ -10,6 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal, Loader2 } from 'lucide-react';
 import axios from 'axios';
+import { getFirebaseAuth } from '@/lib/firebase';
+import { signInWithEmailAndPassword, Auth } from 'firebase/auth';
 
 export function LoginForm() {
   const router = useRouter();
@@ -21,8 +23,15 @@ export function LoginForm() {
   const [role, setRole] = useState('admin');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [authInstance, setAuthInstance] = useState<Auth | null>(null);
 
   useEffect(() => {
+    try {
+      setAuthInstance(getFirebaseAuth());
+    } catch(e) {
+      console.error("Failed to initialize Firebase Auth", e);
+      setError("No se pudieron cargar los servicios de autenticación.");
+    }
     const roleFromQuery = searchParams.get('role');
     if (roleFromQuery && ['admin', 'employee'].includes(roleFromQuery)) {
         setRole(roleFromQuery);
@@ -31,23 +40,54 @@ export function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!authInstance) {
+        setError("El servicio de autenticación no está listo.");
+        return;
+    }
     setIsLoading(true);
     setError('');
 
     try {
-      const response = await axios.post('/api/auth/login', { email, password, role });
-      const userData = response.data;
+      // 1. Sign in on the client using Firebase SDK
+      const userCredential = await signInWithEmailAndPassword(authInstance, email, password);
+      const user = userCredential.user;
       
-      login(userData);
+      // 2. Get the ID token from the signed-in user
+      const idToken = await user.getIdToken();
 
-      if (role === 'admin') {
+      // 3. Send the ID token to our API route to create a session cookie
+      const response = await axios.post('/api/auth/login', { idToken });
+      
+      const { employee } = response.data;
+      
+      // 4. Update the auth context with the employee data from Firestore
+      login(employee);
+
+      // 5. Redirect to the correct dashboard
+      if (employee.role === 'Owner' || employee.role === 'Admin') {
         router.push('/dashboard');
       } else {
         router.push('/portal');
       }
 
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Invalid credentials or server error.';
+      let errorMessage = 'Credenciales inválidas o error del servidor.';
+      if (err.code) {
+        switch(err.code) {
+          case 'auth/user-not-found':
+          case 'auth/wrong-password':
+          case 'auth/invalid-credential':
+            errorMessage = 'El correo electrónico o la contraseña son incorrectos.';
+            break;
+          case 'auth/invalid-email':
+            errorMessage = 'El formato del correo electrónico no es válido.';
+            break;
+          default:
+            errorMessage = 'Ocurrió un error inesperado al iniciar sesión.';
+        }
+      } else if (err.response?.data?.message) {
+         errorMessage = err.response.data.message;
+      }
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -72,6 +112,7 @@ export function LoginForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+          disabled={!authInstance}
         />
       </div>
       <div className="space-y-2">
@@ -83,9 +124,10 @@ export function LoginForm() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
+          disabled={!authInstance}
         />
       </div>
-      <Button type="submit" className="w-full" disabled={isLoading}>
+      <Button type="submit" className="w-full" disabled={isLoading || !authInstance}>
         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
         {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
       </Button>
