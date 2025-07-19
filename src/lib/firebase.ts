@@ -41,6 +41,9 @@ export function getFirebaseDB(): Firestore {
   return getFirestore(getFirebaseApp());
 }
 
-export function getFirebaseAnalytics(): Analytics {
+export function getFirebaseAnalytics(): Analytics | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
   return getAnalytics(getFirebaseApp());
 }

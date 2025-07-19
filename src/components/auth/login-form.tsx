@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +15,6 @@ import { signInWithEmailAndPassword, Auth } from 'firebase/auth';
 
 export function LoginForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { login } = useAuth();
   
   const [email, setEmail] = useState('');
@@ -23,16 +22,19 @@ export function LoginForm() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [authInstance, setAuthInstance] = useState<Auth | null>(null);
+  const [isFirebaseLoading, setIsFirebaseLoading] = useState(true);
 
   useEffect(() => {
     try {
+      // Initialize Firebase Auth on the client
       setAuthInstance(getFirebaseAuth());
     } catch(e) {
       console.error("Failed to initialize Firebase Auth", e);
       setError("No se pudieron cargar los servicios de autenticación.");
+    } finally {
+      setIsFirebaseLoading(false);
     }
-    const roleFromQuery = searchParams.get('role');
-  }, [searchParams]);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,6 +91,8 @@ export function LoginForm() {
       setIsLoading(false);
     }
   };
+  
+  const isFormDisabled = isLoading || isFirebaseLoading || !authInstance;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -108,7 +112,7 @@ export function LoginForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          disabled={!authInstance}
+          disabled={isFormDisabled}
         />
       </div>
       <div className="space-y-2">
@@ -120,12 +124,12 @@ export function LoginForm() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          disabled={!authInstance}
+          disabled={isFormDisabled}
         />
       </div>
-      <Button type="submit" className="w-full" disabled={isLoading || !authInstance}>
-        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-        {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+      <Button type="submit" className="w-full" disabled={isFormDisabled}>
+        {isLoading || isFirebaseLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+        {isLoading ? 'Iniciando sesión...' : isFirebaseLoading ? 'Cargando...' : 'Iniciar Sesión'}
       </Button>
     </form>
   );
