@@ -29,3 +29,4 @@ To allow GitHub Actions to deploy to your Firebase project, you need to provide 
     *   Click **Add secret**.
 
 Once this secret is in place, your deployments will work automatically every time you push code.
+# Deploy for secrets update
