@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main # Asegúrate de que esta es tu rama principal
+  workflow_dispatch: # <-- Permite lanzar el deploy manualmente desde Actions
 
 jobs:
   build_and_deploy:
@@ -39,7 +40,7 @@ jobs:
           FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
           FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
           FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
-          
+
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
@@ -47,6 +48,5 @@ jobs:
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
           projectId: 'mi-workflow-app'
           channelId: 'live'
-        env: # <--- ¡CRÍTICO! Añadida sección 'env' aquí
-          FIREBASE_CLI_EXPERIMENTS: webframeworks # <--- ¡AÑADIDO! Habilitar el experimento de web frameworks
-    
+        env:
+          FIREBASE_CLI_EXPERIMENTS: webframeworks
