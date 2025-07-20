@@ -20,7 +20,7 @@ export function LoginForm() {
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('admin'); // Estado para el rol de la URL
+  const [role, setRole] = useState('admin');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [authInstance, setAuthInstance] = useState<Auth | null>(null);
@@ -37,42 +37,34 @@ export function LoginForm() {
     }
     const roleFromQuery = searchParams.get('role');
     if (roleFromQuery && ['admin', 'employee'].includes(roleFromQuery)) {
-        setRole(roleFromQuery);
+      setRole(roleFromQuery);
     }
-  }, [searchParams]); // Dependencia en searchParams
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!authInstance) {
-        setError("El servicio de autenticación no está listo.");
-        return;
+      setError("El servicio de autenticación no está listo.");
+      return;
     }
     setIsLoading(true);
     setError('');
 
     try {
-      // 1. Sign in on the client using Firebase SDK
       const userCredential = await signInWithEmailAndPassword(authInstance, email, password);
       const user = userCredential.user;
-      
-      // 2. Get the ID token from the signed-in user
       const idToken = await user.getIdToken();
 
-      // 3. Send the ID token to our API route to create a session cookie
       const response = await axios.post('/api/auth/login', { idToken });
-      
       const { employee } = response.data;
-      
-      // 4. Update the auth context with the employee data from Firestore
+
       login(employee);
 
-      // 5. Redirect to the correct dashboard based on the actual role from Firestore
       if (employee.role === 'Owner' || employee.role === 'Admin') {
         router.push('/dashboard');
-      } else { // Asume que cualquier otro rol va al portal general
+      } else {
         router.push('/portal');
       }
-
     } catch (err: any) {
       let errorMessage = 'Credenciales inválidas o error del servidor.';
       if (err.code) {

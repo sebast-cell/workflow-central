@@ -51,32 +51,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
     try {
-        const docRef = doc(dbInstance, 'employees', fbUser.uid);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const employeeData = docSnap.data() as Omit<Employee, 'id' | 'uid'>;
-          const fullEmployeeProfile: Employee = {
-              id: docSnap.id,
-              uid: fbUser.uid,
-              ...employeeData
-          };
-          setUser(fullEmployeeProfile);
-        } else {
-          console.warn("Perfil de empleado no encontrado en Firestore para UID:", fbUser.uid);
-          setError("Perfil de usuario no encontrado.");
-          setUser(null);
-          if (authInstance) await signOut(authInstance);
-        }
-    } catch (error: any) {
-        console.error("Error fetching user data from Firestore:", error);
-        setError("Error al cargar perfil de usuario: " + error.message);
+      const docRef = doc(dbInstance, 'employees', fbUser.uid);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const employeeData = docSnap.data() as Omit<Employee, 'id' | 'uid'>;
+        const fullEmployeeProfile: Employee = {
+          id: docSnap.id,
+          uid: fbUser.uid,
+          ...employeeData
+        };
+        setUser(fullEmployeeProfile);
+      } else {
+        console.warn("Perfil de empleado no encontrado en Firestore para UID:", fbUser.uid);
+        setError("Perfil de usuario no encontrado.");
         setUser(null);
         if (authInstance) await signOut(authInstance);
+      }
+    } catch (error: any) {
+      console.error("Error fetching user data from Firestore:", error);
+      setError("Error al cargar perfil de usuario: " + error.message);
+      setUser(null);
+      if (authInstance) await signOut(authInstance);
     }
   }, [dbInstance, authInstance]);
 
   const login = useCallback((employeeData: Employee) => {
     setUser(employeeData);
+    setError(null); // Limpia error en login
   }, []);
 
   const logout = useCallback(async () => {
@@ -84,7 +85,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (authInstance) {
       await signOut(authInstance);
     }
-    await axios.post('/api/auth/logout');
+    try {
+      await axios.post('/api/auth/logout');
+    } catch (e) {
+      // puede fallar si no existe, ignóralo
+    }
     setUser(null);
     setFirebaseUser(null);
     setIsLoading(false);
@@ -116,6 +121,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       if (unsubscribe) unsubscribe();
     };
+    // eslint-disable-next-line
   }, [initializeFirebaseInstances, fetchUserRoleAndData, user]);
 
   const isAuthenticated = useMemo(() => !!user && !!firebaseUser, [user, firebaseUser]);

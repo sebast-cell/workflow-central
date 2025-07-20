@@ -1,10 +1,11 @@
 // src/lib/firebase.ts
 
-import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
+import { getAnalytics, Analytics } from "firebase/analytics";
+import { getAuth, Auth } from "firebase/auth";
+import { getFirestore, Firestore } from "firebase/firestore";
 
+// Objeto de configuración
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -15,31 +16,29 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// --- SOLUCIÓN: Exportar funciones que inicializan condicionalmente ---
-
-// Función para obtener la instancia de la app de Firebase
-export function getFirebaseApp() {
-  // Asegura que esta función solo se llame en el lado del cliente (navegador)
+// Devuelve la instancia de la app, solo en cliente
+export function getFirebaseApp(): FirebaseApp {
   if (typeof window === "undefined") {
-    throw new Error("getFirebaseApp should only be called client-side.");
+    throw new Error("getFirebaseApp solo debe llamarse en el cliente.");
   }
-  // Inicializa la app si no ha sido inicializada ya
   if (!getApps().length) {
     return initializeApp(firebaseConfig);
   }
-  // Si ya está inicializada, devuelve la instancia existente
   return getApp();
 }
 
-// Funciones para obtener las instancias de los servicios de Firebase
-export function getFirebaseAuth() {
+// Devuelve la instancia de Auth, solo en cliente
+export function getFirebaseAuth(): Auth {
   return getAuth(getFirebaseApp());
 }
 
-export function getFirebaseDB() {
+// Devuelve la instancia de Firestore, solo en cliente
+export function getFirebaseDB(): Firestore {
   return getFirestore(getFirebaseApp());
 }
 
-export function getFirebaseAnalytics() {
+// Devuelve la instancia de Analytics, solo en cliente y solo si window está definido
+export function getFirebaseAnalytics(): Analytics | null {
+  if (typeof window === "undefined") return null;
   return getAnalytics(getFirebaseApp());
 }

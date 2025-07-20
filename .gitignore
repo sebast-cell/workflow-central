@@ -1,5 +1,3 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # Directorios de dependencias
 /node_modules
 /.pnp
@@ -10,42 +8,41 @@
 !.yarn/releases
 !.yarn/versions
 
-# Directorios de build y caché de Next.js
+# Build y caché de Next.js
 /.next/
 /out/
-/build # Si usas React con create-react-app (o similar)
+/build
 
-# Directorios de Firebase CLI y artefactos de despliegue
+# Firebase CLI y artefactos de despliegue
 .firebase/
 firebase-debug.log*
 firestore-debug.log
 hosting-debug.log*
 
-# Archivos de entorno local (contienen secretos o configuraciones específicas de tu máquina)
+# Archivos de entorno local (con secretos)
 .env
 .env.local
 .env.development.local
 .env.production.local
 
-# Archivos de caché o temporales
-.DS_Store # macOS
+# Archivos temporales y de caché
+.DS_Store
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
-*.tsbuildinfo # Archivos de caché de TypeScript
-next-env.d.ts # Archivo de declaración de tipos generado por Next.js
+*.tsbuildinfo
+next-env.d.ts
 
-# ¡CRÍTICO! Claves de servicio de Firebase Admin (NUNCA SUBIR A GIT)
-# Si el archivo JSON está en la raíz del proyecto:
-mi-workflow-app-firebase-adminsdk-fbsvc-*.json
-# Si el archivo JSON está en una carpeta 'credentials' en la raíz del proyecto:
-/credentials/ # Ignora toda la carpeta de credenciales
-# Si el archivo JSON está en una carpeta 'secrets' en la raíz del proyecto:
-/secrets/ # Ignora toda la carpeta de secretos
+# CLAVES DE SERVICIO SENSIBLES - ¡NO SUBIR JAMÁS!
+serviceAccountKey.json
+mi-workflow-app-*.json
+firebase-*.json
+/credentials/
+/secrets/
+*.key
+*.pem
 
-# Vercel
-.vercel
-
-# Genkit (si aplica)
+# Vercel/Genkit
+.vercel/
 .genkit/
