@@ -1,35 +1,33 @@
 // src/lib/firebase-admin.ts
-import { initializeApp, getApps, getApp, cert, App } from 'firebase-admin/app';
+// Este archivo inicializa el SDK de Firebase Admin para ser usado en entornos de servidor (Node.js)
+// como API Routes de Next.js, middleware, y scripts de backend.
+
+import { initializeApp, getApps, getApp, App } from 'firebase-admin/app'; // Eliminado 'cert'
 import { getAuth, Auth } from 'firebase-admin/auth';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
 
-// Servicio: se toma la clave JSON desde la variable de entorno FIREBASE_SERVICE_ACCOUNT
-const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT;
+// Las credenciales se obtienen automáticamente del entorno de Google Cloud (ADC).
+// No necesitamos las variables FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY aquí.
 
-let adminApp: App;
+let adminApp: App; // Declara 'app' con tipo 'App'
 
+// Asegura que la app de Firebase Admin se inicialice una sola vez y de forma robusta.
 if (!getApps().length) {
-  if (serviceAccountKey) {
-    try {
-      const parsedServiceAccount = JSON.parse(
-        serviceAccountKey.replace(/\\n/g, '\n')
-      );
-      adminApp = initializeApp({
-        credential: cert(parsedServiceAccount),
-      });
-      console.log("Firebase Admin SDK inicializado con credenciales.");
-    } catch (error) {
-      console.error("Error al inicializar Firebase Admin SDK con credenciales:", error);
-      adminApp = initializeApp();
-    }
-  } else {
-    console.warn("FIREBASE_SERVICE_ACCOUNT no configurado. Firebase Admin SDK inicializado sin credenciales.");
-    adminApp = initializeApp();
+  try {
+    // applicationDefault() busca automáticamente las credenciales del entorno de Google Cloud.
+    adminApp = initializeApp(); // <--- ¡CAMBIO CLAVE! Inicializa sin argumentos para usar ADC
+    console.log("Firebase Admin SDK inicializado con Credenciales Predeterminadas de la Aplicación (ADC).");
+  } catch (error) {
+    console.error("Error al inicializar Firebase Admin SDK con ADC:", error);
+    throw new Error("Error crítico al inicializar Firebase Admin SDK. Asegúrate de que la cuenta de servicio de Cloud Run tenga los roles de Firebase adecuados.");
   }
 } else {
+  // Si la app ya está inicializada (ej. en una invocación "cálida" de la función),
+  // obtenemos la instancia por defecto.
   adminApp = getApp();
 }
 
-// Exporta Auth y DB
+// Exporta las instancias de Auth y Firestore del SDK Admin.
+// Con la lógica de arriba, estas nunca serán nulas si el build es exitoso.
 export const auth: Auth = getAuth(adminApp);
 export const db: Firestore = getFirestore(adminApp);
