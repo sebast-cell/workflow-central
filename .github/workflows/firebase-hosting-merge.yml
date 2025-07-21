@@ -3,28 +3,32 @@ name: Deploy to Firebase Hosting
 on:
   push:
     branches:
-      - main
+      - main # Asegúrate de que esta es tu rama principal
 
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
 
     steps:
+      # 📥 1. Clonar el repositorio
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # ⚙️ 2. Configurar Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install dependencies and build
+      # 📦 3. Instalar dependencias y construir la app
+      - name: Install dependencies and Build Next.js app
         run: |
           npm ci
           npm run build
         env:
           NODE_OPTIONS: --max_old_space_size=4096
+          # 🔹 Variables frontend
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
           NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
           NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
@@ -33,14 +37,17 @@ jobs:
           NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
           NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID }}
           NEXT_PUBLIC_MAPS_API_KEY: ${{ secrets.NEXT_PUBLIC_MAPS_API_KEY }}
+          # 🔹 Variables backend (Admin SDK)
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
+      # 🚀 4. Desplegar a Firebase Hosting
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
           projectId: 'mi-workflow-app'
-          channelId: live
+          channelId: 'live'
           expires: 7d
           entryPoint: .
           firebaseToolsVersion: latest
